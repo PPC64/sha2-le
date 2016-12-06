@@ -27,25 +27,25 @@ uint32_t k[64] = {
 };
 
 void calculate_padded_msg_size(size_t size, size_t *res) {
-	size_t k = 0;
-	while(1) {
-		if (((k + 8*size + 1) % 512) == 448)
-			break;
-		k++;
-	}
-	if(((k+1)%8) != 0) {printf("ERROR\n"); exit(1);}
-	*res = (k+1)/8;
+	// 64 bytes == 512 bits
+	*res = 64 - (size % 64);
 }
 
 void pad(char *in, char *out, size_t size, size_t padded_size) {
 	int i;
 	for (i = 0; i < size; i ++)
 		out[i] = in[i];
-	out[size] = (char)(1); i++;//1? correct?
 
-	for(; i < padded_size + size; i++)
+	// padding message with 1 and zeroes
+	out[i++] = (char)(1 << 7);
+
+	// reserve last 8 bytes for the size of the message
+	for(; i < padded_size + size - 8; i++)
 		out[i] = 0;
 
+	uint64_t* total_size = (uint64_t*)&out[i];
+	// total_size in bits
+	*total_size = (uint64_t)size * 8;
 }
 
 uint32_t rotate_right(uint32_t num, uint32_t bits)
