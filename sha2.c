@@ -49,16 +49,17 @@ void pad(char *in, char *out, size_t size, size_t padded_size) {
 }
 
 void calculate_higher_values(uint32_t *w) {
-	for (int j = 16; j < 64; j++) {
-		w[j] = 0; //TODO
-	}
+  for (int j = 16; j < 64; j++) {
+    uint32_t s0 = calc_S0(w[j-15]);
+    uint32_t s1 = calc_S1(w[j-2]);
+    w[j] = w[j-16] + s0 + w[j-7] + s1;
+  }
 }
+
 void calculate_w_vector(uint32_t *w, char *input) {
 	memcpy(w, input, 16*sizeof(uint32_t));
 	calculate_higher_values(w);
-
 }
-
 
 uint32_t calc_S1(uint32_t e) {
 	return 0;//TODO
