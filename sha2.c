@@ -48,23 +48,57 @@ void pad(char *in, char *out, size_t size, size_t padded_size) {
 
 }
 
+uint32_t rotate_right(uint32_t num, uint32_t bits)
+{
+	return ((num >> bits) | (num << (32 -bits)));
+}
+
+uint32_t calc_s1(uint32_t e) {
+	uint32_t tmp, tmp2, tmp3;
+	tmp = rotate_right(e, 17);
+	tmp2 = rotate_right(e, 19);
+	tmp3 = e >> 10;
+	return tmp ^ tmp2 ^ tmp3;
+}
 uint32_t calc_S1(uint32_t e) {
-	return 0;//TODO
+	uint32_t tmp, tmp2, tmp3;
+	tmp = rotate_right(e, 6);
+	tmp2 = rotate_right(e, 11);
+	tmp3 = rotate_right(e, 25);
+	return tmp ^ tmp2 ^ tmp3;
 }
 uint32_t calc_ch(uint32_t e, uint32_t f, uint32_t g) {
-	return 0;//TODO
+	uint32_t tmp, tmp2;
+	tmp = e & f;
+	tmp2 = ~e & g;
+	return tmp ^ tmp2;
 }
 uint32_t calc_S0(uint32_t a) {
-	return 0;//TODO
+	uint32_t tmp, tmp2, tmp3;
+	tmp = rotate_right(a, 2);
+	tmp2 = rotate_right(a, 13);
+	tmp3 = rotate_right(a, 22);
+	return tmp ^ tmp2 ^ tmp3;
+}
+uint32_t calc_s0(uint32_t a) {
+	uint32_t tmp, tmp2, tmp3;
+	tmp = rotate_right(a, 7);
+	tmp2 = rotate_right(a, 18);
+	tmp3 = a >> 3;
+	return tmp ^ tmp2 ^ tmp3;
 }
 uint32_t calc_maj(uint32_t a, uint32_t b, uint32_t c) {
-	return 0;//TODO
+	uint32_t tmp, tmp2, tmp3;
+	tmp = a & b;
+	tmp2 = a & c;
+	tmp3 = b & c;
+	return tmp ^ tmp2 ^ tmp3;
 }
 
 void calculate_higher_values(uint32_t *w) {
   for (int j = 16; j < 64; j++) {
-    uint32_t s0 = calc_S0(w[j-15]);
-    uint32_t s1 = calc_S1(w[j-2]);
+    uint32_t s0 = calc_s0(w[j-15]);
+    uint32_t s1 = calc_s1(w[j-2]);
     w[j] = w[j-16] + s0 + w[j-7] + s1;
   }
 }
