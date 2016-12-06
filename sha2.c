@@ -48,6 +48,19 @@ void pad(char *in, char *out, size_t size, size_t padded_size) {
 
 }
 
+uint32_t calc_S1(uint32_t e) {
+	return 0;//TODO
+}
+uint32_t calc_ch(uint32_t e, uint32_t f, uint32_t g) {
+	return 0;//TODO
+}
+uint32_t calc_S0(uint32_t a) {
+	return 0;//TODO
+}
+uint32_t calc_maj(uint32_t a, uint32_t b, uint32_t c) {
+	return 0;//TODO
+}
+
 void calculate_higher_values(uint32_t *w) {
   for (int j = 16; j < 64; j++) {
     uint32_t s0 = calc_S0(w[j-15]);
@@ -61,18 +74,7 @@ void calculate_w_vector(uint32_t *w, char *input) {
 	calculate_higher_values(w);
 }
 
-uint32_t calc_S1(uint32_t e) {
-	return 0;//TODO
-}
-uint32_t calc_ch(uint32_t e, uint32_t f, uint32_t g) {
-	return 0;//TODO
-}
-uint32_t calc_S0(uint32_t a) {
-	return 0;//TODO
-}
-uint32_t calc_maj(uint32_t a, uint32_t b, uint32_t c) {
-	return 0;//TODO
-}
+
 
 void calc_compression(uint32_t *a,uint32_t *b,uint32_t *c ,uint32_t *d ,uint32_t *e ,uint32_t *f ,uint32_t *g ,uint32_t *h,
 			uint32_t *w, int i) {
