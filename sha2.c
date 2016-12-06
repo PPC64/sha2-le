@@ -113,7 +113,8 @@ void calculate_w_vector(uint32_t *w, char *input) {
 
 
 void calc_compression(uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d,
-		uint32_t *e, uint32_t *f, uint32_t *g, uint32_t *h, uint32_t *w, int i) {
+		uint32_t *e, uint32_t *f, uint32_t *g, uint32_t *h, uint32_t *w,
+		int i) {
 	uint32_t S1 = calc_S1(*e);
 	uint32_t ch = calc_ch(*e, *f, *g);
 	uint32_t temp1 = *h + S1 + ch + k[i] + w[i];
