@@ -186,7 +186,7 @@ int main (int argc, char *argv[]) {
 
 	printf("padded size: %d\n", (int)padded_size);
 	printf("input file size: %d\n", (int)size);
-	printf("%x%x%x%x%x%x%x%x\n",_h[0],_h[1],_h[2],_h[3],_h[4],_h[5],_h[6],_h[7]);
+	printf("%08x%08x%08x%08x%08x%08x%08x%08x\n",_h[0],_h[1],_h[2],_h[3],_h[4],_h[5],_h[6],_h[7]);
 	fclose(file);	
 	return 0;
 }
