@@ -24,10 +24,14 @@ int main (int argc, char *argv[]) {
 	char input_padded[padded_size+size];
 	pad(input, input_padded, size, padded_size);
 
+	/* Swap bytes due to endianess */
+	char input_swapped[padded_size+size];
+	swap_bytes(input_padded, input_swapped, padded_size+size);
+
 	/* Sha compression process */
 	for (int i = 0; i < size + padded_size; i = i + 64) { // 512 bits each piece
 		uint32_t w[64];
-		calculate_w_vector(w, input_padded+i);
+		calculate_w_vector(w, input_swapped+i);
 		uint32_t a, b, c, d, e, f, g, h;
 		a = _h[0];
 		b = _h[1];

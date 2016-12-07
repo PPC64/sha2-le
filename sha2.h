@@ -109,6 +109,25 @@ void calculate_w_vector(uint32_t *w, char *input) {
 	calculate_higher_values(w);
 }
 
+void swap_bytes(char *input, char *output, size_t size) {
+	size_t size_in_words = size / 4;
+	for (size_t i = 0; i < size_in_words; i++) {
+		uint32_t *input_32 = (uint32_t*)input+i;
+		uint32_t *output_32 = (uint32_t*)output+i;
+
+#if __BYTE_ORDER__ ==  __ORDER_BIG_ENDIAN__
+		*output_32 = *input_32;
+#elif __BYTE_ORDER__ ==  __ORDER_LITTLE_ENDIAN__
+		*output_32 = (*input_32 & 0xFF000000) >> 24 |
+			(*input_32 & 0x00FF0000) >> 8 |
+			(*input_32 & 0x0000FF00) << 8 |
+			(*input_32 & 0x000000FF) << 24;
+#else
+#error "No endianess found"
+#endif
+
+	}
+}
 
 
 void calc_compression(uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d,
