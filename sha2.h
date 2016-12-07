@@ -131,3 +131,6 @@ void calc_compression(uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d,
 	*a = temp1 + temp2;
 }
 
+// if using vim with "set modeline" on your .vimrc, then this file will be
+// automatically configured as:
+// vim: noai:ts=4:sw=4:sts=4:noet :
