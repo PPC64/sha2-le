@@ -19,7 +19,7 @@ int main (int argc, char *argv[]) {
 	}
 
 	/* Padding */
-	size_t  padded_size;
+	size_t padded_size;
 	calculate_padded_msg_size(size, &padded_size);
 	char input_padded[padded_size+size];
 	pad(input, input_padded, size, padded_size);
@@ -39,8 +39,7 @@ int main (int argc, char *argv[]) {
 		h = _h[7];
 
 		for (int j = 0; j < 64; j++) {
-			//uint32_t _a, _b, _c , _d , _e, _f, _g, _h;
-			calc_compression(&a, &b, &c ,&d ,&e ,&f ,&g ,&h,  w, j);
+			calc_compression(&a, &b, &c ,&d ,&e ,&f ,&g ,&h, w, j);
 		}
 
 		_h[0] = _h[0]+a;

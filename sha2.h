@@ -118,7 +118,7 @@ void calc_compression(uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d,
 	uint32_t ch = calc_ch(*e, *f, *g);
 	uint32_t temp1 = *h + S1 + ch + k[i] + w[i];
 	uint32_t S0 = calc_S0(*a);
-	uint32_t maj = calc_maj(*a,*b,*c);
+	uint32_t maj = calc_maj(*a, *b, *c);
 	uint32_t temp2 = S0 + maj;
 
 	*h = *g;
