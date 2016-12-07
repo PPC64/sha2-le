@@ -12,6 +12,8 @@ int main () {
   if(calc_s1(0x800000) != 0x2050) print_error();
   if(calc_S0(0x8000000) != 0x2004020) print_error();
   if(calc_S1(0x8000000) != 0x210004) print_error();
+  if(calc_ch(0xABABABAB,0xCDCDCDCD,0xEFEFEFEF) != 0xCDCDCDCD) print_error();
+  if(calc_maj(0xABABABAB,0xCDCDCDCD,0xEFEFEFEF) != 0xEFEFEFEF) print_error();
 
   return 0;
 }
