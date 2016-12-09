@@ -32,6 +32,9 @@ static const base_type k[64] = {
 static const size_t W_SIZE     = 64;
 static const size_t BLOCK_SIZE = 64;
 
+static const size_t PAD_MOD = 512;
+static const size_t PAD_EQL = 448;
+
 #elif SHA_BITS == 512
 
 typedef uint64_t base_type;
@@ -61,6 +64,9 @@ static const base_type k[80] = {
 static const size_t W_SIZE     = 80;
 static const size_t BLOCK_SIZE = 128;
 
+static const size_t PAD_MOD    = 1024;
+static const size_t PAD_EQL    = 896;
+
 #else
 #error "Invalid SHA_BITS"
 #endif
@@ -82,12 +88,12 @@ void calculate_padded_msg_size_FIPS_180_4(size_t size, size_t *res) {
 	// analytical way to calculate padding
 	size_t k = 0;
 	while(1) {
-		if (((k + 8*size + 1) % 512) == 448)
+		if (((k + 8*size + 1) % PAD_MOD) == PAD_EQL)
 			break;
 		k++;
 	}
 	if(((k+1)%8) != 0) {printf("ERROR\n"); exit(1);}
-	*res = ((k+1)/8) + 8;
+	*res = ((k+1)/8) + base_type_size*2;
 }
 
 void pad(char *in, char *out, size_t size, size_t padded_size) {
