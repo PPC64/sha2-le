@@ -47,8 +47,8 @@ void pad(char *in, char *out, size_t size, size_t padded_size) {
 
 void write_size(char *input, size_t size, size_t position) {
 	uint32_t* total_size = (uint32_t*)&input[position];
-	// total_size in bits
-	*total_size = (uint32_t)size * 8;
+	*total_size = (uint32_t)(size >> 32) * 8; // high word in bits
+	*(++total_size) = (uint32_t)size * 8;     // low word in bits
 }
 
 uint32_t rotate_right(uint32_t num, uint32_t bits)

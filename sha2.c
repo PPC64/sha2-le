@@ -28,8 +28,8 @@ int main (int argc, char *argv[]) {
 	char input_swapped[padded_size+size];
 	swap_bytes(input_padded, input_swapped, padded_size+size);
 
-	/* write total message size at the last word */
-	write_size(input_swapped, size, padded_size+size-4);
+	/* write total message size (64bits) as the last 2 words */
+	write_size(input_swapped, size, padded_size+size-8);
 
 	/* Sha compression process */
 	for (int i = 0; i < size + padded_size; i = i + 64) { // 512 bits each piece
