@@ -114,7 +114,7 @@ void pad(char *in, char *out, size_t size, size_t padded_size) {
 	// padding message with 1 and zeroes
 	out[i++] = (char)(1 << 7);
 
-	// reserve last 8 bytes for the size of the message
+	// reserve last 8 bytes (or 16, in case of SHA512) for the size of the message
 	for(; i < padded_size + size; i++)
 		out[i] = 0;
 }
