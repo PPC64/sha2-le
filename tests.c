@@ -13,6 +13,7 @@ void print_error_arg(int line, size_t arg) {
 }
 
 int main () {
+#if SHA_BITS==256 || SHA_BITS==512
 	if(rotate_right(1, 2) != 0x40000000) print_error(__LINE__);
 	if(rotate_right(2, 2) != 0x80000000) print_error(__LINE__);
 	if(calc_s0(0x80000) != 0x11002) print_error(__LINE__);
@@ -21,7 +22,9 @@ int main () {
 	if(calc_S1(0x8000000) != 0x210004) print_error(__LINE__);
 	if(calc_ch(0xABABABAB,0xCDCDCDCD,0xEFEFEFEF) != 0xCDCDCDCD) print_error(__LINE__);
 	if(calc_maj(0xABABABAB,0xCDCDCDCD,0xEFEFEFEF) != 0xEFEFEFEF) print_error(__LINE__);
+#endif
 
+#if SHA_BITS==256
 	size_t size, padded_size;
 	size =  3; calculate_padded_msg_size(size, &padded_size); if (size + padded_size !=  64) print_error_arg(__LINE__, padded_size);
 	calculate_padded_msg_size_FIPS_180_4(size, &padded_size); if (size + padded_size !=  64) print_error_arg(__LINE__, padded_size);
@@ -38,6 +41,7 @@ int main () {
 	        calculate_padded_msg_size_FIPS_180_4(size, &padded_size); if (size + padded_size != 5368709184) print_error_arg(__LINE__, padded_size);
 	size = 5368709121; calculate_padded_msg_size(size, &padded_size); if (size + padded_size != 5368709184) print_error_arg(__LINE__, padded_size);
 	        calculate_padded_msg_size_FIPS_180_4(size, &padded_size); if (size + padded_size != 5368709184) print_error_arg(__LINE__, padded_size);
+#endif
 
 	return error_occured;
 }
