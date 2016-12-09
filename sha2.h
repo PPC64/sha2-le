@@ -65,16 +65,18 @@ static const size_t BLOCK_SIZE = 128;
 #error "Invalid SHA_BITS"
 #endif
 
+static const size_t base_type_size = sizeof(base_type);
+
 /* Calculates padding size plus 8-byte length at the end */
 void calculate_padded_msg_size(size_t size, size_t *res) {
 	// direct way to calculate padding
-	// 64 bytes == 512 bits
 	*res = 0;
-	// if 0x80 prepend plus 8 bytes for message length doesn't fit the next 64
-	// bytes multiple, use another one to make sure it's padded to 64 bytes.
-	if (size % 64 > 64-9) *res += 64;
+	// if 0x80 prepend plus 8 bytes for message length doesn't fit the next
+	// BLOCK_SIZE bytes multiple, use another one to make sure it's padded to
+	// BLOCK_SIZE bytes.
+	if (size % BLOCK_SIZE > BLOCK_SIZE-9) *res += BLOCK_SIZE;
 
-	*res += 64 - (size % 64);
+	*res += BLOCK_SIZE - (size % BLOCK_SIZE);
 }
 void calculate_padded_msg_size_FIPS_180_4(size_t size, size_t *res) {
 	// analytical way to calculate padding
@@ -102,9 +104,9 @@ void pad(char *in, char *out, size_t size, size_t padded_size) {
 }
 
 void write_size(char *input, size_t size, size_t position) {
-	uint32_t* total_size = (uint32_t*)&input[position];
-	*total_size = (uint32_t)(size >> 32) * 8; // high word in bits
-	*(++total_size) = (uint32_t)size * 8;     // low word in bits
+	base_type* total_size = (base_type*)&input[position];
+	*total_size = (base_type)(size >> base_type_size*8) * 8; // higher bits
+	*(++total_size) = (base_type)size * 8;                   // lower bits
 }
 
 uint32_t rotate_right(uint32_t num, uint32_t bits)
@@ -248,8 +250,8 @@ int sha2 (int argc, char *argv[]) {
 	char input_swapped[padded_size+size];
 	swap_bytes(input_padded, input_swapped, padded_size+size);
 
-	/* write total message size (64bits) as the last 2 words */
-	write_size(input_swapped, size, padded_size+size-8);
+	/* write total message size at the end (2 base_types*/
+	write_size(input_swapped, size, padded_size+size-2*base_type_size);
 
 	/* Sha compression process */
 	for (int i = 0; i < size + padded_size; i = i + BLOCK_SIZE) {
