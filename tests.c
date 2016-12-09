@@ -43,6 +43,24 @@ int main () {
 	        calculate_padded_msg_size_FIPS_180_4(size, &padded_size); if (size + padded_size != 5368709184) print_error_arg(__LINE__, padded_size);
 #endif
 
+#if SHA_BITS==512
+	size_t size, padded_size;
+	size =  3;  calculate_padded_msg_size(size, &padded_size); if (size + padded_size != 128) print_error_arg(__LINE__, padded_size);
+	 calculate_padded_msg_size_FIPS_180_4(size, &padded_size); if (size + padded_size != 128) print_error_arg(__LINE__, padded_size);
+	size = 127; calculate_padded_msg_size(size, &padded_size); if (size + padded_size != 256) print_error_arg(__LINE__, padded_size);
+	 calculate_padded_msg_size_FIPS_180_4(size, &padded_size); if (size + padded_size != 256) print_error_arg(__LINE__, padded_size);
+	size = 128; calculate_padded_msg_size(size, &padded_size); if (size + padded_size != 256) print_error_arg(__LINE__, padded_size);
+	 calculate_padded_msg_size_FIPS_180_4(size, &padded_size); if (size + padded_size != 256) print_error_arg(__LINE__, padded_size);
+	size = 129; calculate_padded_msg_size(size, &padded_size); if (size + padded_size != 256) print_error_arg(__LINE__, padded_size);
+	 calculate_padded_msg_size_FIPS_180_4(size, &padded_size); if (size + padded_size != 256) print_error_arg(__LINE__, padded_size);
+	// testing around 5G
+	size = 5368709119; calculate_padded_msg_size(size, &padded_size); if (size + padded_size != 5368709184) print_error_arg(__LINE__, padded_size);
+	        calculate_padded_msg_size_FIPS_180_4(size, &padded_size); if (size + padded_size != 5368709184) print_error_arg(__LINE__, padded_size);
+	size = 5368709120; calculate_padded_msg_size(size, &padded_size); if (size + padded_size != 5368709184) print_error_arg(__LINE__, padded_size);
+	        calculate_padded_msg_size_FIPS_180_4(size, &padded_size); if (size + padded_size != 5368709184) print_error_arg(__LINE__, padded_size);
+	size = 5368709121; calculate_padded_msg_size(size, &padded_size); if (size + padded_size != 5368709184) print_error_arg(__LINE__, padded_size);
+	        calculate_padded_msg_size_FIPS_180_4(size, &padded_size); if (size + padded_size != 5368709184) print_error_arg(__LINE__, padded_size);
+#endif
 	return error_occured;
 }
 
