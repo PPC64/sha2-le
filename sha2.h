@@ -172,7 +172,7 @@ base_type calc_s1(base_type e) {
 }
 
 void calculate_higher_values(base_type *w) {
-	for (int j = 16; j < 64; j++) {
+	for (int j = 16; j < W_SIZE; j++) {
 		base_type s0 = calc_s0(w[j-15]);
 		base_type s1 = calc_s1(w[j-2]);
 		w[j] = w[j-16] + s0 + w[j-7] + s1;
