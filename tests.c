@@ -45,12 +45,14 @@ int main () {
 #if SHA_BITS==512
 	if(rotate_right(1, 2) != 0x4000000000000000) print_error(__LINE__);
 	if(rotate_right(2, 2) != 0x8000000000000000) print_error(__LINE__);
-	if(calc_s0(0x80000) != 0x11002) print_error(__LINE__);
-	if(calc_s1(0x800000) != 0x2050) print_error(__LINE__);
-	if(calc_S0(0x8000000) != 0x2004020) print_error(__LINE__);
-	if(calc_S1(0x8000000) != 0x210004) print_error(__LINE__);
+	if(calc_s0(0x80000) != 0x41800) print_error(__LINE__);
+	if(calc_s1(0x4000000000000000) != 0x100080000000002) print_error(__LINE__);
+	if(calc_S0(0x4000000000000000) != 0x410800000) print_error(__LINE__);
+	if(calc_S1(0x4000000000000000) != 0x1100000200000) print_error(__LINE__);
 	if(calc_ch(0xABABABAB,0xCDCDCDCD,0xEFEFEFEF) != 0xCDCDCDCD) print_error(__LINE__);
 	if(calc_maj(0xABABABAB,0xCDCDCDCD,0xEFEFEFEF) != 0xEFEFEFEF) print_error(__LINE__);
+	if(calc_ch(0xABABABABABABABAB,0xCDCDCDCDCDCDCDCD,0xEFEFEFEFEFEFEFEF) != 0xCDCDCDCDCDCDCDCD) print_error(__LINE__);
+	if(calc_maj(0xABABABABABABABAB,0xCDCDCDCDCDCDCDCD,0xEFEFEFEFEFEFEFEF) != 0xEFEFEFEFEFEFEFEF) print_error(__LINE__);
 
 	size_t size, padded_size;
 	size =  3;  calculate_padded_msg_size(size, &padded_size); if (size + padded_size != 128) print_error_arg(__LINE__, size+padded_size);
