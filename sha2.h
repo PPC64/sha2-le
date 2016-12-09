@@ -121,7 +121,9 @@ void pad(char *in, char *out, size_t size, size_t padded_size) {
 
 void write_size(char *input, size_t size, size_t position) {
 	base_type* total_size = (base_type*)&input[position];
+#if SHA_BITS == 256 // for SHA_BITS == 512 it's undefined: uint64_t >> 64
 	*total_size = (base_type)(size >> base_type_size*8) * 8; // higher bits
+#endif
 	*(++total_size) = (base_type)size * 8;                   // lower bits
 }
 
