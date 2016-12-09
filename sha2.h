@@ -27,9 +27,27 @@ uint32_t k[64] = {
 	0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
+/* Calculates padding size plus 8-byte length at the end */
 void calculate_padded_msg_size(size_t size, size_t *res) {
+	// direct way to calculate padding
 	// 64 bytes == 512 bits
-	*res = 64 - (size % 64);
+	*res = 0;
+	// if 0x80 prepend plus 8 bytes for message length doesn't fit the next 64
+	// bytes multiple, use another one to make sure it's padded to 64 bytes.
+	if (size % 64 > 64-9) *res += 64;
+
+	*res += 64 - (size % 64);
+}
+void calculate_padded_msg_size_FIPS_180_4(size_t size, size_t *res) {
+	// analytical way to calculate padding
+	size_t k = 0;
+	while(1) {
+		if (((k + 8*size + 1) % 512) == 448)
+			break;
+		k++;
+	}
+	if(((k+1)%8) != 0) {printf("ERROR\n"); exit(1);}
+	*res = ((k+1)/8) + 8;
 }
 
 void pad(char *in, char *out, size_t size, size_t padded_size) {
