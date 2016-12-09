@@ -1,9 +1,9 @@
 .PHONY: test
 
-all: sha2 tests
+all: sha256
 
-sha2: sha2.c sha2.h
-	gcc -g -std=c99 -o sha2 sha2.c
+sha256: sha256.c sha2.h
+	gcc -g -std=c99 -o sha256 sha256.c
 
 tests: tests.c sha2.h
 	gcc -g -std=c99 -o tests tests.c
