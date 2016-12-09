@@ -35,18 +35,10 @@ static const size_t BLOCK_SIZE = 64;
 static const size_t PAD_MOD = 512;
 static const size_t PAD_EQL = 448;
 
-static const base_type S0_rot1 =  2;
-static const base_type S0_rot2 = 13;
-static const base_type S0_rot3 = 22;
-static const base_type S1_rot1 =  6;
-static const base_type S1_rot2 = 11;
-static const base_type S1_rot3 = 25;
-static const base_type s0_rot1 =  7;
-static const base_type s0_rot2 = 18;
-static const base_type s0_shf1 =  3;
-static const base_type s1_rot1 = 17;
-static const base_type s1_rot2 = 19;
-static const base_type s1_shf1 = 10;
+static const base_type S0_args[] = { 2, 13, 22};
+static const base_type S1_args[] = { 6, 11, 25};
+static const base_type s0_args[] = { 7, 18,  3};
+static const base_type s1_args[] = {17, 19, 10};
 
 #elif SHA_BITS == 512
 
@@ -80,18 +72,10 @@ static const size_t BLOCK_SIZE = 128;
 static const size_t PAD_MOD    = 1024;
 static const size_t PAD_EQL    = 896;
 
-static const base_type S0_rot1 = 28;
-static const base_type S0_rot2 = 34;
-static const base_type S0_rot3 = 39;
-static const base_type S1_rot1 = 14;
-static const base_type S1_rot2 = 18;
-static const base_type S1_rot3 = 41;
-static const base_type s0_rot1 =  1;
-static const base_type s0_rot2 =  8;
-static const base_type s0_shf1 =  7;
-static const base_type s1_rot1 = 19;
-static const base_type s1_rot2 = 61;
-static const base_type s1_shf1 =  6;
+static const base_type S0_args[] = {28, 34, 39};
+static const base_type S1_args[] = {14, 18, 41};
+static const base_type s0_args[] = { 1,  8,  7};
+static const base_type s1_args[] = {19, 61,  6};
 
 #else
 #error "Invalid SHA_BITS"
@@ -160,30 +144,30 @@ base_type calc_maj(base_type a, base_type b, base_type c) {
 }
 base_type calc_S0(base_type a) {
 	base_type tmp1, tmp2, tmp3;
-	tmp1 = rotate_right(a, S0_rot1);
-	tmp2 = rotate_right(a, S0_rot2);
-	tmp3 = rotate_right(a, S0_rot3);
+	tmp1 = rotate_right(a, S0_args[0]);
+	tmp2 = rotate_right(a, S0_args[1]);
+	tmp3 = rotate_right(a, S0_args[2]);
 	return tmp1 ^ tmp2 ^ tmp3;
 }
 base_type calc_S1(base_type e) {
 	base_type tmp1, tmp2, tmp3;
-	tmp1 = rotate_right(e, S1_rot1);
-	tmp2 = rotate_right(e, S1_rot2);
-	tmp3 = rotate_right(e, S1_rot3);
+	tmp1 = rotate_right(e, S1_args[0]);
+	tmp2 = rotate_right(e, S1_args[1]);
+	tmp3 = rotate_right(e, S1_args[2]);
 	return tmp1 ^ tmp2 ^ tmp3;
 }
 base_type calc_s0(base_type a) {
 	base_type tmp1, tmp2, tmp3;
-	tmp1 = rotate_right(a, s0_rot1);
-	tmp2 = rotate_right(a, s0_rot2);
-	tmp3 = a >> s0_shf1;
+	tmp1 = rotate_right(a, s0_args[0]);
+	tmp2 = rotate_right(a, s0_args[1]);
+	tmp3 = a >> s0_args[2];
 	return tmp1 ^ tmp2 ^ tmp3;
 }
 base_type calc_s1(base_type e) {
 	base_type tmp1, tmp2, tmp3;
-	tmp1 = rotate_right(e, s1_rot1);
-	tmp2 = rotate_right(e, s1_rot2);
-	tmp3 = e >> s1_shf1;
+	tmp1 = rotate_right(e, s1_args[0]);
+	tmp2 = rotate_right(e, s1_args[1]);
+	tmp3 = e >> s1_args[2];
 	return tmp1 ^ tmp2 ^ tmp3;
 }
 
