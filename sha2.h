@@ -115,17 +115,10 @@ size_t calculate_padded_msg_size_FIPS_180_4(size_t size) {
 	return (((k+1)/8) + base_type_size*2) + size;
 }
 
-void pad(char *in, char *out, size_t size, size_t padded_size) {
-	int i;
-	for (i = 0; i < size; i ++)
-		out[i] = in[i];
-
-	// padding message with 1 and zeroes
-	out[i++] = (char)(1 << 7);
-
-	// reserve last 8 bytes (or 16, in case of SHA512) for the size of the message
-	for(; i < padded_size; i++)
-		out[i] = 0;
+void pad(char *in, size_t size, size_t padded_size) {
+	// padding message with 1 bit and zeroes
+	in[size++] = (char)(1 << 7);
+	while (size < padded_size) in[size++] = 0;
 }
 
 void write_size(char *input, size_t size, size_t position) {
@@ -279,21 +272,21 @@ int sha2 (int argc, char *argv[]) {
 	size_t size = ftell(file); // get current file pointer
 	fseek(file, 0, SEEK_SET); // seek back to beginning of file
 
-	char input[size];
+	/* Padding. padded_size is total message bytes including pad bytes. */
+	size_t padded_size = calculate_padded_msg_size(size);
 
 	/* Save file in buffer */
+	char input[padded_size];
 	if (fread(input, sizeof(char), size, file) != size) {
 		printf("ERROR\n"); return 1;
 	}
 
-	/* Padding. padded_size is total message bytes including pad bytes. */
-	size_t padded_size = calculate_padded_msg_size(size);
-	char input_padded[padded_size];
-	pad(input, input_padded, size, padded_size);
+	/* Pad trailing bytes accordingly */
+	pad(input, size, padded_size);
 
 	/* Swap bytes due to endianess */
 	char input_swapped[padded_size];
-	swap_bytes(input_padded, input_swapped, padded_size);
+	swap_bytes(input, input_swapped, padded_size);
 
 	/* write total message size at the end (2 base_types*/
 	write_size(input_swapped, size, padded_size - 2 * base_type_size);
