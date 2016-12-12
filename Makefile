@@ -1,4 +1,4 @@
-.PHONY: test tests clean
+.PHONY: all test tests clean
 
 all: sha256 sha512
 
@@ -18,14 +18,14 @@ test512: tests.c sha2.h
 	gcc -DSHA_BITS=512 -g -std=c99 -o tests512 tests.c
 	gcc -DSHA_BITS=512 -DIN_ASM -g -std=c99 -o tests512_asm tests.c
 
-tests: test256 test512
-
-test: tests
+test: sha256 sha512 test256 test512
 	./tests256
 	./tests256_asm
 	./tests512
 	./tests512_asm
 	./blackbox-test.sh
+
+tests: test
 
 clean:
 	rm sha256 sha512 tests256 tests512
