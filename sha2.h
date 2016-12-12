@@ -84,26 +84,31 @@ static const base_type s1_args[] = {19, 61,  6};
 static const size_t base_type_size = sizeof(base_type);
 
 /* Calculates padding size plus 8-byte length at the end */
-void calculate_padded_msg_size(size_t size, size_t *res) {
+size_t calculate_padded_msg_size(size_t size) {
 	// direct way to calculate padding
-	*res = 0;
-	// if 0x80 prepend plus 8 bytes for message length doesn't fit the next
-	// BLOCK_SIZE bytes multiple, use another one to make sure it's padded to
-	// BLOCK_SIZE bytes.
-	if (size % BLOCK_SIZE > BLOCK_SIZE-9) *res += BLOCK_SIZE;
+	size_t res = 0;
+	// if 0x80 (1byte) prepend plus BLOCK_SIZE bytes for message length doesn't
+	// fit the next BLOCK_SIZE bytes multiple, use another one to make sure
+	// it's padded to BLOCK_SIZE bytes.
+	if (size % BLOCK_SIZE > BLOCK_SIZE-9) res += BLOCK_SIZE;
 
-	*res += BLOCK_SIZE - (size % BLOCK_SIZE);
+	res += BLOCK_SIZE - (size % BLOCK_SIZE);
+	return res + size;
 }
-void calculate_padded_msg_size_FIPS_180_4(size_t size, size_t *res) {
+size_t calculate_padded_msg_size_FIPS_180_4(size_t size) {
 	// analytical way to calculate padding
 	size_t k = 0;
-	while(1) {
+
+	while (1) {
 		if (((k + 8*size + 1) % PAD_MOD) == PAD_EQL)
 			break;
 		k++;
 	}
-	if(((k+1)%8) != 0) {printf("ERROR\n"); exit(1);}
-	*res = ((k+1)/8) + base_type_size*2;
+	if (((k+1)%8) != 0) {
+		printf("ERROR\n");
+		exit(1);
+	}
+	return (((k+1)/8) + base_type_size*2) + size;
 }
 
 void pad(char *in, char *out, size_t size, size_t padded_size) {
@@ -115,7 +120,7 @@ void pad(char *in, char *out, size_t size, size_t padded_size) {
 	out[i++] = (char)(1 << 7);
 
 	// reserve last 8 bytes (or 16, in case of SHA512) for the size of the message
-	for(; i < padded_size + size; i++)
+	for(; i < padded_size; i++)
 		out[i] = 0;
 }
 
@@ -257,21 +262,20 @@ int sha2 (int argc, char *argv[]) {
 		printf("ERROR\n"); return 1;
 	}
 
-	/* Padding */
-	size_t padded_size;
-	calculate_padded_msg_size(size, &padded_size);
-	char input_padded[padded_size+size];
+	/* Padding. padded_size is total message bytes including pad bytes. */
+	size_t padded_size = calculate_padded_msg_size(size);
+	char input_padded[padded_size];
 	pad(input, input_padded, size, padded_size);
 
 	/* Swap bytes due to endianess */
-	char input_swapped[padded_size+size];
-	swap_bytes(input_padded, input_swapped, padded_size+size);
+	char input_swapped[padded_size];
+	swap_bytes(input_padded, input_swapped, padded_size);
 
 	/* write total message size at the end (2 base_types*/
-	write_size(input_swapped, size, padded_size+size-2*base_type_size);
+	write_size(input_swapped, size, padded_size - 2 * base_type_size);
 
 	/* Sha compression process */
-	for (int i = 0; i < size + padded_size; i = i + BLOCK_SIZE) {
+	for (int i = 0; i < padded_size; i = i + BLOCK_SIZE) {
 		base_type w[W_SIZE];
 		calculate_w_vector(w, input_swapped+i);
 		base_type a, b, c, d, e, f, g, h;
@@ -300,8 +304,6 @@ int sha2 (int argc, char *argv[]) {
 	}
 
 
-	printf("padded size: %zu\n", padded_size);
-	printf("input file size: %zu\n", size);
 	printf(
 #if SHA_BITS == 256
 			"%08x%08x%08x%08x%08x%08x%08x%08x\n",
