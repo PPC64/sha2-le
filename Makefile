@@ -19,6 +19,7 @@ tests: test256 test512
 test: tests
 	./tests256
 	./tests512
+	./blackbox-test.sh
 
 clean:
 	rm sha256 sha512 tests256 tests512
