@@ -3,6 +3,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#if defined(IN_ASM) && defined(__powerpc64__)
+	#define USE_INASM
+#endif
+
 #if SHA_BITS == 256
 
 typedef uint32_t base_type;
@@ -133,7 +137,27 @@ void write_size(char *input, size_t size, size_t position) {
 }
 
 base_type rotate_right(base_type num, base_type bits) {
+#if defined(USE_INASM)
+	base_type ret;
+#if SHA_BITS==256
+	__asm__("rlwnm %0,%1,%2,0,31\n\t"
+			:"=r"(ret)
+			:"r"(num),
+			 "r"(32-bits)
+	   );
+	return ret;
+
+#elif SHA_BITS==512
+	__asm__("rldcl %0,%1,%2,0\n\t"
+			:"=r"(ret)
+			:"r"(num),
+			 "r"(64-bits)
+	   );
+	return ret;
+#endif
+#else
 	return ((num >> bits) | (num << (base_type_size*8 - bits)));
+#endif
 }
 
 base_type calc_ch(base_type e, base_type f, base_type g) {
