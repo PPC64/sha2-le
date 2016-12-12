@@ -216,7 +216,7 @@ void calculate_w_vector(base_type *w, char *input) {
 }
 
 void swap_bytes(char *input, char *output, size_t size) {
-	size_t size_in_words = size / 4;
+	size_t size_in_words = size / base_type_size;
 	for (size_t i = 0; i < size_in_words; i++) {
 		base_type *input_cast = (base_type*)input+i;
 		base_type *output_cast = (base_type*)output+i;
