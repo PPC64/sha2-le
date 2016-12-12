@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#if defined(USE_HW_VECTOR) && !defined(__powerpc64__)
+#if USE_HW_VECTOR == 1 && !defined(__powerpc64__)
 	#error "HW vector only implemented for powerpc64"
 #endif
 
@@ -130,9 +130,9 @@ void write_size(char *input, size_t size, size_t position) {
 }
 
 base_type rotate_right(base_type num, base_type bits) {
-#if defined(USE_HW_VECTOR)
+#if USE_HW_VECTOR == 1
 	base_type ret;
-#if SHA_BITS==256
+#if SHA_BITS == 256
 	__asm__("rlwnm %0,%1,%2,0,31\n\t"
 			:"=r"(ret)
 			:"r"(num),
@@ -140,7 +140,7 @@ base_type rotate_right(base_type num, base_type bits) {
 	   );
 	return ret;
 
-#elif SHA_BITS==512
+#elif SHA_BITS == 512
 	__asm__("rldcl %0,%1,%2,0\n\t"
 			:"=r"(ret)
 			:"r"(num),
