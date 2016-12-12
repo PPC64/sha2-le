@@ -9,12 +9,13 @@ for sha_bits in 256 512; do
   echo "Running tests for SHA-${sha_bits}:";
   for file in $a $b $c $d; do
     echo -n $file > _tmp
-    ./sha${sha_bits} _tmp > _my
+    ./sha${sha_bits} _tmp > _c
+    ./sha${sha_bits}_hw _tmp > _hw
     sha${sha_bits}sum _tmp | cut -d\  -f1 > _ref
-    diff -u _my _ref > _tmp # overwrite, I know... but it's useless now
+    diff3 _c _hw _ref > _tmp # overwrite, I know... but it's useless now
     if [[ $? -eq 0 ]]; then echo 'Ok'; else echo 'NOK!'; tail -n2 _tmp ; fi
   done
   echo ""
 done
-rm _ref _my _tmp
+rm _ref _c _hw _tmp
 

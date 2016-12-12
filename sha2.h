@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#if defined(IN_ASM) && defined(__powerpc64__)
-	#define USE_INASM
+#if defined(USE_HW_VECTOR) && !defined(__powerpc64__)
+	#error "HW vector only implemented for powerpc64"
 #endif
 
 #if SHA_BITS == 256
@@ -130,7 +130,7 @@ void write_size(char *input, size_t size, size_t position) {
 }
 
 base_type rotate_right(base_type num, base_type bits) {
-#if defined(USE_INASM)
+#if defined(USE_HW_VECTOR)
 	base_type ret;
 #if SHA_BITS==256
 	__asm__("rlwnm %0,%1,%2,0,31\n\t"
@@ -261,26 +261,7 @@ void calc_compression(base_type *a, base_type *b, base_type *c, base_type *d,
 	*a = temp1 + temp2;
 }
 
-int sha2 (int argc, char *argv[]) {
-	char *filename = argv[1];
-	FILE *file = fopen(filename, "r");
-
-	if (file == NULL) { printf("ERROR\n"); return 1; }
-
-	/* Get Size of file */
-	fseek(file, 0, SEEK_END); // seek to end of file
-	size_t size = ftell(file); // get current file pointer
-	fseek(file, 0, SEEK_SET); // seek back to beginning of file
-
-	/* Padding. padded_size is total message bytes including pad bytes. */
-	size_t padded_size = calculate_padded_msg_size(size);
-
-	/* Save file in buffer */
-	char input[padded_size];
-	if (fread(input, sizeof(char), size, file) != size) {
-		printf("ERROR\n"); return 1;
-	}
-
+void sha2_core(char *input, size_t size, size_t padded_size, base_type *_h) {
 	/* Pad trailing bytes accordingly */
 	pad(input, size, padded_size);
 
@@ -317,9 +298,32 @@ int sha2 (int argc, char *argv[]) {
 		_h[5] = _h[5]+f;
 		_h[6] = _h[6]+g;
 		_h[7] = _h[7]+h;
-
 	}
+}
 
+int sha2 (int argc, char *argv[]) {
+	char *filename = argv[1];
+	FILE *file = fopen(filename, "r");
+
+	if (file == NULL) { printf("ERROR\n"); return 1; }
+
+	/* Get Size of file */
+	fseek(file, 0, SEEK_END);  // seek to end of file
+	size_t size = ftell(file); // get current file pointer
+	fseek(file, 0, SEEK_SET);  // seek back to beginning of file
+
+	/* Padding. padded_size is total message bytes including pad bytes. */
+	size_t padded_size = calculate_padded_msg_size(size);
+
+	/* Save file in buffer */
+	char input[padded_size];
+	if (fread(input, sizeof(char), size, file) != size) {
+		printf("ERROR\n");
+		return 1;
+	}
+	fclose(file);
+
+	sha2_core(input, size, padded_size, _h);
 
 	printf(
 #if SHA_BITS == 256
@@ -328,7 +332,6 @@ int sha2 (int argc, char *argv[]) {
 			"%016lx%016lx%016lx%016lx%016lx%016lx%016lx%016lx\n",
 #endif
 			_h[0],_h[1],_h[2],_h[3],_h[4],_h[5],_h[6],_h[7]);
-	fclose(file);
 	return 0;
 }
 
