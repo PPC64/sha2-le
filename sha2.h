@@ -174,7 +174,7 @@ base_type calc_S0(base_type a) {
 			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
 			"stwx       %1,0,0\n\t"     // store value in order to be read by vector
 			"lvewx      0,0,0\n\t"      // load 4 words to a vector
-			"vshasigmaw 0,0,1,0x0\n\t"  // apply big sigma function
+			"vshasigmaw 0,0,1,0xE\n\t"  // apply big sigma 0 function (only to 0x1 bit)
 			"stvewx     0,0,0\n\t"      // store back 4 words
 			"lwzx       %0,0,0\n\t"     // load resulted word to return value
 			:"=r"(ret)
@@ -186,7 +186,7 @@ base_type calc_S0(base_type a) {
 			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
 			"stdx       %1,0,0\n\t"     // store it in order to be read by vector
 			"lvx        0,0,0\n\t"      // load 2 doublewords to a vector
-			"vshasigmad 0,0,1,0x0\n\t"  // apply big sigma function
+			"vshasigmad 0,0,1,0xD\n\t"  // apply big sigma 0 function (only to 2*i = 0x2 bit)
 			"stvx       0,0,0\n\t"      // store back 2 doublewords
 			"ldx        %0,0,0\n\t"     // load resulted word to return value
 			:"=r"(ret)
@@ -211,7 +211,7 @@ base_type calc_S1(base_type e) {
 			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
 			"stwx       %1,0,0\n\t"     // store value in order to be read by vector
 			"lvewx      0,0,0\n\t"      // load 4 words to a vector
-			"vshasigmaw 0,0,1,0xF\n\t"  // apply big sigma function
+			"vshasigmaw 0,0,1,0x1\n\t"  // apply big sigma 1 function (only to 0x1 bit)
 			"stvewx     0,0,0\n\t"      // store back 4 words
 			"lwzx       %0,0,0\n\t"     // load resulted word to return value
 			:"=r"(ret)
@@ -223,7 +223,7 @@ base_type calc_S1(base_type e) {
 			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
 			"stdx       %1,0,0\n\t"     // store it in order to be read by vector
 			"lvx        0,0,0\n\t"      // load 2 doublewords to a vector
-			"vshasigmad 0,0,1,0xF\n\t"  // apply big sigma function
+			"vshasigmad 0,0,1,0x2\n\t"  // apply big sigma 1 function (only to 2*i = 0x2 bit)
 			"stvx       0,0,0\n\t"      // store back 2 doublewords
 			"ldx        %0,0,0\n\t"     // load resulted word to return value
 			:"=r"(ret)
@@ -248,7 +248,7 @@ base_type calc_s0(base_type a) {
 			"la         0,-16(1)\n\t"   // use r0 and -4(r1) as temporary
 			"stwx       %1,0,0\n\t"     // store it in order to be read by vector
 			"lvewx      0,0,0\n\t"      // load 4 words to a vector
-			"vshasigmaw 0,0,0,0x0\n\t"  // apply small sigma function
+			"vshasigmaw 0,0,0,0xE\n\t"  // apply small sigma 0 function (only to 0x1 bit)
 			"stvewx     0,0,0\n\t"      // store back 4 words
 			"lwzx       %0,0,0\n\t"     // load resulted word to return value
 			:"=r"(ret)
@@ -260,7 +260,7 @@ base_type calc_s0(base_type a) {
 			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
 			"stdx       %1,0,0\n\t"     // store it in order to be read by vector
 			"lvx        0,0,0\n\t"      // load 2 doublewords to a vector
-			"vshasigmad 0,0,0,0x0\n\t"  // apply small sigma function
+			"vshasigmad 0,0,0,0xD\n\t"  // apply small sigma 0 function (only to 2*i = 0x2 bit)
 			"stvx       0,0,0\n\t"      // store back 2 doublewords
 			"ldx        %0,0,0\n\t"     // load resulted word to return value
 			:"=r"(ret)
@@ -285,7 +285,7 @@ base_type calc_s1(base_type e) {
 			"la         0,-16(1)\n\t"   // use r0 and -4(r1) as temporary
 			"stwx       %1,0,0\n\t"     // store it in order to be read by vector
 			"lvewx      0,0,0\n\t"      // load 4 words to a vector
-			"vshasigmaw 0,0,0,0xF\n\t"  // apply small sigma function
+			"vshasigmaw 0,0,0,0x1\n\t"  // apply small sigma 1 function (only to 0x1 bit)
 			"stvewx     0,0,0\n\t"      // store back 4 words
 			"lwzx       %0,0,0\n\t"     // load resulted word to return value
 			:"=r"(ret)
@@ -297,7 +297,7 @@ base_type calc_s1(base_type e) {
 			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
 			"stdx       %1,0,0\n\t"     // store it in order to be read by vector
 			"lvx        0,0,0\n\t"      // load 2 doublewords to a vector
-			"vshasigmad 0,0,0,0xF\n\t"  // apply small sigma function
+			"vshasigmad 0,0,0,0x2\n\t"  // apply small sigma 1 function (only to 2*i = 0x2 bit)
 			"stvx       0,0,0\n\t"      // store back 2 doublewords
 			"ldx        %0,0,0\n\t"     // load resulted word to return value
 			:"=r"(ret)
