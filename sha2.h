@@ -167,78 +167,18 @@ base_type calc_maj(base_type a, base_type b, base_type c) {
 	return tmp ^ tmp2 ^ tmp3;
 }
 base_type calc_S0(base_type a) {
-#if USE_HW_VECTOR == 1
-	base_type ret;
-#if SHA_BITS == 256
-	__asm__(
-			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
-			"stwx       %1,0,0\n\t"     // store value in order to be read by vector
-			"lvewx      0,0,0\n\t"      // load 4 words to a vector
-			"vshasigmaw 0,0,1,0xE\n\t"  // apply big sigma 0 function (only to 0x1 bit)
-			"stvewx     0,0,0\n\t"      // store back 4 words
-			"lwzx       %0,0,0\n\t"     // load resulted word to return value
-			:"=r"(ret)
-			:"r"(a)
-			:"r0"
-	   );
-#elif SHA_BITS == 512
-	__asm__(
-			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
-			"stdx       %1,0,0\n\t"     // store it in order to be read by vector
-			"lvx        0,0,0\n\t"      // load 2 doublewords to a vector
-			"vshasigmad 0,0,1,0xD\n\t"  // apply big sigma 0 function (only to 2*i = 0x2 bit)
-			"stvx       0,0,0\n\t"      // store back 2 doublewords
-			"ldx        %0,0,0\n\t"     // load resulted word to return value
-			:"=r"(ret)
-			:"r"(a)
-			:"r0"
-	   );
-#endif
-	return ret;
-#else
 	base_type tmp1, tmp2, tmp3;
 	tmp1 = rotate_right(a, S0_args[0]);
 	tmp2 = rotate_right(a, S0_args[1]);
 	tmp3 = rotate_right(a, S0_args[2]);
 	return tmp1 ^ tmp2 ^ tmp3;
-#endif
 }
 base_type calc_S1(base_type e) {
-#if USE_HW_VECTOR == 1
-	base_type ret;
-#if SHA_BITS == 256
-	__asm__(
-			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
-			"stwx       %1,0,0\n\t"     // store value in order to be read by vector
-			"lvewx      0,0,0\n\t"      // load 4 words to a vector
-			"vshasigmaw 0,0,1,0x1\n\t"  // apply big sigma 1 function (only to 0x1 bit)
-			"stvewx     0,0,0\n\t"      // store back 4 words
-			"lwzx       %0,0,0\n\t"     // load resulted word to return value
-			:"=r"(ret)
-			:"r"(e)
-			:"r0"
-	   );
-#elif SHA_BITS == 512
-	__asm__(
-			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
-			"stdx       %1,0,0\n\t"     // store it in order to be read by vector
-			"lvx        0,0,0\n\t"      // load 2 doublewords to a vector
-			"vshasigmad 0,0,1,0x2\n\t"  // apply big sigma 1 function (only to 2*i = 0x2 bit)
-			"stvx       0,0,0\n\t"      // store back 2 doublewords
-			"ldx        %0,0,0\n\t"     // load resulted word to return value
-			:"=r"(ret)
-			:"r"(e)
-			:"r0"
-	   );
-#endif
-	return ret;
-#else
 	base_type tmp1, tmp2, tmp3;
 	tmp1 = rotate_right(e, S1_args[0]);
 	tmp2 = rotate_right(e, S1_args[1]);
 	tmp3 = rotate_right(e, S1_args[2]);
 	return tmp1 ^ tmp2 ^ tmp3;
-#endif
 }
 base_type calc_s0(base_type a) {
 #if USE_HW_VECTOR == 1
