@@ -1,9 +1,9 @@
-sha256
-sha256_hw
-sha512
-sha512_hw
-tests256
-tests256_hw
-tests512
-tests512_hw
+bin/sha256
+bin/sha256_hw
+bin/sha512
+bin/sha512_hw
+bin/tests256
+bin/tests256_hw
+bin/tests512
+bin/tests512_hw
 .*.sw[po]
