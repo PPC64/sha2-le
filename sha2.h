@@ -170,15 +170,15 @@ base_type calc_S0(base_type a) {
 #if USE_HW_VECTOR == 1
 	base_type ret;
 #if SHA_BITS == 256
-	uint32_t aux[4];
 	__asm__(
-			"stw        %1,0(%2)\n\t"   // store value in order to be read by vector
-			"lvewx      0,0,%2\n\t"     // load 4 words to a vector
+			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
+			"stwx       %1,0,0\n\t"     // store value in order to be read by vector
+			"lvewx      0,0,0\n\t"      // load 4 words to a vector
 			"vshasigmaw 0,0,1,0x0\n\t"  // apply big sigma function
-			"stvewx     0,0,%2\n\t"     // store back 4 words
-			"lwzx       %0,0,%2\n\t"    // load resulted word to return value
+			"stvewx     0,0,0\n\t"      // store back 4 words
+			"lwzx       %0,0,0\n\t"     // load resulted word to return value
 			:"=r"(ret)
-			:"r"(a),"r"(aux)
+			:"r"(a)
 			:"r0"
 	   );
 #elif SHA_BITS == 512
@@ -207,15 +207,15 @@ base_type calc_S1(base_type e) {
 #if USE_HW_VECTOR == 1
 	base_type ret;
 #if SHA_BITS == 256
-	uint32_t aux[4];
 	__asm__(
-			"stw        %1,0(%2)\n\t"   // store value in order to be read by vector
-			"lvewx      0,0,%2\n\t"     // load 4 words to a vector
+			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
+			"stwx       %1,0,0\n\t"     // store value in order to be read by vector
+			"lvewx      0,0,0\n\t"      // load 4 words to a vector
 			"vshasigmaw 0,0,1,0xF\n\t"  // apply big sigma function
-			"stvewx     0,0,%2\n\t"     // store back 4 words
-			"lwzx       %0,0,%2\n\t"    // load resulted word to return value
+			"stvewx     0,0,0\n\t"      // store back 4 words
+			"lwzx       %0,0,0\n\t"     // load resulted word to return value
 			:"=r"(ret)
-			:"r"(e),"r"(aux)
+			:"r"(e)
 			:"r0"
 	   );
 #elif SHA_BITS == 512
