@@ -284,7 +284,7 @@ void calc_compression(base_type *a, base_type *b, base_type *c, base_type *d,
 			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
 			"stw        %2,-16(1)\n\t"  // store value in order to be read by vector
 			"stw        %3,-12(1)\n\t"
-			"lvewx      0,0,0\n\t"      // load 4 words to a vector
+			"lvx        0,0,0\n\t"      // load 4 words to a vector
 			"vshasigmaw 0,0,1,0xE\n\t"  // apply big sigma 0 function (only to 0x1 bit)
 			"stvx       0,0,0\n\t"      // store back 4 words
 			"lwz        %0,-16(1)\n\t"  // load resulted word to return value
