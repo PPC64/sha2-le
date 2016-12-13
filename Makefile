@@ -28,7 +28,7 @@ bin/test512:    tests.c sha2.h
 bin/test512_hw: tests.c sha2.h
 	gcc -g -std=c99 tests.c -DSHA_BITS=512 -DUSE_HW_VECTOR=1 -o $(BIN_DIR)/tests512_hw
 
-test: sha256 sha256_hw sha512 sha512_hw test256 test256_hw test512 test512_hw
+test: bin/sha256 bin/sha256_hw bin/sha512 bin/sha512_hw bin/test256 bin/test256_hw bin/test512 bin/test512_hw
 	./$(BIN_DIR)/tests256
 	./$(BIN_DIR)/tests256_hw
 	./$(BIN_DIR)/tests512
