@@ -8,6 +8,7 @@ d="EN?<AL@FSPDG?UBMENDNEWESOSHWMAL<CXAL>BQSO=DLV@=B>EJNDX=ED?IL@RLRNMOBUEMOUY?OW
 function cmp() {
     diff -u $1 _ref > _out
     if [[ $? -eq 0 ]]; then echo "$1 is Ok"; else echo "$1 is NOK!"; tail -n2 _out ; fi
+    rm -f _out
 }
 
 for sha_bits in 256 512; do
@@ -19,8 +20,8 @@ for sha_bits in 256 512; do
     sha${sha_bits}sum _tmp | cut -d\  -f1 > _ref
     cmp _c
     cmp _hw
+    rm -f _ref _c _hw _tmp
   done
   echo ""
 done
-rm _ref _c _hw _tmp
 
