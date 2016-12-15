@@ -197,23 +197,33 @@ base_type calc_s1(base_type e) {
 
 void calculate_higher_values(base_type *w) {
 	for (int j = 16; j < W_SIZE; j++) {
-		base_type s0,s1;
 #if USE_HW_VECTOR == 1
 #if SHA_BITS == 256
 		__asm__(
-				"la         0,-16(1)\n\t"   // use r0 and -4(r1) as temporary
-				"stw        %2,-16(1)\n\t"  // store it in order to be read by vector
-				"stw        %3,-12(1)\n\t"  // store it in order to be read by vector
-				"lvx        0,0,0\n\t"      // load 4 words to a vector
+				"sldi       27,%1,2\n\t"    // j * 4 (word size)
+				"add        27,27,%0\n\t"   // alias to W[j] location
+				"lwz        28,-60(27)\n\t" // W[j-15]
+				"stw        28,-16(1)\n\t"  // store it in order to be read by vector
+				"lwz        28,-8(27)\n\t"  // W[j-2]
+				"stw        28,-12(1)\n\t"  // store it in order to be read by vector
+				"la         28,-16(1)\n\t"  // use r0 and -4(r1) as temporary
+				"lvx        0,0,28\n\t"     // load 4 words to a vector
 				"vshasigmaw 0,0,0,0x2\n\t"  // apply small sigma 0 function (only to 0x1 bit)
-				"stvx       0,0,0\n\t"      // store back 4 words
-				"lwz        %0,-16(1)\n\t"  // load resulted word to return value
-				"lwz        %1,-12(1)\n\t"  // load resulted word to return value
-				:"=r"(s0),"=r"(s1)
-				:"r"(w[j-15]),"r"(w[j-2])
-				:"r0"
+				"stvx       0,0,28\n\t"     // store back 4 words
+				"lwz        28,-16(1)\n\t"  // load resulted word to return value
+				"lwz        29,-12(1)\n\t"  // load resulted word to return value
+				"add        29,29,28\n\t"   // s0 + s1
+				"lwz        28,-64(27)\n\t" // W[j-16]
+				"add        29,29,28\n\t"   // s0 + s1 + W[j-16]
+				"lwz        28,-28(27)\n\t" // W[j-7]
+				"add        29,29,28\n\t"   // s0 + s1 + W[j-7]
+				"stw        29,0(27)\n\t"   // store it in W[j]
+				:
+				:"r"(w), "r"(j)
+				:"r27","r28","r29","memory"
 	   );
 #elif SHA_BITS == 512
+		base_type s0,s1;
 		__asm__(
 				"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
 				"std        %2,-16(1)\n\t"  // store it in order to be read by vector
@@ -227,12 +237,14 @@ void calculate_higher_values(base_type *w) {
 				:"r"(w[j-15]),"r"(w[j-2])
 				:"r0"
 		   );
+		w[j] = w[j-16] + s0 + w[j-7] + s1;
 #endif
 #else
+		base_type s0,s1;
 		s0 = calc_s0(w[j-15]);
 		s1 = calc_s1(w[j-2]);
-#endif
 		w[j] = w[j-16] + s0 + w[j-7] + s1;
+#endif
 	}
 }
 
