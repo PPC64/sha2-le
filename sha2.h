@@ -220,7 +220,7 @@ void calculate_higher_values(base_type *w) {
 				"stw        29,0(27)\n\t"   // store it in W[j]
 				:
 				:"r"(w), "r"(j)
-				:"r27","r28","r29","memory"
+				:"r27","r28","r29","v0","memory"
 	   );
 #elif SHA_BITS == 512
 		base_type s0,s1;
@@ -235,7 +235,7 @@ void calculate_higher_values(base_type *w) {
 				"ld         %1,-8(1)\n\t"   // load resulted word to return value
 				:"=r"(s0),"=r"(s1)
 				:"r"(w[j-15]),"r"(w[j-2])
-				:"r0"
+				:"r0","v0","memory"
 		   );
 		w[j] = w[j-16] + s0 + w[j-7] + s1;
 #endif
@@ -340,7 +340,7 @@ void calc_compression(base_type *_h, base_type *w) {
 				:"=r"(a),"=r"(b),"=r"(c),"=r"(d),"=r"(e),"=r"(f),"=r"(g),"=r"(h)
 				: "0"(a), "1"(b), "2"(c), "3"(d), "4"(e), "5"(f), "6"(g), "7"(h),
 				 "r"(w[i]),"r"(k[i])
-				:"r5","r6","r7","r8","memory"
+				:"r5","r6","r7","r8","v0","memory"
 			   );
 #elif SHA_BITS == 512
 		base_type S1, S0;
@@ -355,7 +355,7 @@ void calc_compression(base_type *_h, base_type *w) {
 				"ld         %1,-8(1)\n\t"   // load resulted word to return value
 				:"=r"(S0),"=r"(S1)
 				:"r"(a),"r"(e)
-				:"r0"
+				:"r0","v0","memory"
 			   );
 		base_type ch = calc_ch(e, f, g);
 		base_type temp1 = h + S1 + ch + k[i] + w[i];
