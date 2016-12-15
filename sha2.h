@@ -300,19 +300,47 @@ void calc_compression(base_type *_h, base_type *w) {
 	for (int i = 0; i < W_SIZE; i++) {
 #if USE_HW_VECTOR == 1
 #if SHA_BITS == 256
-		base_type S1, S0;
 		__asm__(
-				"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
-				"stw        %2,-16(1)\n\t"  // store value in order to be read by vector
-				"stw        %3,-12(1)\n\t"
-				"lvx        0,0,0\n\t"      // load 4 words to a vector
-				"vshasigmaw 0,0,1,0xE\n\t"  // apply big sigma 0 function (only to 0x1 bit)
-				"stvx       0,0,0\n\t"      // store back 4 words
-				"lwz        %0,-16(1)\n\t"  // load resulted word to return value
-				"lwz        %1,-12(1)\n\t"
-				:"=r"(S0),"=r"(S1)
-				:"r"(a),"r"(e)
-				:"r0"
+// S0 and S1
+				"la         5,-16(1)\n\t"  // use -16(r1) as temporary
+				"stw        %0,0(5)\n\t"   // wanna be S0
+				"stw        %4,4(5)\n\t"   // wanna be S1
+				"lvx        0,0,5\n\t"     // load 4 words to a vector
+				"vshasigmaw 0,0,1,0xE\n\t" // apply big sigma 0 function (only to 0x1 bit)
+				"stvx       0,0,5\n\t"     // store back 4 words
+				"lwz        6,0(5)\n\t"    // S0
+				"lwz        7,4(5)\n\t"    // S1
+
+				"andc 5,%6,%4\n\t"         // g & e
+				"and 8,%4,%5\n\t"          // e & f
+				"xor 5,5,8\n\t"            // ch = (g & e) ^ (e & f)
+				"add 8,%16,%17\n\t"        // k[0] + w[0]
+				"add 8,8,7\n\t"            // (k[0] + w[0]) + S1(e)
+				"add 5,5,8\n\t"            // ch + (k[0] + w[0]) + S1(e)
+				"add 5,5,%7\n\t"           // temp1 = (ch + k[0] + w[0] + S1(e)) + h
+
+				"xor 7,%1,%2\n\t"          // b ^ c
+				"and 7,7,%0\n\t"           // (b ^ c) & a
+				"and 8,%1,%2\n\t"          // b & c
+				"xor 8,7,8\n\t"            // maj = ((b ^ c) & a) ^ (b & c)
+				"add 6,8,6\n\t"            // temp2 = maj + S0(a)
+
+				"mr %7,%6\n\t"             // h = g
+				"mr %6,%5\n\t"             // g = f
+				"mr %5,%4\n\t"             // f = e
+				"add %4,5,%3\n\t"          // e = temp1 + d
+				// not needed ATM "clrldi %4,%4,32\n\t"      // e (truncate to word)
+				"mr %3,%2\n\t"             // d = c
+				"mr %2,%1\n\t"             // c = b
+				"mr %1,%0\n\t"             // b = a
+				"add %0,5,6\n\t"           // a = temp1 + temp2
+				// not needed ATM "clrldi %0,%0,32\n\t"      // a (truncate to word)
+
+// end S0 and S1
+				:"=r"(a),"=r"(b),"=r"(c),"=r"(d),"=r"(e),"=r"(f),"=r"(g),"=r"(h)
+				: "0"(a), "1"(b), "2"(c), "3"(d), "4"(e), "5"(f), "6"(g), "7"(h),
+				 "r"(w[i]),"r"(k[i])
+				:"r5","r6","r7","r8","memory"
 			   );
 #elif SHA_BITS == 512
 		base_type S1, S0;
@@ -329,12 +357,6 @@ void calc_compression(base_type *_h, base_type *w) {
 				:"r"(a),"r"(e)
 				:"r0"
 			   );
-#endif
-#else
-		base_type S1, S0;
-		S1 = calc_S1(e);
-		S0 = calc_S0(a);
-#endif
 		base_type ch = calc_ch(e, f, g);
 		base_type temp1 = h + S1 + ch + k[i] + w[i];
 		base_type maj = calc_maj(a, b, c);
@@ -348,6 +370,25 @@ void calc_compression(base_type *_h, base_type *w) {
 		c = b;
 		b = a;
 		a = temp1 + temp2;
+#endif
+#else
+		base_type S1, S0;
+		S0 = calc_S0(a);
+		S1 = calc_S1(e);
+		base_type ch = calc_ch(e, f, g);
+		base_type temp1 = h + S1 + ch + k[i] + w[i];
+		base_type maj = calc_maj(a, b, c);
+		base_type temp2 = S0 + maj;
+
+		h = g;
+		g = f;
+		f = e;
+		e = d + temp1;
+		d = c;
+		c = b;
+		b = a;
+		a = temp1 + temp2;
+#endif
 	}
 	_h[0] += a;
 	_h[1] += b;
