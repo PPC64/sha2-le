@@ -286,8 +286,17 @@ void swap_bytes(char *input, char *output, size_t size) {
 }
 
 
-void calc_compression(base_type *a, base_type *b, base_type *c, base_type *d,
-		base_type *e, base_type *f, base_type *g, base_type *h, base_type *w) {
+void calc_compression(base_type *_h, base_type *w) {
+	base_type a, b, c, d, e, f, g, h;
+	a = _h[0];
+	b = _h[1];
+	c = _h[2];
+	d = _h[3];
+	e = _h[4];
+	f = _h[5];
+	g = _h[6];
+	h = _h[7];
+
 	for (int i = 0; i < W_SIZE; i++) {
 #if USE_HW_VECTOR == 1
 #if SHA_BITS == 256
@@ -302,7 +311,7 @@ void calc_compression(base_type *a, base_type *b, base_type *c, base_type *d,
 				"lwz        %0,-16(1)\n\t"  // load resulted word to return value
 				"lwz        %1,-12(1)\n\t"
 				:"=r"(S0),"=r"(S1)
-				:"r"(*a),"r"(*e)
+				:"r"(a),"r"(e)
 				:"r0"
 			   );
 #elif SHA_BITS == 512
@@ -317,29 +326,37 @@ void calc_compression(base_type *a, base_type *b, base_type *c, base_type *d,
 				"ld         %0,-16(1)\n\t"  // load resulted word to return value
 				"ld         %1,-8(1)\n\t"   // load resulted word to return value
 				:"=r"(S0),"=r"(S1)
-				:"r"(*a),"r"(*e)
+				:"r"(a),"r"(e)
 				:"r0"
 			   );
 #endif
 #else
 		base_type S1, S0;
-		S1 = calc_S1(*e);
-		S0 = calc_S0(*a);
+		S1 = calc_S1(e);
+		S0 = calc_S0(a);
 #endif
-		base_type ch = calc_ch(*e, *f, *g);
-		base_type temp1 = *h + S1 + ch + k[i] + w[i];
-		base_type maj = calc_maj(*a, *b, *c);
+		base_type ch = calc_ch(e, f, g);
+		base_type temp1 = h + S1 + ch + k[i] + w[i];
+		base_type maj = calc_maj(a, b, c);
 		base_type temp2 = S0 + maj;
 
-		*h = *g;
-		*g = *f;
-		*f = *e;
-		*e = *d + temp1;
-		*d = *c;
-		*c = *b;
-		*b = *a;
-		*a = temp1 + temp2;
+		h = g;
+		g = f;
+		f = e;
+		e = d + temp1;
+		d = c;
+		c = b;
+		b = a;
+		a = temp1 + temp2;
 	}
+	_h[0] += a;
+	_h[1] += b;
+	_h[2] += c;
+	_h[3] += d;
+	_h[4] += e;
+	_h[5] += f;
+	_h[6] += g;
+	_h[7] += h;
 }
 
 void sha2_core(char *input, size_t size, size_t padded_size, base_type *_h) {
@@ -357,26 +374,7 @@ void sha2_core(char *input, size_t size, size_t padded_size, base_type *_h) {
 	for (int i = 0; i < padded_size; i = i + BLOCK_SIZE) {
 		base_type w[W_SIZE];
 		calculate_w_vector(w, input_swapped+i);
-		base_type a, b, c, d, e, f, g, h;
-		a = _h[0];
-		b = _h[1];
-		c = _h[2];
-		d = _h[3];
-		e = _h[4];
-		f = _h[5];
-		g = _h[6];
-		h = _h[7];
-
-		calc_compression(&a, &b, &c ,&d ,&e ,&f ,&g ,&h, w);
-
-		_h[0] = _h[0]+a;
-		_h[1] = _h[1]+b;
-		_h[2] = _h[2]+c;
-		_h[3] = _h[3]+d;
-		_h[4] = _h[4]+e;
-		_h[5] = _h[5]+f;
-		_h[6] = _h[6]+g;
-		_h[7] = _h[7]+h;
+		calc_compression(_h, w);
 	}
 }
 
