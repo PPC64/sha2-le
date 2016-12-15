@@ -287,57 +287,59 @@ void swap_bytes(char *input, char *output, size_t size) {
 
 
 void calc_compression(base_type *a, base_type *b, base_type *c, base_type *d,
-		base_type *e, base_type *f, base_type *g, base_type *h, base_type *w,
-		int i) {
-	base_type S1, S0;
+		base_type *e, base_type *f, base_type *g, base_type *h, base_type *w) {
+	for (int i = 0; i < W_SIZE; i++) {
 #if USE_HW_VECTOR == 1
 #if SHA_BITS == 256
-	__asm__(
-			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
-			"stw        %2,-16(1)\n\t"  // store value in order to be read by vector
-			"stw        %3,-12(1)\n\t"
-			"lvx        0,0,0\n\t"      // load 4 words to a vector
-			"vshasigmaw 0,0,1,0xE\n\t"  // apply big sigma 0 function (only to 0x1 bit)
-			"stvx       0,0,0\n\t"      // store back 4 words
-			"lwz        %0,-16(1)\n\t"  // load resulted word to return value
-			"lwz        %1,-12(1)\n\t"
-			:"=r"(S0),"=r"(S1)
-			:"r"(*a),"r"(*e)
-			:"r0"
-	   );
+		base_type S1, S0;
+		__asm__(
+				"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
+				"stw        %2,-16(1)\n\t"  // store value in order to be read by vector
+				"stw        %3,-12(1)\n\t"
+				"lvx        0,0,0\n\t"      // load 4 words to a vector
+				"vshasigmaw 0,0,1,0xE\n\t"  // apply big sigma 0 function (only to 0x1 bit)
+				"stvx       0,0,0\n\t"      // store back 4 words
+				"lwz        %0,-16(1)\n\t"  // load resulted word to return value
+				"lwz        %1,-12(1)\n\t"
+				:"=r"(S0),"=r"(S1)
+				:"r"(*a),"r"(*e)
+				:"r0"
+			   );
 #elif SHA_BITS == 512
-	__asm__(
-			"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
-			"std        %2,-16(1)\n\t"  // store it in order to be read by vector
-			"std        %3,-8(1)\n\t"
-			"lvx        0,0,0\n\t"      // load 2 doublewords to a vector
-			"vshasigmad 0,0,1,0xD\n\t"  // apply big sigma 0 function (only to 2*i = 0x2 bit)
-			"stvx       0,0,0\n\t"      // store back 2 doublewords
-			"ld         %0,-16(1)\n\t"  // load resulted word to return value
-			"ld         %1,-8(1)\n\t"   // load resulted word to return value
-			:"=r"(S0),"=r"(S1)
-			:"r"(*a),"r"(*e)
-			:"r0"
-	   );
+		base_type S1, S0;
+		__asm__(
+				"la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
+				"std        %2,-16(1)\n\t"  // store it in order to be read by vector
+				"std        %3,-8(1)\n\t"
+				"lvx        0,0,0\n\t"      // load 2 doublewords to a vector
+				"vshasigmad 0,0,1,0xD\n\t"  // apply big sigma 0 function (only to 2*i = 0x2 bit)
+				"stvx       0,0,0\n\t"      // store back 2 doublewords
+				"ld         %0,-16(1)\n\t"  // load resulted word to return value
+				"ld         %1,-8(1)\n\t"   // load resulted word to return value
+				:"=r"(S0),"=r"(S1)
+				:"r"(*a),"r"(*e)
+				:"r0"
+			   );
 #endif
 #else
-	S1 = calc_S1(*e);
-	S0 = calc_S0(*a);
+		base_type S1, S0;
+		S1 = calc_S1(*e);
+		S0 = calc_S0(*a);
 #endif
-	base_type ch = calc_ch(*e, *f, *g);
-	base_type temp1 = *h + S1 + ch + k[i] + w[i];
-	base_type maj = calc_maj(*a, *b, *c);
-	base_type temp2 = S0 + maj;
+		base_type ch = calc_ch(*e, *f, *g);
+		base_type temp1 = *h + S1 + ch + k[i] + w[i];
+		base_type maj = calc_maj(*a, *b, *c);
+		base_type temp2 = S0 + maj;
 
-	*h = *g;
-	*g = *f;
-	*f = *e;
-	*e = *d + temp1;
-	*d = *c;
-	*c = *b;
-	*b = *a;
-	*a = temp1 + temp2;
-
+		*h = *g;
+		*g = *f;
+		*f = *e;
+		*e = *d + temp1;
+		*d = *c;
+		*c = *b;
+		*b = *a;
+		*a = temp1 + temp2;
+	}
 }
 
 void sha2_core(char *input, size_t size, size_t padded_size, base_type *_h) {
@@ -365,9 +367,7 @@ void sha2_core(char *input, size_t size, size_t padded_size, base_type *_h) {
 		g = _h[6];
 		h = _h[7];
 
-		for (int j = 0; j < W_SIZE; j++) {
-			calc_compression(&a, &b, &c ,&d ,&e ,&f ,&g ,&h, w, j);
-		}
+		calc_compression(&a, &b, &c ,&d ,&e ,&f ,&g ,&h, w);
 
 		_h[0] = _h[0]+a;
 		_h[1] = _h[1]+b;
