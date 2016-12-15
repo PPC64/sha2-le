@@ -301,7 +301,6 @@ void calc_compression(base_type *_h, base_type *w) {
 #if USE_HW_VECTOR == 1
 #if SHA_BITS == 256
 		__asm__(
-// S0 and S1
 				"la         5,-16(1)\n\t"  // use -16(r1) as temporary
 				"stw        %0,0(5)\n\t"   // wanna be S0
 				"stw        %4,4(5)\n\t"   // wanna be S1
@@ -336,7 +335,6 @@ void calc_compression(base_type *_h, base_type *w) {
 				"add        %0,5,6\n\t"    // a = temp1 + temp2
 				"clrldi     %0,%0,32\n\t"  // a (truncate to word)
 
-// end S0 and S1
 				:"=r"(a),"=r"(b),"=r"(c),"=r"(d),"=r"(e),"=r"(f),"=r"(g),"=r"(h)
 				: "0"(a), "1"(b), "2"(c), "3"(d), "4"(e), "5"(f), "6"(g), "7"(h),
 				 "r"(w[i]),"r"(k[i])
