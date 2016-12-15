@@ -311,30 +311,30 @@ void calc_compression(base_type *_h, base_type *w) {
 				"lwz        6,0(5)\n\t"    // S0
 				"lwz        7,4(5)\n\t"    // S1
 
-				"andc 5,%6,%4\n\t"         // g & e
-				"and 8,%4,%5\n\t"          // e & f
-				"xor 5,5,8\n\t"            // ch = (g & e) ^ (e & f)
-				"add 8,%16,%17\n\t"        // k[0] + w[0]
-				"add 8,8,7\n\t"            // (k[0] + w[0]) + S1(e)
-				"add 5,5,8\n\t"            // ch + (k[0] + w[0]) + S1(e)
-				"add 5,5,%7\n\t"           // temp1 = (ch + k[0] + w[0] + S1(e)) + h
+				"andc       5,%6,%4\n\t"   // g & e
+				"and        8,%4,%5\n\t"   // e & f
+				"xor        5,5,8\n\t"     // ch = (g & e) ^ (e & f)
+				"add        8,%16,%17\n\t" // k[0] + w[0]
+				"add        8,8,7\n\t"     // (k[0] + w[0]) + S1(e)
+				"add        5,5,8\n\t"     // ch + (k[0] + w[0]) + S1(e)
+				"add        5,5,%7\n\t"    // temp1 = (ch + k[0] + w[0] + S1(e)) + h
 
-				"xor 7,%1,%2\n\t"          // b ^ c
-				"and 7,7,%0\n\t"           // (b ^ c) & a
-				"and 8,%1,%2\n\t"          // b & c
-				"xor 8,7,8\n\t"            // maj = ((b ^ c) & a) ^ (b & c)
-				"add 6,8,6\n\t"            // temp2 = maj + S0(a)
+				"xor        7,%1,%2\n\t"   // b ^ c
+				"and        7,7,%0\n\t"    // (b ^ c) & a
+				"and        8,%1,%2\n\t"   // b & c
+				"xor        8,7,8\n\t"     // maj = ((b ^ c) & a) ^ (b & c)
+				"add        6,8,6\n\t"     // temp2 = maj + S0(a)
 
-				"mr %7,%6\n\t"             // h = g
-				"mr %6,%5\n\t"             // g = f
-				"mr %5,%4\n\t"             // f = e
-				"add %4,5,%3\n\t"          // e = temp1 + d
-				// not needed ATM "clrldi %4,%4,32\n\t"      // e (truncate to word)
-				"mr %3,%2\n\t"             // d = c
-				"mr %2,%1\n\t"             // c = b
-				"mr %1,%0\n\t"             // b = a
-				"add %0,5,6\n\t"           // a = temp1 + temp2
-				// not needed ATM "clrldi %0,%0,32\n\t"      // a (truncate to word)
+				"mr         %7,%6\n\t"     // h = g
+				"mr         %6,%5\n\t"     // g = f
+				"mr         %5,%4\n\t"     // f = e
+				"add        %4,5,%3\n\t"   // e = temp1 + d
+				"clrldi     %4,%4,32\n\t"  // e (truncate to word)
+				"mr         %3,%2\n\t"     // d = c
+				"mr         %2,%1\n\t"     // c = b
+				"mr         %1,%0\n\t"     // b = a
+				"add        %0,5,6\n\t"    // a = temp1 + temp2
+				"clrldi     %0,%0,32\n\t"  // a (truncate to word)
 
 // end S0 and S1
 				:"=r"(a),"=r"(b),"=r"(c),"=r"(d),"=r"(e),"=r"(f),"=r"(g),"=r"(h)
