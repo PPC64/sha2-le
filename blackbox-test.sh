@@ -16,11 +16,13 @@ for sha_bits in 256 512; do
   for file in $a $b $c $d; do
     echo -n $file > _tmp
     ${bin_dir}/sha${sha_bits} _tmp > _c
-    ${bin_dir}/sha${sha_bits}_hw _tmp > _hw
+    ${bin_dir}/sha${sha_bits}_ll_intrinsics _tmp > _intrinsics
+    ${bin_dir}/sha${sha_bits}_ll_asm _tmp > _asm
     sha${sha_bits}sum _tmp | cut -d\  -f1 > _ref
     cmp _c
-    cmp _hw
-    rm -f _ref _c _hw _tmp
+    cmp _intrinsics
+    cmp _asm
+    rm -f _ref _c _intrinsics _asm _tmp
   done
   echo ""
 done

@@ -1,9 +1,13 @@
 bin/sha256
-bin/sha256_hw
+bin/sha256_ll_intrinsics
+bin/sha256_ll_asm
 bin/sha512
-bin/sha512_hw
+bin/sha512_ll_intrinsics
+bin/sha512_ll_asm
 bin/tests256
-bin/tests256_hw
+bin/tests256_ll_intrinsics
+bin/tests256_ll_asm
 bin/tests512
-bin/tests512_hw
+bin/tests512_ll_intrinsics
+bin/tests512_ll_asm
 .*.sw[po]
