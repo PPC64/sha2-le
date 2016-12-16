@@ -4,10 +4,10 @@ bin/sha256_ll_asm
 bin/sha512
 bin/sha512_ll_intrinsics
 bin/sha512_ll_asm
-bin/tests256
-bin/tests256_ll_intrinsics
-bin/tests256_ll_asm
-bin/tests512
-bin/tests512_ll_intrinsics
-bin/tests512_ll_asm
+bin/test256
+bin/test256_ll_intrinsics
+bin/test256_ll_asm
+bin/test512
+bin/test512_ll_intrinsics
+bin/test512_ll_asm
 .*.sw[po]
