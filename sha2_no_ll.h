@@ -1,3 +1,6 @@
+#ifndef _PPC64_LE_SHA2_NO_LL_H_
+#define _PPC64_LE_SHA2_NO_LL_H_
+
 base_type rotate_right(base_type num, base_type bits) {
 	return ((num >> bits) | (num << (base_type_size*8 - bits)));
 }
@@ -78,6 +81,7 @@ void calc_compression(base_type *_h, base_type *w) {
 	_h[7] += h;
 }
 
+#endif // _PPC64_LE_SHA2_NO_LL_H_
 // if using vim with "set modeline" on your .vimrc, then this file will be
 // automatically configured as:
 // vim: noai:ts=4:sw=4:sts=4:noet :

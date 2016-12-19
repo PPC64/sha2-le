@@ -1,3 +1,6 @@
+#ifndef _PPC64_LE_SHA2_ASM_LL_H_
+#define _PPC64_LE_SHA2_ASM_LL_H_
+
 #if LOW_LEVEL != 2
 #error "The sha2_ll_asm.h header should only be included on LOW_LEVEL == 2"
 #endif
@@ -143,6 +146,7 @@ void calc_compression(base_type *_h, base_type *w) {
 	_h[7] += h;
 }
 
+#endif // _PPC64_LE_SHA2_ASM_LL_H_
 // if using vim with "set modeline" on your .vimrc, then this file will be
 // automatically configured as:
 // vim: noai:ts=4:sw=4:sts=4:noet :

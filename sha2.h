@@ -1,8 +1,9 @@
+#ifndef _PPC64_LE_SHA2_H_
+#define _PPC64_LE_SHA2_H_
+
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <string.h>
-#include <altivec.h>
 #include <errno.h>
 
 #include <sys/stat.h>
@@ -157,6 +158,8 @@ int sha2(char *input, size_t size, size_t padded_size, base_type *_h) {
 			_h[0],_h[1],_h[2],_h[3],_h[4],_h[5],_h[6],_h[7]);
 	return 0;
 }
+
+#endif // _PPC64_LE_BASE_TYPES_H_
 
 // if using vim with "set modeline" on your .vimrc, then this file will be
 // automatically configured as:

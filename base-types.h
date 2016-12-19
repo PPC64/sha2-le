@@ -1,3 +1,6 @@
+#ifndef _PPC64_LE_BASE_TYPES_H_
+#define _PPC64_LE_BASE_TYPES_H_
+
 #include <stdint.h>
 #include <altivec.h>
 
@@ -75,3 +78,5 @@ static const base_type s1_args[] = {19, 61,  6};
 
 static const size_t base_type_size = sizeof(base_type);
 extern base_type _h[8];
+
+#endif // _PPC64_LE_BASE_TYPES_H_
