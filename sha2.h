@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <altivec.h>
+#include <errno.h>
 
 #if (LOW_LEVEL == 2 || LOW_LEVEL == 1) && !defined(__powerpc64__)
 	#error "HW vector only implemented for powerpc64"
@@ -214,7 +215,11 @@ int sha2 (int argc, char *argv[]) {
 	char *filename = argv[1];
 	FILE *file = fopen(filename, "r");
 
-	if (file == NULL) { printf("ERROR\n"); return 1; }
+	if (file == NULL) {
+      fprintf(stderr, "Error while open %s. %s\n", argv[1],
+        strerror(errno));
+      return errno;
+    }
 
 	/* Get Size of file */
 	fseek(file, 0, SEEK_END);  // seek to end of file
@@ -227,8 +232,10 @@ int sha2 (int argc, char *argv[]) {
 	/* Save file in buffer */
 	char input[padded_size];
 	if (fread(input, sizeof(char), size, file) != size) {
-		printf("ERROR\n");
-		return 1;
+      fprintf(stderr, "Read error on file %s. %s\n", argv[1],
+        strerror(errno));
+      fclose(file);
+	  return errno;
 	}
 	fclose(file);
 
