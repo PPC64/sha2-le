@@ -5,6 +5,8 @@
 #include <altivec.h>
 #include <errno.h>
 
+#include <sys/stat.h>
+
 #if (LOW_LEVEL == 2 || LOW_LEVEL == 1) && !defined(__powerpc64__)
 	#error "HW vector only implemented for powerpc64"
 #endif
@@ -221,17 +223,21 @@ int sha2 (int argc, char *argv[]) {
       return errno;
     }
 
-	/* Get Size of file */
-	fseek(file, 0, SEEK_END);  // seek to end of file
-	size_t size = ftell(file); // get current file pointer
-	fseek(file, 0, SEEK_SET);  // seek back to beginning of file
+    struct stat st;
+
+    if (stat(argv[1], &st) != 0) {
+      fprintf(stderr, "Cannot determine size of %s: %s\n", argv[1],
+        strerror(errno));
+      fclose(file);
+      return errno;
+    }
 
 	/* Padding. padded_size is total message bytes including pad bytes. */
-	size_t padded_size = calculate_padded_msg_size(size);
+	size_t padded_size = calculate_padded_msg_size(st.st_size);
 
 	/* Save file in buffer */
 	char input[padded_size];
-	if (fread(input, sizeof(char), size, file) != size) {
+	if (fread(input, sizeof(char), st.st_size, file) != st.st_size) {
       fprintf(stderr, "Read error on file %s. %s\n", argv[1],
         strerror(errno));
       fclose(file);
@@ -239,7 +245,7 @@ int sha2 (int argc, char *argv[]) {
 	}
 	fclose(file);
 
-	sha2_core(input, size, padded_size, _h);
+	sha2_core(input, st.st_size, padded_size, _h);
 
 	printf(
 #if SHA_BITS == 256
