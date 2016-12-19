@@ -195,10 +195,10 @@ void write_size(char *input, size_t size, size_t position) {
 }
 
 void sha2_core(char *input, size_t size, size_t padded_size, base_type *_h) {
-	/* Pad trailing bytes accordingly */
+	// Pad trailing bytes accordingly.
 	pad(input, size, padded_size);
 
-	/* Swap bytes due to endianess */
+	// Swap bytes due to endianess .
     char* input_swapped = (char *) malloc(padded_size);
     if (input_swapped == NULL) {
       fprintf(stderr, "%s\n.", strerror(errno));
@@ -206,10 +206,10 @@ void sha2_core(char *input, size_t size, size_t padded_size, base_type *_h) {
     }
 	swap_bytes(input, input_swapped, padded_size);
 
-	/* write total message size at the end (2 base_types*/
+	// write total message size at the end (2 base_types).
 	write_size(input_swapped, size, padded_size - 2 * base_type_size);
 
-	/* Sha compression process */
+	// Sha compression process.
 	for (int i = 0; i < padded_size; i = i + BLOCK_SIZE) {
 		base_type w[W_SIZE];
 		calculate_w_vector(w, input_swapped+i);
@@ -227,6 +227,7 @@ int sha2 (int argc, char *argv[]) {
       return errno;
     }
 
+    // Get file size
     struct stat st;
 
     if (stat(argv[1], &st) != 0) {
@@ -236,10 +237,10 @@ int sha2 (int argc, char *argv[]) {
       return errno;
     }
 
-	/* Padding. padded_size is total message bytes including pad bytes. */
+	// Padding. padded_size is total message bytes including pad bytes.
 	size_t padded_size = calculate_padded_msg_size(st.st_size);
 
-	/* Save file in buffer */
+	// Save file in a input buffer.
 	char* input = (char *) malloc(padded_size);
     if (input == NULL) {
       fprintf(stderr, "%s\n.", strerror(errno));
