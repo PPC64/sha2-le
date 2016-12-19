@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
 
 #include <sys/stat.h>
 
@@ -60,20 +61,24 @@ size_t calculate_padded_msg_size(size_t size) {
 	res += BLOCK_SIZE - (size % BLOCK_SIZE);
 	return res + size;
 }
-size_t calculate_padded_msg_size_FIPS_180_4(size_t size) {
-	// analytical way to calculate padding
-	size_t k = 0;
 
-	while (1) {
-		if (((k + 8*size + 1) % PAD_MOD) == PAD_EQL)
-			break;
-		k++;
-	}
-	if (((k+1)%8) != 0) {
-		printf("ERROR\n");
-		exit(1);
-	}
-	return (((k+1)/8) + base_type_size*2) + size;
+// Message M with lenght l
+// 64-bits (sha256) or 128-bits (sha 512) block
+// lets S = SHA_BITS (256, 512...)
+// Append 1 to M and then k zero bits where k = (S*2-(l+1)) mod S*2
+// then append (S/4) bits block to M with l value represented in binary
+// Return result in bytes dividing all by CHAR_BIT
+size_t calculate_padded_msg_size_FIPS_180_4(size_t size) {
+    uint32_t block_size = SHA_BITS * 2;
+    int64_t k = (block_size - (block_size/8)) - ((size * CHAR_BIT) + 1);
+
+    // in fact % operator is more like a remainder operator not really module
+    // and not work with negative numbers. To do that correctly we must add
+    // the result r = a % b with abs(b) if r < 0.
+    k %= block_size;
+    k = (k < 0) ? k + block_size : k;
+
+    return size + (((k + 1) + (block_size/8)) / CHAR_BIT);
 }
 
 void calculate_w_vector(base_type *w, char *input) {
