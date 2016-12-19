@@ -199,7 +199,11 @@ void sha2_core(char *input, size_t size, size_t padded_size, base_type *_h) {
 	pad(input, size, padded_size);
 
 	/* Swap bytes due to endianess */
-	char input_swapped[padded_size];
+    char* input_swapped = (char *) malloc(padded_size);
+    if (input_swapped == NULL) {
+      fprintf(stderr, "%s\n.", strerror(errno));
+      exit(EXIT_FAILURE);
+    }
 	swap_bytes(input, input_swapped, padded_size);
 
 	/* write total message size at the end (2 base_types*/
@@ -236,13 +240,19 @@ int sha2 (int argc, char *argv[]) {
 	size_t padded_size = calculate_padded_msg_size(st.st_size);
 
 	/* Save file in buffer */
-	char input[padded_size];
+	char* input = (char *) malloc(padded_size);
+    if (input == NULL) {
+      fprintf(stderr, "%s\n.", strerror(errno));
+      return errno;
+    }
+
 	if (fread(input, sizeof(char), st.st_size, file) != st.st_size) {
       fprintf(stderr, "Read error on file %s. %s\n", argv[1],
         strerror(errno));
       fclose(file);
 	  return errno;
 	}
+
 	fclose(file);
 
 	sha2_core(input, st.st_size, padded_size, _h);
