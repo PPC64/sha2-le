@@ -34,7 +34,7 @@ int main (int argc, char *argv[]) {
   size_t padded_size = calculate_padded_msg_size(st.st_size);
 
   // Save file in a input buffer.
-  char* input = (char *) malloc(padded_size);
+  char* input = (char *) calloc(padded_size, sizeof(char));
   if (input == NULL) {
     fprintf(stderr, "%s\n.", strerror(errno));
     return errno;

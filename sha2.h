@@ -84,12 +84,6 @@ void calculate_w_vector(base_type *w, char *input) {
   calculate_higher_values(w);
 }
 
-void pad(char *in, size_t size, size_t padded_size) {
-  // padding message with 1 bit and zeroes
-  in[size++] = (char)(1 << 7);
-  while (size < padded_size) in[size++] = 0;
-}
-
 void swap_bytes(char *input, char *output, size_t size) {
   size_t size_in_words = size / base_type_size;
 
@@ -132,11 +126,12 @@ void write_size(char *input, size_t size, size_t position) {
 }
 
 int sha2(char *input, size_t size, size_t padded_size, base_type *_h) {
-  // Pad trailing bytes accordingly.
-  pad(input, size, padded_size);
+
+  // Concatenate '1' to input.
+  input[size] = (char)(1 << 7);
 
   // Swap bytes due to endianess .
-  char* input_swapped = (char *) malloc(padded_size);
+  char* input_swapped = (char *) calloc(padded_size, sizeof(char));
   if (input_swapped == NULL) {
     fprintf(stderr, "%s\n.", strerror(errno));
     return errno;
