@@ -49,17 +49,13 @@ base_type calc_maj(base_type a, base_type b, base_type c) {
 #include "sha2_no_ll.h"
 #endif
 
-/* Calculates padding size plus 8-byte length at the end */
-size_t calculate_padded_msg_size(size_t size) {
-	// direct way to calculate padding
-	size_t res = 0;
-	// if 0x80 (1byte) prepend plus BLOCK_SIZE bytes for message length doesn't
-	// fit the next BLOCK_SIZE bytes multiple, use another one to make sure
-	// it's padded to BLOCK_SIZE bytes.
-	if (size % BLOCK_SIZE > BLOCK_SIZE-9) res += BLOCK_SIZE;
-
-	res += BLOCK_SIZE - (size % BLOCK_SIZE);
-	return res + size;
+// Directly way to calculate padding plus 8 bytes appended at the end
+static inline size_t calculate_padded_msg_size(size_t size) {
+	// if 0x80 (1 byte) prepended to BLOCK_SIZE bytes of message doesn't fit
+    // the next multiple of BLOCK_SIZE, append another block to align it to the
+    // next multiple of BLOCK_SIZE.
+    return (BLOCK_SIZE - (size % BLOCK_SIZE)) + ((size % BLOCK_SIZE >
+       BLOCK_SIZE - 9) ? BLOCK_SIZE : 0) + size;
 }
 
 // Message M with lenght l
