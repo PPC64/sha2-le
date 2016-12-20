@@ -44,6 +44,7 @@ static inline base_type calc_maj(base_type a, base_type b, base_type c) {
 #include "sha2_no_ll.h"
 #endif
 
+
 // Directly way to calculate padding plus 8 bytes appended at the end
 static inline size_t calculate_padded_msg_size(size_t size) {
   // if 0x80 (1 byte) prepended to BLOCK_SIZE bytes of message doesn't fit
