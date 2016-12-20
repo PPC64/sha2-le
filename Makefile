@@ -1,6 +1,6 @@
 .PHONY: all test tests clean
 
-CFLAGS=-O3 -Wall -fPIC -fno-omit-frame-pointer
+CFLAGS=-g -Wall -fPIC -fno-omit-frame-pointer
 BIN_DIR=./bin
 
 BINS  = $(BIN_DIR)/sha256 $(BIN_DIR)/sha256_ll_intrinsics \
