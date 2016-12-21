@@ -49,5 +49,5 @@ int main (int argc, char *argv[]) {
 
   fclose(file);
 
-  return sha2(input, st.st_size, padded_size, _h);
+  return sha2(input, st.st_size, padded_size);
 }

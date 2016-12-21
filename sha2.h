@@ -118,7 +118,7 @@ void write_size(char *input, size_t size, size_t position) {
   *(++total_size) = (base_type)size * 8;                   // lower bits
 }
 
-int sha2(char *input, size_t size, size_t padded_size, base_type *_h) {
+int sha2(char *input, size_t size, size_t padded_size) {
 
   // Concatenate '1' to input.
   input[size] = (char)(1 << 7);
