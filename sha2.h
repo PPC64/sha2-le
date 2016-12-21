@@ -29,18 +29,11 @@ base_type _h[8] = {
 	#error "HW vector only implemented for powerpc64"
 #endif
 
-base_type calc_ch(base_type e, base_type f, base_type g) {
-  base_type tmp, tmp2;
-  tmp = e & f;
-  tmp2 = ~e & g;
-  return tmp ^ tmp2;
+static inline base_type calc_ch(base_type e, base_type f, base_type g) {
+  return (e & f) ^ (~e & g);
 }
-base_type calc_maj(base_type a, base_type b, base_type c) {
-  base_type tmp, tmp2, tmp3;
-  tmp = a & b;
-  tmp2 = a & c;
-  tmp3 = b & c;
-  return tmp ^ tmp2 ^ tmp3;
+static inline base_type calc_maj(base_type a, base_type b, base_type c) {
+  return (a & b) ^ (a & c) ^ (b & c);
 }
 
 #if LOW_LEVEL == 2
