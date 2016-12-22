@@ -9,79 +9,79 @@ void calculate_higher_values(base_type *w) {
 
 #if SHA_BITS == 256
   int Rb = 8;
+  int j = W_SIZE; // 64
+  __asm__(
+    "BEGIN_LOOP:\n\t"
+    "add        27,%1,%0\n\t"   // alias to W[j] location
+    "andi.      24,27,0xf\n\t"  // aligned in 16 bit?
+    "beq LOAD_ALIGNED\n\t"
+    //On first iteration, the first element is aligned on 16 bits.
+    "addi       26,27,-64\n\t"
+    "lvx        2,0,26\n\t"
+    "lvsl       3,0,%2\n\t"
+    "addi       26,27,-48\n\t"
+    "lvx        4,0,26\n\t"
+    "vperm      0,4,2,3\n\t"    // load 4 words to vector: W[j-16] to W[j-13]
 
-  for (int j = 16; j < W_SIZE; j=j+2) {
-    __asm__(
-      "sldi       27,%1,2\n\t"    // j * 4 (word size)
-      "add        27,27,%0\n\t"   // alias to W[j] location
+    "addi       24,27,-16\n\t"
+    "lvx        5,0,24\n\t"
+    // Use previous result here.
+    "vperm      1,8,5,3\n\t"    // load 4 words to vector: W[j-4] to W[j-1]
 
-      "andi.      24,27,0xf\n\t"  // aligned in 16 bit?
-      "beq LOAD_ALIGNED\n\t"
-      //On first iteration, the first element is aligned on 16 bits.
-      "addi       26,27,-64\n\t"
-      "lvx        2,0,26\n\t"
-      "lvsl       3,0,%2\n\t"
-      "addi       26,27,-48\n\t"
-      "lvx        4,0,26\n\t"
-      "vperm      0,4,2,3\n\t"    // load 4 words to vector: W[j-16] to W[j-13]
+    "lvsr       3,0,%2\n\t"     // Move previous result to high half
+    "vperm      9,8,8,3\n\t"
 
-      "addi       24,27,-16\n\t"
-      "lvx        5,0,24\n\t"
-      // Use previous result here.
-      "vperm      1,8,5,3\n\t"    // load 4 words to vector: W[j-4] to W[j-1]
+    "addi       26,27,-32\n\t"
+    "lvx        2,0,26\n\t"
+    "vperm      5,5,2,3\n\t"    // load 4 words to vector: W[j-32] to W[j-16]
 
-      "lvsr       3,0,%2\n\t"     // Move previous result to high half
-      "vperm      9,8,8,3\n\t"
+    "b MAIN\n\t"
 
-      "addi       26,27,-32\n\t"
-      "lvx        2,0,26\n\t"
-      "vperm      5,5,2,3\n\t"    // load 4 words to vector: W[j-32] to W[j-16]
+    "LOAD_ALIGNED:\n\t"
+    "mr         23,27\n\t"      // Save store location
+    "addi       26,27,-64\n\t"
+    "lvx        0,0,26\n\t"     // load 4 words to vector: W[j-16] to W[j-13]
 
-      "b MAIN\n\t"
+    "addi       26,27,-16\n\t"
+    "lvx        1,0,26\n\t"     // load 4 words to vector: W[j-4] to W[j-1]
 
-      "LOAD_ALIGNED:\n\t"
-      "mr         23,27\n\t"      // Save store location
-      "addi       26,27,-64\n\t"
-      "lvx        0,0,26\n\t"     // load 4 words to vector: W[j-16] to W[j-13]
+    "addi       26,27,-32\n\t"
+    "lvx        5,0,26\n\t"     // load 4 words to vector: W[j-32] to W[j-16]
 
-      "addi       26,27,-16\n\t"
-      "lvx        1,0,26\n\t"     // load 4 words to vector: W[j-4] to W[j-1]
+    "MAIN:\n\t"
+    "vmrghw     2,0,0\n\t"      // v2 = W[j-14], W[j-14], W[j-13], W[j-13]
+    "vmrglw     2,2,0\n\t"      // v2 = W[j-16], W[j-14], W[j-15], W[j-14]
+    "vmrghw     2,1,2\n\t"      // v2 = W[j-15], W[j-2], W[j-14], W[j-1]
+    "vshasigmaw 2,2,0,0xA\n\t"  // small sigma 0 (only to 0x1 bit)
 
-      "addi       26,27,-32\n\t"
-      "lvx        5,0,26\n\t"     // load 4 words to vector: W[j-32] to W[j-16]
+    "vmrghw     7,2,2\n\t"      // v7 = W[j-14], W[j-14], W[j-1], W[j-1]
+    "vmrgow     3,7,2\n\t"      // v3 = W[j-15], W[j-14] ...
 
-      "MAIN:\n\t"
-      "vmrghw     2,0,0\n\t"      // v2 = W[j-14], W[j-14], W[j-13], W[j-13]
-      "vmrglw     2,2,0\n\t"      // v2 = W[j-16], W[j-14], W[j-15], W[j-14]
-      "vmrghw     2,1,2\n\t"      // v2 = W[j-15], W[j-2], W[j-14], W[j-1]
-      "vshasigmaw 2,2,0,0xA\n\t"  // small sigma 0 (only to 0x1 bit)
+    "vmrglw     4,2,2\n\t"
+    "vmrghw     4,7,4\n\t"      // v4 = W[j-2], W[j-1] ...
 
-      "vmrghw     7,2,2\n\t"      // v7 = W[j-14], W[j-14], W[j-1], W[j-1]
-      "vmrgow     3,7,2\n\t"      // v3 = W[j-15], W[j-14] ...
+    "vadduwm    4,4,3\n\t"
+    "vadduwm    4,4,0\n\t"
 
-      "vmrglw     4,2,2\n\t"
-      "vmrghw     4,7,4\n\t"      // v4 = W[j-2], W[j-1] ...
+    "vmrglw     6,5,5\n\t"
+    "vmrghw     6,5,6\n\t"
 
-      "vadduwm    4,4,3\n\t"
-      "vadduwm    4,4,0\n\t"
+    "vadduwm    8,4,6\n\t"
 
-      "vmrglw     6,5,5\n\t"
-      "vmrghw     6,5,6\n\t"
+    "beq END\n\t"             // Branch if current iteration is aligned
 
-      "vadduwm    8,4,6\n\t"
-
-      "beq END\n\t"             // Branch if current iteration is aligned
-
-      "lvsl       3,0,%2\n\t"
-      "vperm      9,8,9,3\n\t"
-      "stvx       9,0,23\n\t"   // store it in W[j-2] to W[j+2]
-      "END:\n\t"
-      :
-      :"r"(w), "r"(j), "r"(Rb)
-      :"r23","r27","r28","r29","r26","r25","v0","v1","v2","v3","v4","v5","v6",
-       "v8","v9","r24","memory"
-    );
-  }
+    "lvsl       3,0,%2\n\t"
+    "vperm      9,8,9,3\n\t"
+    "stvx       9,0,23\n\t"   // store it in W[j-2] to W[j+2]
+    "END:\n\t"
+    "addi       %1,%1,8\n\t"
+    "cmpi       0,1,%1,256\n\t"
+    "blt BEGIN_LOOP"
+    :
+    :"r"(w), "r"(j), "r"(Rb)
+    :"r23", "r24", "r26","r27","v0","v1","v2","v3","v4","v5","v6","v7","v8",
+     "v9", "memory"
+  );
 #elif SHA_BITS == 512
   base_type s0,s1;
 
