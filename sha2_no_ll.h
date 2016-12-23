@@ -57,9 +57,9 @@ void calc_compression(base_type *_h, base_type *w) {
     base_type S1, S0;
     S0 = calc_S0(a);
     S1 = calc_S1(e);
-    base_type ch = calc_ch(e, f, g);
+    base_type ch = (e & f) ^ (~e & g);
     base_type temp1 = h + S1 + ch + k[i] + w[i];
-    base_type maj = calc_maj(a, b, c);
+    base_type maj = (a & b) ^ (a & c) ^ (b & c);
     base_type temp2 = S0 + maj;
 
     h = g;

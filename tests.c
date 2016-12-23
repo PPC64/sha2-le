@@ -23,8 +23,6 @@ int main () {
 	if(calc_S0(0x8000000) != 0x2004020) print_error(__LINE__);
 	if(calc_S1(0x8000000) != 0x210004) print_error(__LINE__);
 #endif
-	if(calc_ch(0xABABABAB,0xCDCDCDCD,0xEFEFEFEF) != 0xCDCDCDCD) print_error(__LINE__);
-	if(calc_maj(0xABABABAB,0xCDCDCDCD,0xEFEFEFEF) != 0xEFEFEFEF) print_error(__LINE__);
 
 	size_t size, padded_size;
 	size =  3;
@@ -60,10 +58,6 @@ int main () {
 	if(calc_S0(0x4000000000000000) != 0x410800000) print_error(__LINE__);
 	if(calc_S1(0x4000000000000000) != 0x1100000200000) print_error(__LINE__);
 #endif
-	if(calc_ch(0xABABABAB,0xCDCDCDCD,0xEFEFEFEF) != 0xCDCDCDCD) print_error(__LINE__);
-	if(calc_maj(0xABABABAB,0xCDCDCDCD,0xEFEFEFEF) != 0xEFEFEFEF) print_error(__LINE__);
-	if(calc_ch(0xABABABABABABABAB,0xCDCDCDCDCDCDCDCD,0xEFEFEFEFEFEFEFEF) != 0xCDCDCDCDCDCDCDCD) print_error(__LINE__);
-	if(calc_maj(0xABABABABABABABAB,0xCDCDCDCDCDCDCDCD,0xEFEFEFEFEFEFEFEF) != 0xEFEFEFEFEFEFEFEF) print_error(__LINE__);
 
 	size_t size, padded_size;
 	size =  3;

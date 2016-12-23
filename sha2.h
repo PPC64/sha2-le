@@ -29,13 +29,6 @@ base_type _h[8] = {
 	#error "HW vector only implemented for powerpc64"
 #endif
 
-static inline base_type calc_ch(base_type e, base_type f, base_type g) {
-  return (e & f) ^ (~e & g);
-}
-static inline base_type calc_maj(base_type a, base_type b, base_type c) {
-  return (a & b) ^ (a & c) ^ (b & c);
-}
-
 #if LOW_LEVEL == 2
 #include "sha2_ll_asm.h"
 #elif LOW_LEVEL == 1
