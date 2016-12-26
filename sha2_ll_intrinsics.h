@@ -5,20 +5,29 @@
 #error "The sha2_ll_intrinsics.h header should only be included on LOW_LEVEL == 1"
 #endif
 
+// TODO(rcardoso): adapt igor (asm) algorithm to do a better use of vectors.
 void calculate_higher_values(base_type *w) {
-  for (int j = 16; j < W_SIZE; j++) {
-    vector_base_type v;
-    v[0] = w[j-15];
-    v[1] = w[j-2];
+  vector_base_type s; // sigma vector
+  for (int t = 16; t < W_SIZE; t++) {
+    s[0] = w[t-15];
+    s[1] = w[t-2];
 #if SHA_BITS == 256
-    v = __builtin_crypto_vshasigmaw(v, 0, 0x2);
+    s = __builtin_crypto_vshasigmaw(s, 0, 0x2);
 #elif SHA_BITS == 512
-    v = __builtin_crypto_vshasigmad(v, 0, 0xD);
+    s = __builtin_crypto_vshasigmad(s, 0, 0xD);
 #endif
-    base_type s1, s0;
-    s0 = v[0];
-    s1 = v[1];
-    w[j] = w[j-16] + s0 + w[j-7] + s1;
+    w[t] = s[1] + w[t-7] + s[0] + w[t-16];
+    // Wt is added to Kt in compression function we can move this operation to
+    // message scheduler; This can be done since both Wt and Kt are available
+    // and there's no dependency with the others operands. Since we already
+    // have the operands avaliable here we can sum avoiding load those
+    // operands again on compression phase.
+    w[t-16] += k[t-16];
+  }
+  // Continue to sum Kt to Wt. Note that we can fallthrough from previous loop
+  // , unroll that loop and do the sums in parallel using vector add operations.
+  for (int i=W_SIZE-16; i < W_SIZE; i++) {
+    w[i] += k[i];
   }
 }
 
@@ -47,7 +56,7 @@ void calc_compression(base_type *_h, base_type *w) {
     S1 = v[1];
 
     base_type ch = (e & f) ^ (~e & g);
-    base_type temp1 = h + S1 + ch + k[i] + w[i];
+    base_type temp1 = h + S1 + ch + w[i];
     base_type maj = (a & b) ^ (a & c) ^ (b & c);
     base_type temp2 = S0 + maj;
 
