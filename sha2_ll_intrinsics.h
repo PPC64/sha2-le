@@ -5,27 +5,42 @@
 #error "The sha2_ll_intrinsics.h header should only be included on LOW_LEVEL == 1"
 #endif
 
-// TODO(rcardoso): adapt igor (asm) algorithm to do a better use of vectors.
+#include "base-types.h"
+
 void calculate_higher_values(base_type *w) {
-  vector_base_type s; // sigma vector
-  for (int t = 16; t < W_SIZE; t++) {
-    s[0] = w[t-15];
-    s[1] = w[t-2];
+  vector_base_type s; // small sigma vector
 #if SHA_BITS == 256
-    s = __builtin_crypto_vshasigmaw(s, 0, 0x2);
-#elif SHA_BITS == 512
-    s = __builtin_crypto_vshasigmad(s, 0, 0xD);
-#endif
-    w[t] = s[1] + w[t-7] + s[0] + w[t-16];
+  // Expand two message blocks per loop cycle
+  for (int t = 16; t < W_SIZE; t += 2) {
+    //sig0  = w[t-15];
+    //sig1  = w[t-2];
+    //sig0' = w[t-14];
+    //sig1' = w[t-1];
+    s = (vector_base_type) { w[t-15], w[t-2], w[t-14], w[t-1] };
+    s = __builtin_crypto_vshasigmaw(s, 0, 0xA);
+    w[t]   = s[1] + w[t-7] + s[0] + w[t-16];
+    w[t+1] = s[3] + w[t-6] + s[2] + w[t-15];
     // Wt is added to Kt in compression function we can move this operation to
     // message scheduler; This can be done since both Wt and Kt are available
     // and there's no dependency with the others operands. Since we already
     // have the operands avaliable here we can sum avoiding load those
     // operands again on compression phase.
+    // TODO(rcardoso): we can try to sum the two values with one operation.
     w[t-16] += k[t-16];
+    w[t-15] += k[t-15];
+#elif SHA_BITS == 512
+for (int t = 16; t < W_SIZE; t++) {
+    // sig0 = w[t-15];
+    // sig1 = w[t-2];
+    s = (vector_base_type) {  w[t-15], w[t-2] };
+    s = __builtin_crypto_vshasigmad(s, 0, 0xD);
+    w[t]   = s[1] + w[t-7] + s[0] + w[t-16];
+    // Wt + Kt
+    w[t-16] += k[t-16];
+#endif
   }
-  // Continue to sum Kt to Wt. Note that we can fallthrough from previous loop
-  // , unroll that loop and do the sums in parallel using vector add operations.
+  // Continue to sum Kt to Wt. Note that we can fallthrough from previous loop,
+  // unroll that loop and do the sums in parallel using vector add operations.
   for (int i=W_SIZE-16; i < W_SIZE; i++) {
     w[i] += k[i];
   }
