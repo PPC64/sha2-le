@@ -4,32 +4,32 @@
 base_type rotate_right(base_type num, base_type bits) {
   return ((num >> bits) | (num << (base_type_size*8 - bits)));
 }
-base_type calc_S0(base_type a) {
+base_type calc_S0(base_type x) {
   base_type tmp1, tmp2, tmp3;
-  tmp1 = rotate_right(a, S0_args[0]);
-  tmp2 = rotate_right(a, S0_args[1]);
-  tmp3 = rotate_right(a, S0_args[2]);
+  tmp1 = rotate_right(x, S0_args[0]);
+  tmp2 = rotate_right(x, S0_args[1]);
+  tmp3 = rotate_right(x, S0_args[2]);
   return tmp1 ^ tmp2 ^ tmp3;
 }
-base_type calc_S1(base_type e) {
+base_type calc_S1(base_type x) {
   base_type tmp1, tmp2, tmp3;
-  tmp1 = rotate_right(e, S1_args[0]);
-  tmp2 = rotate_right(e, S1_args[1]);
-  tmp3 = rotate_right(e, S1_args[2]);
+  tmp1 = rotate_right(x, S1_args[0]);
+  tmp2 = rotate_right(x, S1_args[1]);
+  tmp3 = rotate_right(x, S1_args[2]);
   return tmp1 ^ tmp2 ^ tmp3;
 }
-base_type calc_s0(base_type a) {
+base_type calc_s0(base_type x) {
   base_type tmp1, tmp2, tmp3;
-  tmp1 = rotate_right(a, s0_args[0]);
-  tmp2 = rotate_right(a, s0_args[1]);
-  tmp3 = a >> s0_args[2];
+  tmp1 = rotate_right(x, s0_args[0]);
+  tmp2 = rotate_right(x, s0_args[1]);
+  tmp3 = x >> s0_args[2];
   return tmp1 ^ tmp2 ^ tmp3;
 }
-base_type calc_s1(base_type e) {
+base_type calc_s1(base_type x) {
   base_type tmp1, tmp2, tmp3;
-  tmp1 = rotate_right(e, s1_args[0]);
-  tmp2 = rotate_right(e, s1_args[1]);
-  tmp3 = e >> s1_args[2];
+  tmp1 = rotate_right(x, s1_args[0]);
+  tmp2 = rotate_right(x, s1_args[1]);
+  tmp3 = x >> s1_args[2];
   return tmp1 ^ tmp2 ^ tmp3;
 }
 
@@ -43,7 +43,9 @@ void calculate_higher_values(base_type *w) {
 }
 
 void calc_compression(base_type *_h, base_type *w) {
+  base_type S1, S0;
   base_type a, b, c, d, e, f, g, h;
+
   a = _h[0];
   b = _h[1];
   c = _h[2];
@@ -54,7 +56,6 @@ void calc_compression(base_type *_h, base_type *w) {
   h = _h[7];
 
   for (int i = 0; i < W_SIZE; i++) {
-    base_type S1, S0;
     S0 = calc_S0(a);
     S1 = calc_S1(e);
     base_type ch = (e & f) ^ (~e & g);

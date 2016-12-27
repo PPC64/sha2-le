@@ -106,6 +106,7 @@ void calculate_higher_values(base_type *w) {
 
 void calc_compression(base_type *_h, base_type *w) {
   base_type a, b, c, d, e, f, g, h;
+
   a = _h[0];
   b = _h[1];
   c = _h[2];
@@ -115,7 +116,7 @@ void calc_compression(base_type *_h, base_type *w) {
   g = _h[6];
   h = _h[7];
 
- for (int i = 0; i < W_SIZE; i++) {
+  for (int i = 0; i < W_SIZE; i++) {
 #if SHA_BITS == 256
    // whole compression is in assembly
     __asm__ volatile(
@@ -159,8 +160,9 @@ void calc_compression(base_type *_h, base_type *w) {
       :"r5","r6","r7","r8","v0","memory"
     );
 #elif SHA_BITS == 512
-        // only core sigma functions are in assembly
-    base_type S1, S0;
+    // only core sigma functions are in assembly
+    base_type S0, S1;
+
     __asm__ volatile(
       "la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
       "std        %2,-16(1)\n\t"  // store it in order to be read by vector
