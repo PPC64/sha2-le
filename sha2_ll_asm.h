@@ -5,6 +5,8 @@
 #error "The sha2_ll_asm.h header should only be included on LOW_LEVEL == 2"
 #endif
 
+#include "base-types.h"
+
 void calculate_higher_values(base_type *w) {
 
 #if SHA_BITS == 256
@@ -161,7 +163,7 @@ void calc_compression(base_type *_h, base_type *w) {
     );
 #elif SHA_BITS == 512
     // only core sigma functions are in assembly
-    base_type S0, S1;
+    base_type S0, S1, tmp1, tmp2;
 
     __asm__ volatile(
       "la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
@@ -176,19 +178,17 @@ void calc_compression(base_type *_h, base_type *w) {
       :"r"(a),"r"(e)
       :"r0","v0","memory"
     );
-    base_type ch = (e & f) ^ (~e & g);
-    base_type temp1 = h + S1 + ch + k[i] + w[i];
-    base_type maj = (a & b) ^ (a & c) ^ (b & c);
-    base_type temp2 = S0 + maj;
+    tmp1 = h + S1 + Ch(e, f, g) + k[i] + w[i];
+    tmp2 = S0 + Maj(a, b, c);
 
     h = g;
     g = f;
     f = e;
-    e = d + temp1;
+    e = d + tmp1;
     d = c;
     c = b;
     b = a;
-    a = temp1 + temp2;
+    a = tmp1 + tmp2;
 #endif // SHA_BITS
   }
   _h[0] += a;

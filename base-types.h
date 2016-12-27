@@ -90,4 +90,7 @@ static const base_type s1_args[] = {19, 61,  6};
 static const size_t base_type_size = sizeof(base_type);
 extern base_type _h[8];
 
+#define Ch(e, f, g) (((e) & (f)) ^ ((~e) & (g)))
+#define Maj(a, b, c) (((a) & (b)) ^ ((a) & (c)) ^ ((b) & (c)))
+
 #endif // _PPC64_LE_BASE_TYPES_H_

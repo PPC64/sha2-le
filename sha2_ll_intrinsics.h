@@ -71,7 +71,7 @@ void calculate_higher_values(base_type *w) {
 
 void calc_compression(base_type *_h, base_type *w) {
   vector_base_type bsigma; // Big Sigma vector
-  base_type a, b, c, d, e, f, g, h;
+  base_type a, b, c, d, e, f, g, h, tmp1, tmp2;
 
   a = _h[0];
   b = _h[1];
@@ -90,19 +90,17 @@ void calc_compression(base_type *_h, base_type *w) {
 #elif SHA_BITS == 512
     bsigma = __builtin_crypto_vshasigmad(bsigma, 1, 0xD);
 #endif
-    base_type ch = (e & f) ^ (~e & g);
-    base_type temp1 = h + bsigma[1] + ch + w[i];
-    base_type maj = (a & b) ^ (a & c) ^ (b & c);
-    base_type temp2 = bsigma[0] + maj;
+    tmp1 =  h + bsigma[1] + Ch(e, f, g) + w[i];
+    tmp2 = bsigma[0] + Maj(a, b, c);
 
     h = g;
     g = f;
     f = e;
-    e = d + temp1;
+    e = d + tmp1;
     d = c;
     c = b;
     b = a;
-    a = temp1 + temp2;
+    a = tmp1 + tmp2;
   }
   _h[0] += a;
   _h[1] += b;

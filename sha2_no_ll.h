@@ -1,6 +1,8 @@
 #ifndef _PPC64_LE_SHA2_NO_LL_H_
 #define _PPC64_LE_SHA2_NO_LL_H_
 
+#include "base-types.h"
+
 base_type rotate_right(base_type num, base_type bits) {
   return ((num >> bits) | (num << (base_type_size*8 - bits)));
 }
@@ -44,7 +46,7 @@ void calculate_higher_values(base_type *w) {
 
 void calc_compression(base_type *_h, base_type *w) {
   base_type S1, S0;
-  base_type a, b, c, d, e, f, g, h;
+  base_type a, b, c, d, e, f, g, h, tmp1, tmp2;
 
   a = _h[0];
   b = _h[1];
@@ -58,19 +60,17 @@ void calc_compression(base_type *_h, base_type *w) {
   for (int i = 0; i < W_SIZE; i++) {
     S0 = calc_S0(a);
     S1 = calc_S1(e);
-    base_type ch = (e & f) ^ (~e & g);
-    base_type temp1 = h + S1 + ch + k[i] + w[i];
-    base_type maj = (a & b) ^ (a & c) ^ (b & c);
-    base_type temp2 = S0 + maj;
+    tmp1 = h + S1 + Ch(e, f, g) + k[i] + w[i];
+    tmp2 = S0 + Maj(a, b, c);
 
     h = g;
     g = f;
     f = e;
-    e = d + temp1;
+    e = d + tmp1;
     d = c;
     c = b;
     b = a;
-    a = temp1 + temp2;
+    a = tmp1 + tmp2;
   }
 
   _h[0] += a;
