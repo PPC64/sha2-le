@@ -3,49 +3,29 @@
 
 #include "base-types.h"
 
-base_type rotate_right(base_type num, base_type bits) {
-  return ((num >> bits) | (num << (base_type_size*8 - bits)));
-}
-base_type calc_S0(base_type x) {
-  base_type tmp1, tmp2, tmp3;
-  tmp1 = rotate_right(x, S0_args[0]);
-  tmp2 = rotate_right(x, S0_args[1]);
-  tmp3 = rotate_right(x, S0_args[2]);
-  return tmp1 ^ tmp2 ^ tmp3;
-}
-base_type calc_S1(base_type x) {
-  base_type tmp1, tmp2, tmp3;
-  tmp1 = rotate_right(x, S1_args[0]);
-  tmp2 = rotate_right(x, S1_args[1]);
-  tmp3 = rotate_right(x, S1_args[2]);
-  return tmp1 ^ tmp2 ^ tmp3;
-}
-base_type calc_s0(base_type x) {
-  base_type tmp1, tmp2, tmp3;
-  tmp1 = rotate_right(x, s0_args[0]);
-  tmp2 = rotate_right(x, s0_args[1]);
-  tmp3 = x >> s0_args[2];
-  return tmp1 ^ tmp2 ^ tmp3;
-}
-base_type calc_s1(base_type x) {
-  base_type tmp1, tmp2, tmp3;
-  tmp1 = rotate_right(x, s1_args[0]);
-  tmp2 = rotate_right(x, s1_args[1]);
-  tmp3 = x >> s1_args[2];
-  return tmp1 ^ tmp2 ^ tmp3;
-}
+#define ROTR(n, b) (((n) >> (b)) | ((n) << ((base_type_size * 8) - (b))))
+
+#define SHR(x, n) ((x) >> (n))
+
+#define BIGSIGMA0(x) (ROTR((x), S0_args[0]) ^ ROTR((x), S0_args[1]) ^ \
+  ROTR((x), S0_args[2]))
+
+#define BIGSIGMA1(x) (ROTR((x), S1_args[0]) ^ ROTR((x), S1_args[1]) ^ \
+  ROTR((x), S1_args[2]))
+
+#define SIGMA0(x) (ROTR((x), s0_args[0]) ^ ROTR((x), s0_args[1]) ^ \
+  SHR((x), s0_args[2]))
+
+#define SIGMA1(x) (ROTR((x), s1_args[0]) ^ ROTR((x), s1_args[1]) ^ \
+  SHR((x), s1_args[2]))
 
 void calculate_higher_values(base_type *w) {
   for (int j = 16; j < W_SIZE; j++) {
-    base_type s0,s1;
-    s0 = calc_s0(w[j-15]);
-    s1 = calc_s1(w[j-2]);
-    w[j] = w[j-16] + s0 + w[j-7] + s1;
+    w[j] = w[j-16] + SIGMA0(w[j-15]) + w[j-7] + SIGMA1(w[j-2]);
   }
 }
 
 void calc_compression(base_type *_h, base_type *w) {
-  base_type S1, S0;
   base_type a, b, c, d, e, f, g, h, tmp1, tmp2;
 
   a = _h[0];
@@ -58,10 +38,8 @@ void calc_compression(base_type *_h, base_type *w) {
   h = _h[7];
 
   for (int i = 0; i < W_SIZE; i++) {
-    S0 = calc_S0(a);
-    S1 = calc_S1(e);
-    tmp1 = h + S1 + Ch(e, f, g) + k[i] + w[i];
-    tmp2 = S0 + Maj(a, b, c);
+    tmp1 = h + BIGSIGMA1(e) + Ch(e, f, g) + k[i] + w[i];
+    tmp2 = BIGSIGMA0(a) + Maj(a, b, c);
 
     h = g;
     g = f;
