@@ -36,15 +36,11 @@ void calculate_higher_values(base_type *w) {
   // Continue to sum Kt to Wt. Sums the last sixteen values in parallel using
   // vector add operations (4x4). On asm code we can easily unroll this loop
   // avoiding branchs.
-  for (int i=W_SIZE-16; i < W_SIZE; i += 4) {
-    w_vec = (vector_base_type) {w[i], w[i+1], w[i+2], w[i+3] };
-    k_vec = (vector_base_type) {k[i], k[i+1], k[i+2], k[i+3] };
+  for (int i = W_SIZE-16; i < W_SIZE; i += 4) {
+    w_vec = (vector_base_type) { w[i], w[i+1], w[i+2], w[i+3] };
+    k_vec = (vector_base_type) { k[i], k[i+1], k[i+2], k[i+3] };
     kw_vec = __builtin_vec_add(w_vec, k_vec);
-    // TODO(rcardoso): Replace this for a vector store intrinsic
-    w[i] = kw_vec[0];
-    w[i+1] = kw_vec[1];
-    w[i+2] = kw_vec[2];
-    w[i+3] = kw_vec[3];
+    __builtin_vec_st(kw_vec, 0, &w[i]);
   }
 #elif SHA_BITS == 512
   for (int t = 16; t < W_SIZE; t++) {
@@ -57,16 +53,16 @@ void calculate_higher_values(base_type *w) {
     w[t-16] += k[t-16];
   }
   // Sum the sixteen k to w (2x2)
-  for (int i=W_SIZE-16; i < W_SIZE; i += 2) {
-    w_vec = (vector_base_type) {w[i], w[i+1] };
-    k_vec = (vector_base_type) {k[i], k[i+1] };
+  for (int i = W_SIZE-16; i < W_SIZE; i += 2) {
+    w_vec = (vector_base_type) { w[i], w[i+1] };
+    k_vec = (vector_base_type) { k[i], k[i+1] };
     kw_vec = __builtin_vec_add(w_vec, k_vec);
-    // Replace this for a vector store instrinsic
+    // TODO(rcardoso): Replace this for a vector instrinsic instructions.
+    // Note that we don't have a builtin to store long values.
     w[i] = kw_vec[0];
     w[i+1] = kw_vec[1];
   }
 #endif
-
 }
 
 void calc_compression(base_type *_h, base_type *w) {
