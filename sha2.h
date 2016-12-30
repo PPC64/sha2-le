@@ -66,11 +66,6 @@ size_t calculate_padded_msg_size_FIPS_180_4(size_t size) {
   return size + (((k + 1) + (block_size/8)) / CHAR_BIT);
 }
 
-void calculate_w_vector(base_type *w, char *input) {
-  memcpy(w, input, 16*sizeof(base_type));
-  calculate_higher_values(w);
-}
-
 void swap_bytes(char *input, char *output, size_t size) {
   size_t size_in_words = size / base_type_size;
 
@@ -131,8 +126,8 @@ int sha2(char *input, size_t size, size_t padded_size) {
   // Sha compression process.
   for (int i = 0; i < padded_size; i = i + BLOCK_SIZE) {
     base_type w[W_SIZE];
-    calculate_w_vector(w, input_swapped+i);
-    calc_compression(_h, w);
+    memcpy(w, input_swapped + i, 16 * sizeof(base_type));
+    sha2_transform(_h, w);
   }
 
   printf(

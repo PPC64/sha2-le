@@ -9,9 +9,12 @@
 
 #include "base-types.h"
 
-void calculate_higher_values(base_type *w) {
+void sha2_transform(base_type* _h, base_type* w) {
+  vector_base_type bsigma; // big Sigma vector
   vector_base_type sigma; // small sigma vector
   vector_base_type w_vec, k_vec, kw_vec; // temp vectors to sum k+w
+  base_type a, b, c, d, e, f, g, h, tmp1, tmp2; // compression registers
+
 #if SHA_BITS == 256
   // Expand two message blocks per loop cycle
   for (int t = 16; t < W_SIZE; t += 2) {
@@ -63,11 +66,6 @@ void calculate_higher_values(base_type *w) {
     w[i+1] = kw_vec[1];
   }
 #endif
-}
-
-void calc_compression(base_type *_h, base_type *w) {
-  vector_base_type bsigma; // Big Sigma vector
-  base_type a, b, c, d, e, f, g, h, tmp1, tmp2;
 
   a = _h[0];
   b = _h[1];

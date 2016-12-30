@@ -19,13 +19,7 @@
 #define SIGMA1(x) (ROTR((x), s1_args[0]) ^ ROTR((x), s1_args[1]) ^ \
   SHR((x), s1_args[2]))
 
-void calculate_higher_values(base_type *w) {
-  for (int j = 16; j < W_SIZE; j++) {
-    w[j] = w[j-16] + SIGMA0(w[j-15]) + w[j-7] + SIGMA1(w[j-2]);
-  }
-}
-
-void calc_compression(base_type *_h, base_type *w) {
+void sha2_transform(base_type* _h, base_type* w) {
   base_type a, b, c, d, e, f, g, h, tmp1, tmp2;
 
   a = _h[0];
@@ -37,7 +31,13 @@ void calc_compression(base_type *_h, base_type *w) {
   g = _h[6];
   h = _h[7];
 
+  // TODO(rcardoso): we can unroll this loop to avoid the i ge 16 comparison.
+  // Define macros to improve readability and 'sew' message scheduler and
+  // compression together
   for (int i = 0; i < W_SIZE; i++) {
+    if (i >= 16) {
+      w[i] = w[i-16] + SIGMA0(w[i-15]) + w[i-7] + SIGMA1(w[i-2]);
+    }
     tmp1 = h + BIGSIGMA1(e) + Ch(e, f, g) + k[i] + w[i];
     tmp2 = BIGSIGMA0(a) + Maj(a, b, c);
 

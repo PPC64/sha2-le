@@ -7,7 +7,18 @@
 
 #include "base-types.h"
 
-void calculate_higher_values(base_type *w) {
+void sha2_transform(base_type* _h, base_type* w) {
+  base_type a, b, c, d, e, f, g, h;
+
+  a = _h[0];
+  b = _h[1];
+  c = _h[2];
+  d = _h[3];
+  e = _h[4];
+  f = _h[5];
+  g = _h[6];
+  h = _h[7];
+
 
 #if SHA_BITS == 256
   int Rb = 8;
@@ -104,19 +115,6 @@ void calculate_higher_values(base_type *w) {
     w[j] = w[j-16] + s0 + w[j-7] + s1;
   }
 #endif
-}
-
-void calc_compression(base_type *_h, base_type *w) {
-  base_type a, b, c, d, e, f, g, h;
-
-  a = _h[0];
-  b = _h[1];
-  c = _h[2];
-  d = _h[3];
-  e = _h[4];
-  f = _h[5];
-  g = _h[6];
-  h = _h[7];
 
   for (int i = 0; i < W_SIZE; i++) {
 #if SHA_BITS == 256
