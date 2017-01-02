@@ -28,7 +28,7 @@ void sha2_transform(base_type* _h, base_type* w) {
     "add        27,%1,%0\n\t"   // alias to W[j] location
     "andi.      24,27,0xf\n\t"  // aligned in 16 bit?
     "beq LOAD_ALIGNED\n\t"
-    //On first iteration, the first element is aligned on 16 bits.
+    //Assumption: On first iteration, the first element is aligned on 16 bits.
     "addi       26,27,-64\n\t"
     "lvx        2,0,26\n\t"
     "lvsl       3,0,%2\n\t"
@@ -65,7 +65,7 @@ void sha2_transform(base_type* _h, base_type* w) {
     "vmrghw     2,0,0\n\t"      // v2 = W[j-14], W[j-14], W[j-13], W[j-13]
     "vmrglw     2,2,0\n\t"      // v2 = W[j-16], W[j-14], W[j-15], W[j-14]
     "vmrghw     2,1,2\n\t"      // v2 = W[j-15], W[j-2], W[j-14], W[j-1]
-    "vshasigmaw 2,2,0,0xA\n\t"  // small sigma 0 (only to 0x1 bit)
+    "vshasigmaw 2,2,0,0xA\n\t"  // small sigma 0 and sigma 1
 
     "vmrghw     7,2,2\n\t"      // v7 = W[j-14], W[j-14], W[j-1], W[j-1]
     "vmrgow     3,7,2\n\t"      // v3 = W[j-15], W[j-14] ...
