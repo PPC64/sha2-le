@@ -2,6 +2,7 @@
 
 CFLAGS=-g -Wall -fPIC -fno-omit-frame-pointer
 BIN_DIR=./bin
+PERFTXT = $(BIN_DIR)/perfexample.txt
 
 BINS  = $(BIN_DIR)/sha256 $(BIN_DIR)/sha256_ll_intrinsics \
 				$(BIN_DIR)/sha256_ll_asm $(BIN_DIR)/sha512 \
@@ -60,5 +61,15 @@ test: $(BINS) $(TESTS)
 
 tests: test
 
+perf:
+	# Generating a 56M file
+	rm -f $(PERFTXT) ;\
+	for i in `seq 99` ;\
+	do \
+		seq 1 100000 >> $(PERFTXT) ;\
+	done
+	sudo perf stat bin/sha256 $(PERFTXT)
+
 clean:
 	rm -f $(BINS) $(TESTS)
+	rm -f $(PERFTXT)
