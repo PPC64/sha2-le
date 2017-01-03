@@ -19,8 +19,28 @@
 #define SIGMA1(x) (ROTR((x), s1_args[0]) ^ ROTR((x), s1_args[1]) ^ \
   SHR((x), s1_args[2]))
 
+void static inline sha2_round(base_type *a, base_type *b, base_type *c, base_type *d, base_type
+                           *e, base_type *f, base_type *g, base_type *h, base_type k,
+                           base_type w) {
+
+  base_type tmp1, tmp2;
+
+  tmp1 = *h + BIGSIGMA1(*e) + Ch(*e, *f, *g) + k + w;
+  tmp2 = BIGSIGMA0(*a) + Maj(*a, *b, *c);
+
+  *h = *g;
+  *g = *f;
+  *f = *e;
+  *e = *d + tmp1;
+  *d = *c;
+  *c = *b;
+  *b = *a;
+  *a = tmp1 + tmp2;
+}
+
 void sha2_transform(base_type* _h, base_type* w) {
-  base_type a, b, c, d, e, f, g, h, tmp1, tmp2;
+  base_type a, b, c, d, e, f, g, h;
+  int i;
 
   a = _h[0];
   b = _h[1];
@@ -31,24 +51,15 @@ void sha2_transform(base_type* _h, base_type* w) {
   g = _h[6];
   h = _h[7];
 
-  // TODO(rcardoso): we can unroll this loop to avoid the i ge 16 comparison.
-  // Define macros to improve readability and 'sew' message scheduler and
-  // compression together
-  for (int i = 0; i < W_SIZE; i++) {
-    if (i >= 16) {
-      w[i] = w[i-16] + SIGMA0(w[i-15]) + w[i-7] + SIGMA1(w[i-2]);
-    }
-    tmp1 = h + BIGSIGMA1(e) + Ch(e, f, g) + k[i] + w[i];
-    tmp2 = BIGSIGMA0(a) + Maj(a, b, c);
+  // Loop unrolling, from 0 to 15
+  for (i = 0; i < 16; i++) {
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i], w[i]);
+  }
 
-    h = g;
-    g = f;
-    f = e;
-    e = d + tmp1;
-    d = c;
-    c = b;
-    b = a;
-    a = tmp1 + tmp2;
+  // From 16 to W_SIZE (64)
+  for (; i < W_SIZE; i++) {
+    w[i] = w[i-16] + SIGMA0(w[i-15]) + w[i-7] + SIGMA1(w[i-2]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i], w[i]);
   }
 
   _h[0] += a;
