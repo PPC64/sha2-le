@@ -31,22 +31,26 @@ void sha2_transform(base_type* _h, base_type* w) {
     "andi.      24,27,0xf\n\t"  // aligned in 16 bit?
     "beq LOAD_ALIGNED\n\t"
     //Assumption: On first iteration, the first element is aligned on 16 bits.
-    "addi       26,27,-64\n\t"
-    "lvx        2,0,26\n\t"
-    "addi       26,27,-48\n\t"
+    "addi       26,23,-48\n\t"
     "lvx        4,0,26\n\t"
-    "vperm      0,4,2,7\n\t"    // load 4 words to vector: w[j-16] to w[j-13]
 
-    "addi       24,27,-16\n\t"
-    "lvx        5,0,24\n\t"
+    "vperm      5,1,5,7\n\t"    // load 4 words to vector: w[j-7] to w[j-3]
+                                // This operation reuses the v1 value loaded
+                                // on last iteration.
+
     // Use previous result here.
-    "vperm      1,8,5,7\n\t"    // load 4 words to vector: w[j-4] to w[j-1]
+    "vperm      1,8,1,7\n\t"    // load 4 words to vector: w[j-2] to w[j+1]
+                                // This operation reuses the v1 value loaded
+                                // on last iteration.
+                                // v8 carries the last result calculated. Its
+                                // content is merged with v1.
+
+    "vperm      0,4,0,7\n\t"    // load 4 words to vector: w[j-14] to w[j-11]
+                                // This operation reuses the v0 value loaded
+                                // on last iteration.
 
     "vperm      9,8,8,7\n\t"    // Move previous result to high half
 
-    "addi       26,27,-32\n\t"
-    "lvx        2,0,26\n\t"
-    "vperm      5,5,2,7\n\t"    // load 4 words to vector: w[j-32] to w[j-16]
 
     "b MAIN\n\t"
 
