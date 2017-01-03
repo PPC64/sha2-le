@@ -1,6 +1,6 @@
 .PHONY: all test tests clean
 
-CFLAGS=-g -Wall -fPIC -fno-omit-frame-pointer
+CFLAGS=-O3 -g -Wall -fPIC -fno-omit-frame-pointer
 BIN_DIR=./bin
 PERFTXT = $(BIN_DIR)/perfexample.txt
 
