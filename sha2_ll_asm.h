@@ -7,8 +7,25 @@
 
 #include "base-types.h"
 
+#define ROTR(n, b) (((n) >> (b)) | ((n) << ((base_type_size * 8) - (b))))
+
+#define SHR(x, n) ((x) >> (n))
+
+#define BIGSIGMA0(x) (ROTR((x), S0_args[0]) ^ ROTR((x), S0_args[1]) ^ \
+  ROTR((x), S0_args[2]))
+
+#define BIGSIGMA1(x) (ROTR((x), S1_args[0]) ^ ROTR((x), S1_args[1]) ^ \
+  ROTR((x), S1_args[2]))
+
+#define SIGMA0(x) (ROTR((x), s0_args[0]) ^ ROTR((x), s0_args[1]) ^ \
+  SHR((x), s0_args[2]))
+
+#define SIGMA1(x) (ROTR((x), s1_args[0]) ^ ROTR((x), s1_args[1]) ^ \
+  SHR((x), s1_args[2]))
+
+
 void sha2_transform(base_type* _h, base_type* w) {
-  base_type a, b, c, d, e, f, g, h;
+  base_type a, b, c, d, e, f, g, h, tmp1, tmp2;
 
   a = _h[0];
   b = _h[1];
@@ -114,68 +131,10 @@ void sha2_transform(base_type* _h, base_type* w) {
   }
 #endif
 
+
   for (int i = 0; i < W_SIZE; i++) {
-#if SHA_BITS == 256
-   // whole compression is in assembly
-    __asm__ volatile(
-      "la         5,-16(1)\n\t"  // use -16(r1) as temporary
-      "stw        %0,0(5)\n\t"   // wanna be S0
-      "stw        %4,4(5)\n\t"   // wanna be S1
-      "lvx        0,0,5\n\t"     // load 4 words to a vector
-      "vshasigmaw 0,0,1,0xE\n\t" // big sigma 0 (only to 0x1 bit)
-      "stvx       0,0,5\n\t"     // store back 4 words
-      "lwz        6,0(5)\n\t"    // S0
-      "lwz        7,4(5)\n\t"    // S1
-
-      "andc       5,%6,%4\n\t"   // g & e
-      "and        8,%4,%5\n\t"   // e & f
-      "xor        5,5,8\n\t"     // ch = (g & e) ^ (e & f)
-      "add        8,%16,%17\n\t" // k[0] + w[0]
-      "add        8,8,7\n\t"     // (k[0] + w[0]) + S1(e)
-      "add        5,5,8\n\t"     // ch + (k[0] + w[0]) + S1(e)
-      "add        5,5,%7\n\t"    // temp1 = (ch + k[0] + w[0] + S1(e)) + h
-
-      "xor        7,%1,%2\n\t"   // b ^ c
-      "and        7,7,%0\n\t"    // (b ^ c) & a
-      "and        8,%1,%2\n\t"   // b & c
-      "xor        8,7,8\n\t"     // maj = ((b ^ c) & a) ^ (b & c)
-      "add        6,8,6\n\t"     // temp2 = maj + S0(a)
-
-      "mr         %7,%6\n\t"     // h = g
-      "mr         %6,%5\n\t"     // g = f
-      "mr         %5,%4\n\t"     // f = e
-      "add        %4,5,%3\n\t"   // e = temp1 + d
-      "clrldi     %4,%4,32\n\t"  // e (truncate to word)
-      "mr         %3,%2\n\t"     // d = c
-      "mr         %2,%1\n\t"     // c = b
-      "mr         %1,%0\n\t"     // b = a
-      "add        %0,5,6\n\t"    // a = temp1 + temp2
-      "clrldi     %0,%0,32\n\t"  // a (truncate to word)
-
-      :"=r"(a),"=r"(b),"=r"(c),"=r"(d),"=r"(e),"=r"(f),"=r"(g),"=r"(h)
-      : "0"(a), "1"(b), "2"(c), "3"(d), "4"(e), "5"(f), "6"(g), "7"(h),
-      "r"(w[i]),"r"(k[i])
-      :"r5","r6","r7","r8","v0","memory"
-    );
-#elif SHA_BITS == 512
-    // only core sigma functions are in assembly
-    base_type S0, S1, tmp1, tmp2;
-
-    __asm__ volatile(
-      "la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
-      "std        %2,-16(1)\n\t"  // store it in order to be read by vector
-      "std        %3,-8(1)\n\t"
-      "lvx        0,0,0\n\t"      // load 2 doublewords to a vector
-      "vshasigmad 0,0,1,0xD\n\t"  // big sigma 0 (only to 2*i = 0x2 bit)
-      "stvx       0,0,0\n\t"      // store back 2 doublewords
-      "ld         %0,-16(1)\n\t"  // load resulted word to return value
-      "ld         %1,-8(1)\n\t"   // load resulted word to return value
-      :"=r"(S0),"=r"(S1)
-      :"r"(a),"r"(e)
-      :"r0","v0","memory"
-    );
-    tmp1 = h + S1 + Ch(e, f, g) + k[i] + w[i];
-    tmp2 = S0 + Maj(a, b, c);
+    tmp1 = h + BIGSIGMA1(e) + Ch(e, f, g) + k[i] + w[i];
+    tmp2 = BIGSIGMA0(a) + Maj(a, b, c);
 
     h = g;
     g = f;
@@ -185,8 +144,8 @@ void sha2_transform(base_type* _h, base_type* w) {
     c = b;
     b = a;
     a = tmp1 + tmp2;
-#endif // SHA_BITS
   }
+
   _h[0] += a;
   _h[1] += b;
   _h[2] += c;
@@ -195,6 +154,6 @@ void sha2_transform(base_type* _h, base_type* w) {
   _h[5] += f;
   _h[6] += g;
   _h[7] += h;
-}
 
+}
 #endif // _PPC64_LE_SHA2_ASM_LL_H_
