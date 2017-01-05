@@ -125,7 +125,7 @@ int sha2(char *input, size_t size, size_t padded_size) {
 
   // Sha compression process.
   for (int i = 0; i < padded_size; i = i + BLOCK_SIZE) {
-    base_type w[W_SIZE];
+    base_type w[W_SIZE] __attribute__ ((aligned (16)));
     memcpy(w, input_swapped + i, 16 * sizeof(base_type));
     sha2_transform(_h, w);
   }
