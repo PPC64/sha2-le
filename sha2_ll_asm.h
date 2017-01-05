@@ -1,6 +1,10 @@
 #ifndef _PPC64_LE_SHA2_NO_LL_H_
 #define _PPC64_LE_SHA2_NO_LL_H_
 
+#if LOW_LEVEL != 2
+#error "The sha2_ll_asm.h header should only be included on LOW_LEVEL == 2"
+#endif
+
 #include "base-types.h"
 
 #define ROTR(n, b) (((n) >> (b)) | ((n) << ((base_type_size * 8) - (b))))
