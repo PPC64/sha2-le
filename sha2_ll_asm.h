@@ -1,14 +1,45 @@
-#ifndef _PPC64_LE_SHA2_ASM_LL_H_
-#define _PPC64_LE_SHA2_ASM_LL_H_
-
-#if LOW_LEVEL != 2
-#error "The sha2_ll_asm.h header should only be included on LOW_LEVEL == 2"
-#endif
+#ifndef _PPC64_LE_SHA2_NO_LL_H_
+#define _PPC64_LE_SHA2_NO_LL_H_
 
 #include "base-types.h"
 
+#define ROTR(n, b) (((n) >> (b)) | ((n) << ((base_type_size * 8) - (b))))
+
+#define SHR(x, n) ((x) >> (n))
+
+#define BIGSIGMA0(x) (ROTR((x), S0_args[0]) ^ ROTR((x), S0_args[1]) ^ \
+  ROTR((x), S0_args[2]))
+
+#define BIGSIGMA1(x) (ROTR((x), S1_args[0]) ^ ROTR((x), S1_args[1]) ^ \
+  ROTR((x), S1_args[2]))
+
+#define SIGMA0(x) (ROTR((x), s0_args[0]) ^ ROTR((x), s0_args[1]) ^ \
+  SHR((x), s0_args[2]))
+
+#define SIGMA1(x) (ROTR((x), s1_args[0]) ^ ROTR((x), s1_args[1]) ^ \
+  SHR((x), s1_args[2]))
+
+void static inline sha2_round(base_type *a, base_type *b, base_type *c, base_type *d, base_type
+                           *e, base_type *f, base_type *g, base_type *h, base_type kplusw) {
+
+  base_type tmp1, tmp2;
+
+  tmp1 = *h + BIGSIGMA1(*e) + Ch(*e, *f, *g) + kplusw;
+  tmp2 = BIGSIGMA0(*a) + Maj(*a, *b, *c);
+
+  *h = *g;
+  *g = *f;
+  *f = *e;
+  *e = *d + tmp1;
+  *d = *c;
+  *c = *b;
+  *b = *a;
+  *a = tmp1 + tmp2;
+}
+
 void sha2_transform(base_type* _h, base_type* w) {
   base_type a, b, c, d, e, f, g, h;
+  int i;
 
   a = _h[0];
   b = _h[1];
@@ -19,174 +50,87 @@ void sha2_transform(base_type* _h, base_type* w) {
   g = _h[6];
   h = _h[7];
 
+  // Loop unrolling, from 0 to 15
+  for (i = 0; i < 16; i++) {
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i]+w[i]);
+  }
+
 
 #if SHA_BITS == 256
-  int Rb = 8, Rc = 4;
-  int j = W_SIZE; // 64
-  __asm__(
-    "lvsl       7,0,%2\n\t"
-    "lvsr       10,0,%3\n\t"
-    "BEGIN_LOOP:\n\t"
-    "add        27,%1,%0\n\t"   // alias to W[j] location
-    "andi.      24,27,0xf\n\t"  // aligned in 16 bit?
-    "beq LOAD_ALIGNED\n\t"
-    //Assumption: On first iteration, the first element is aligned on 16 bits.
-    "addi       26,23,-48\n\t"
-    "lvx        4,0,26\n\t"
+  // From 16 to W_SIZE (64)
+  for (; i < W_SIZE; i=i+4) {
+    int Rb = 8, Rc = 4;
+    base_type kplusw[4] __attribute__ ((aligned (16))) ;
+    //int j = W_SIZE; // 64
+    __asm__(
+      "lvsl       7,0,%2\n\t"
+      "lvsr       10,0,%3\n\t"
+      "sldi       27,%1,2\n\t"    // j * 4 (word size)
 
-    "vperm      5,1,5,7\n\t"    // load 4 words to vector: w[j-7] to w[j-3]
-                                // This operation reuses the v1 value loaded
-                                // on last iteration.
+      "add        26,27,%4\n\t"
 
-    // Use previous result here.
-    "vperm      1,8,1,7\n\t"    // load 4 words to vector: w[j-2] to w[j+1]
-                                // This operation reuses the v1 value loaded
-                                // on last iteration.
-                                // v8 carries the last result calculated. Its
-                                // content is merged with v1.
+      "add        27,27,%0\n\t"   // alias to W[j] location
 
-    "vperm      0,4,0,7\n\t"    // load 4 words to vector: w[j-14] to w[j-11]
-                                // This operation reuses the v0 value loaded
-                                // on last iteration.
+      "lvx        11,0,26\n\t"
 
-    "vperm      9,8,8,7\n\t"    // Move previous result to high half
+      "addi       26,27,-64\n\t"
+      "lvx        0,0,26\n\t"     // load 4 words to vector: w[j-16] to w[j-13]
 
+      "addi       26,27,-48\n\t"
+      "lvx        1,0,26\n\t"    // load 4 words to vector: w[j-12] to w[j-9]
 
-    "b MAIN\n\t"
+      "addi       26,27,-32\n\t"
+      "lvx        2,0,26\n\t"     // load 4 words to vector: w[j-8] to w[j-5]
 
-    "LOAD_ALIGNED:\n\t"
-    "mr         23,27\n\t"      // Save store location
-    "addi       26,27,-64\n\t"
-    "lvx        0,0,26\n\t"     // load 4 words to vector: w[j-16] to w[j-13]
+      "addi       26,27,-16\n\t"
+      "lvx        3,0,26\n\t"     // load 4 words to vector: w[j-4] to w[j-1]
 
-    "addi       26,27,-16\n\t"
-    "lvx        1,0,26\n\t"     // load 4 words to vector: w[j-4] to w[j-1]
+      "MAIN:\n\t"
+      "vperm      4,1,0,10\n\t"   // v4 = w[j-15], w[j-14], w[j-13], w[j-12]
 
-    "addi       26,27,-32\n\t"
-    "lvx        5,0,26\n\t"     // load 4 words to vector: w[j-8] to w[j-5]
+      "vperm      2,3,2,10\n\t"   // v2 = w[j-7], w[j-6], w[j-5], w[j-4]
 
-    "MAIN:\n\t"
-    "vperm      2,0,0,10\n\t"    // v2 = w[j-15], w[j-14], w[j-13], w[j-16]
+      "vperm      3,3,3,7\n\t"    // v3 = w[j-2], w[j-1], w[j-4], w[j-3]
 
-    "vperm      3,1,1,7\n\t"    // v3 = w[j-2], W[j-1], W[j-4], W[j-3]
+      "vshasigmaw 4,4,0,0\n\t"    // v4 = s0(w[j-15]),s0(w[j-14]),s0(w[j-13]),s0(w[j-12])
+      "vshasigmaw 5,3,0,0xf\n\t"  // v5 = s1(w[j-2]) ,s1(w[j-1]) ,s1(w[j-4]) ,s1(w[j-3])
 
-    "vshasigmaw 2,2,0,0\n\t"    // v2 = s0(w[j-15]),s0(w[j-14])
-    "vshasigmaw 3,3,0,3\n\t"    // v3 = s1(w[j-2]) ,s1(w[j-1])
+      "vadduwm    6,4,2\n\t"      // v6 = s0(w[j-15])+w[j-7],s0(w[j-14])+w[j-6],s0(w[j-13])+w[j-5],s0(w[j-12])+w[j-4]
+      "vadduwm    8,6,0\n\t"      // v8 = v4[0]+w[j-16],v4[1]+w[j-15],v4[2]+w[j-14],v4[3]+w[j-13]
+      "vadduwm    9,8,5\n\t"      // v9 = v8[0]+s1(w[j-2]) ,v8[0]+s1(w[j-1]) ,v8[0]+s1(w[j-2]) ,v8[0]+s1(w[j-1])
+      // At this point, v9[0] and v9[1] are the correct values to be stored at w[0] and w[1]
+      // v[2] and v[3] are not considered
+      "vshasigmaw 0,9,0,0xf\n\t"  // v0 = s1(w[0]),s1(s(w[1]),... (the rest is undefined)
 
-    "vmrglw     6,5,5\n\t"      // v6 = w[j-8], w[j-8], w[j-7], w[j-7]
-    "vmrghw     6,5,6\n\t"      // v6 = w[j-7], w[j-6]. w[j-7], w[j-5]
+//      "lvsr       7,0,%2\n\t"
+      "vperm 0,0,0,7\n\t"         //TODO: review this!! There must be a more efficient way.
+      "vperm 5,5,0,7\n\t"
+      "vperm 5,5,5,7\n\t"         //v5 = s1(w[j-2]) ,s1(w[j-1]) ,s1(w[j]) ,s1(w[j+1])
 
-    "vadduwm    4,2,3\n\t"      // v4 = s0(w[j-15])+s1(w[j-2]),s0(w[j-14])+s1(w[j-1]),...
-    "vadduwm    8,6,0\n\t"      // v8 = w[j-7]+w[j-16],w[j-6]+w[j-15],...
-    "vadduwm    8,8,4\n\t"      // v8 = v8+v4
-
-    "beq END\n\t"             // Branch if current iteration is aligned
-
-    "vperm      9,8,9,7\n\t"
-    "stvx       9,0,23\n\t"   // store it in W[j-2] to W[j+2]
-    "END:\n\t"
-    "addi       %1,%1,8\n\t"
-    "cmpi       0,1,%1,256\n\t"
-    "blt BEGIN_LOOP"
-    :
-    :"r"(w), "r"(j), "r"(Rb), "r"(Rc)
-    :"r23", "r24", "r26","r27","v0","v1","v2","v3","v4","v5","v6","v7","v8",
-     "v9","v10","memory"
-  );
-#elif SHA_BITS == 512
-  base_type s0,s1;
-
-  for (int j = 16; j < W_SIZE; j++) {
-    __asm__ volatile(
-      "la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
-      "std        %2,-16(1)\n\t"  // store it in order to be read by vector
-      "std        %3,-8(1)\n\t"   // store it in order to be read by vector
-      "lvx        0,0,0\n\t"      // load 2 doublewords to a vector
-      "vshasigmad 0,0,0,0xD\n\t"  // small sigma 0 (only to 2*i = 0x2 bit)
-      "stvx       0,0,0\n\t"      // store back 2 doublewords
-      "ld         %0,-16(1)\n\t"  // load resulted word to return value
-      "ld         %1,-8(1)\n\t"   // load resulted word to return value
-      :"=r"(s0),"=r"(s1)
-      :"r"(w[j-15]),"r"(w[j-2])
-      :"r0","v0","memory"
+      "vadduwm    9,8,5\n\t"      // v9 = v8[0]+s1(w[j-2]) ,v8[0]+s1(w[j-1]) ,v8[0]+s1(w[j]) ,v8[0]+s1(w[j+1])
+      "stvx       9,0,27\n\t"   // store the result in W[j] to W[j+3]
+      "vadduwm    9,9,11\n\t"
+      "stvx       9,0,%5\n\t"   // store k[0->3]+w[0->3] to kplusw
+      :
+      :"r"(w), "r"(i), "r"(Rb), "r"(Rc), "r"(k),"r"(kplusw)
+      :"r26","r27","v0","v1","v2","v3","v4","v5","v6","v7","v8",
+       "v9","v10","v11","memory"
     );
-    w[j] = w[j-16] + s0 + w[j-7] + s1;
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[0]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[1]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[2]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[3]);
+  }
+
+#else
+
+  // From 16 to W_SIZE (64)
+  for (; i < W_SIZE; i++) {
+    w[i] = w[i-16] + SIGMA0(w[i-15]) + w[i-7] + SIGMA1(w[i-2]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, w[i]+k[i]);
   }
 #endif
 
-  for (int i = 0; i < W_SIZE; i++) {
-#if SHA_BITS == 256
-   // whole compression is in assembly
-    __asm__ volatile(
-      "la         5,-16(1)\n\t"  // use -16(r1) as temporary
-      "stw        %0,0(5)\n\t"   // wanna be S0
-      "stw        %4,4(5)\n\t"   // wanna be S1
-      "lvx        0,0,5\n\t"     // load 4 words to a vector
-      "vshasigmaw 0,0,1,0xE\n\t" // big sigma 0 (only to 0x1 bit)
-      "stvx       0,0,5\n\t"     // store back 4 words
-      "lwz        6,0(5)\n\t"    // S0
-      "lwz        7,4(5)\n\t"    // S1
-
-      "andc       5,%6,%4\n\t"   // g & e
-      "and        8,%4,%5\n\t"   // e & f
-      "xor        5,5,8\n\t"     // ch = (g & e) ^ (e & f)
-      "add        8,%16,%17\n\t" // k[0] + w[0]
-      "add        8,8,7\n\t"     // (k[0] + w[0]) + S1(e)
-      "add        5,5,8\n\t"     // ch + (k[0] + w[0]) + S1(e)
-      "add        5,5,%7\n\t"    // temp1 = (ch + k[0] + w[0] + S1(e)) + h
-
-      "xor        7,%1,%2\n\t"   // b ^ c
-      "and        7,7,%0\n\t"    // (b ^ c) & a
-      "and        8,%1,%2\n\t"   // b & c
-      "xor        8,7,8\n\t"     // maj = ((b ^ c) & a) ^ (b & c)
-      "add        6,8,6\n\t"     // temp2 = maj + S0(a)
-
-      "mr         %7,%6\n\t"     // h = g
-      "mr         %6,%5\n\t"     // g = f
-      "mr         %5,%4\n\t"     // f = e
-      "add        %4,5,%3\n\t"   // e = temp1 + d
-      "clrldi     %4,%4,32\n\t"  // e (truncate to word)
-      "mr         %3,%2\n\t"     // d = c
-      "mr         %2,%1\n\t"     // c = b
-      "mr         %1,%0\n\t"     // b = a
-      "add        %0,5,6\n\t"    // a = temp1 + temp2
-      "clrldi     %0,%0,32\n\t"  // a (truncate to word)
-
-      :"=r"(a),"=r"(b),"=r"(c),"=r"(d),"=r"(e),"=r"(f),"=r"(g),"=r"(h)
-      : "0"(a), "1"(b), "2"(c), "3"(d), "4"(e), "5"(f), "6"(g), "7"(h),
-      "r"(w[i]),"r"(k[i])
-      :"r5","r6","r7","r8","v0","memory"
-    );
-#elif SHA_BITS == 512
-    // only core sigma functions are in assembly
-    base_type S0, S1, tmp1, tmp2;
-
-    __asm__ volatile(
-      "la         0,-16(1)\n\t"   // use r0 and -16(r1) as temporary
-      "std        %2,-16(1)\n\t"  // store it in order to be read by vector
-      "std        %3,-8(1)\n\t"
-      "lvx        0,0,0\n\t"      // load 2 doublewords to a vector
-      "vshasigmad 0,0,1,0xD\n\t"  // big sigma 0 (only to 2*i = 0x2 bit)
-      "stvx       0,0,0\n\t"      // store back 2 doublewords
-      "ld         %0,-16(1)\n\t"  // load resulted word to return value
-      "ld         %1,-8(1)\n\t"   // load resulted word to return value
-      :"=r"(S0),"=r"(S1)
-      :"r"(a),"r"(e)
-      :"r0","v0","memory"
-    );
-    tmp1 = h + S1 + Ch(e, f, g) + k[i] + w[i];
-    tmp2 = S0 + Maj(a, b, c);
-
-    h = g;
-    g = f;
-    f = e;
-    e = d + tmp1;
-    d = c;
-    c = b;
-    b = a;
-    a = tmp1 + tmp2;
-#endif // SHA_BITS
-  }
   _h[0] += a;
   _h[1] += b;
   _h[2] += c;
@@ -197,4 +141,4 @@ void sha2_transform(base_type* _h, base_type* w) {
   _h[7] += h;
 }
 
-#endif // _PPC64_LE_SHA2_ASM_LL_H_
+#endif // _PPC64_LE_SHA2_NO_LL_H_
