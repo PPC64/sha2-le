@@ -20,12 +20,11 @@
   SHR((x), s1_args[2]))
 
 void static inline sha2_round(base_type *a, base_type *b, base_type *c, base_type *d, base_type
-                           *e, base_type *f, base_type *g, base_type *h, base_type k,
-                           base_type w) {
+                           *e, base_type *f, base_type *g, base_type *h, base_type kplusw) {
 
   base_type tmp1, tmp2;
 
-  tmp1 = *h + BIGSIGMA1(*e) + Ch(*e, *f, *g) + k + w;
+  tmp1 = *h + BIGSIGMA1(*e) + Ch(*e, *f, *g) + kplusw;
   tmp2 = BIGSIGMA0(*a) + Maj(*a, *b, *c);
 
   *h = *g;
@@ -53,7 +52,7 @@ void sha2_transform(base_type* _h, base_type* w) {
 
   // Loop unrolling, from 0 to 15
   for (i = 0; i < 16; i++) {
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i], w[i]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i]+w[i]);
   }
 
 
@@ -61,12 +60,18 @@ void sha2_transform(base_type* _h, base_type* w) {
   // From 16 to W_SIZE (64)
   for (; i < W_SIZE; i=i+4) {
     int Rb = 8, Rc = 4;
+    base_type kplusw[4] __attribute__ ((aligned (16))) ;
     //int j = W_SIZE; // 64
     __asm__(
       "lvsl       7,0,%2\n\t"
       "lvsr       10,0,%3\n\t"
       "sldi       27,%1,2\n\t"    // j * 4 (word size)
+
+      "add        26,27,%4\n\t"
+
       "add        27,27,%0\n\t"   // alias to W[j] location
+
+      "lvx        11,0,26\n\t"
 
       "addi       26,27,-64\n\t"
       "lvx        0,0,26\n\t"     // load 4 words to vector: w[j-16] to w[j-13]
@@ -103,26 +108,26 @@ void sha2_transform(base_type* _h, base_type* w) {
       "vperm 5,5,5,7\n\t"         //v5 = s1(w[j-2]) ,s1(w[j-1]) ,s1(w[j]) ,s1(w[j+1])
 
       "vadduwm    9,8,5\n\t"      // v9 = v8[0]+s1(w[j-2]) ,v8[0]+s1(w[j-1]) ,v8[0]+s1(w[j]) ,v8[0]+s1(w[j+1])
-
-      "stvx       9,0,27\n\t"   // store it in W[j] to W[j+3]
+      "stvx       9,0,27\n\t"   // store the result in W[j] to W[j+3]
+      "vadduwm    9,9,11\n\t"
+      "stvx       9,0,%5\n\t"   // store k[0->3]+w[0->3] to kplusw
       :
-      :"r"(w), "r"(i), "r"(Rb), "r"(Rc)
-      :"r23", "r24", "r26","r27","v0","v1","v2","v3","v4","v5","v6","v7","v8",
-       "v9","v10","memory"
+      :"r"(w), "r"(i), "r"(Rb), "r"(Rc), "r"(k),"r"(kplusw)
+      :"r26","r27","v0","v1","v2","v3","v4","v5","v6","v7","v8",
+       "v9","v10","v11","memory"
     );
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i], w[i]);
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i+1], w[i+1]);
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i+2], w[i+2]);
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i+3], w[i+3]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[0]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[1]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[2]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[3]);
   }
 
 #else
 
   // From 16 to W_SIZE (64)
   for (; i < W_SIZE; i++) {
-
     w[i] = w[i-16] + SIGMA0(w[i-15]) + w[i-7] + SIGMA1(w[i-2]);
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i], w[i]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, w[i]+k[i]);
   }
 #endif
 
