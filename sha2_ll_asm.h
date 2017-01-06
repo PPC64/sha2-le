@@ -67,57 +67,70 @@ void sha2_transform(base_type* _h, base_type* w) {
     sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i]+w[i]);
   }
 
-
 #if SHA_BITS == 256
+  // Load 16 elements from w out of the loop
+  __asm__ volatile(
+    "lvsl       7,0,%[rb]\n\t"
+    "lvsr       10,0,%[rc]\n\t"
+    "sldi       27,%[index],2\n\t"    // j * 4 (word size)
+
+    "add        27,27,%[wptr]\n\t"    // alias to W[j] location
+
+    "addi       26,27,-64\n\t"
+    "lvx        0,0,26\n\t"           // load 4 words to vector: w[j-16] to w[j-13]
+
+    "addi       26,27,-48\n\t"
+    "lvx        1,0,26\n\t"           // load 4 words to vector: w[j-12] to w[j-9]
+
+    "addi       26,27,-32\n\t"
+    "lvx        2,0,26\n\t"           // load 4 words to vector: w[j-8] to w[j-5]
+
+    "addi       26,27,-16\n\t"
+    "lvx        3,0,26\n\t"           // load 4 words to vector: w[j-4] to w[j-1]
+    :
+    : [index] "r" (i), [rb] "r" (Rb), [rc] "r" (Rc), [wptr] "r" (w)
+    : "memory", "v0", "v1", "v2", "v3", "v7", "v10", "r26", "r27"
+  );
+
+  // BEWARE!!! we do *not* have a strong guarantee that the v register won't
+  // get dirty in between this two __asm__ calls.
+  // As of now, this is just a quick experiment and SHOULD be fixed.
+
   // From 16 to W_SIZE (64)
   for (; i < W_SIZE; i=i+4) {
     //int j = W_SIZE; // 64
     __asm__(
-      "lvsl       7,0,%[rb]\n\t"
-      "lvsr       10,0,%[rc]\n\t"
       "sldi       27,%[index],2\n\t"    // j * 4 (word size)
 
       "add        26,27,%[kptr]\n\t"
-
-      "add        27,27,%[wptr]\n\t"    // alias to W[j] location
-
       "lvx        11,0,26\n\t"
 
-      "addi       26,27,-64\n\t"
-      "lvx        0,0,26\n\t"           // load 4 words to vector: w[j-16] to w[j-13]
-
-      "addi       26,27,-48\n\t"
-      "lvx        1,0,26\n\t"           // load 4 words to vector: w[j-12] to w[j-9]
-
-      "addi       26,27,-32\n\t"
-      "lvx        2,0,26\n\t"           // load 4 words to vector: w[j-8] to w[j-5]
-
-      "addi       26,27,-16\n\t"
-      "lvx        3,0,26\n\t"           // load 4 words to vector: w[j-4] to w[j-1]
-
       "vperm      4,1,0,10\n\t"         // v4 = w[j-15], w[j-14], w[j-13], w[j-12]
-
-      "vperm      2,3,2,10\n\t"         // v2 = w[j-7], w[j-6], w[j-5], w[j-4]
-
-      "vperm      3,3,3,7\n\t"          // v3 = w[j-2], w[j-1], w[j-4], w[j-3]
+      "vperm      12,3,2,10\n\t"        // v12 = w[j-7], w[j-6], w[j-5], w[j-4]
+      "vperm      13,3,3,7\n\t"         // v13 = w[j-2], w[j-1], w[j-4], w[j-3]
 
       "vshasigmaw 4,4,0,0\n\t"          // v4 = s0(w[j-15]),s0(w[j-14]),s0(w[j-13]),s0(w[j-12])
-      "vshasigmaw 5,3,0,0xf\n\t"        // v5 = s1(w[j-2]) ,s1(w[j-1]) ,s1(w[j-4]) ,s1(w[j-3])
+      "vshasigmaw 5,13,0,0xf\n\t"       // v5 = s1(w[j-2]) ,s1(w[j-1]) ,s1(w[j-4]) ,s1(w[j-3])
 
-      "vadduwm    6,4,2\n\t"            // v6 = s0(w[j-15])+w[j-7],s0(w[j-14])+w[j-6],s0(w[j-13])+w[j-5],s0(w[j-12])+w[j-4]
+      "vadduwm    6,4,12\n\t"           // v6 = s0(w[j-15])+w[j-7],s0(w[j-14])+w[j-6],s0(w[j-13])+w[j-5],s0(w[j-12])+w[j-4]
       "vadduwm    8,6,0\n\t"            // v8 = v4[0]+w[j-16],v4[1]+w[j-15],v4[2]+w[j-14],v4[3]+w[j-13]
       "vadduwm    9,8,5\n\t"            // v9 = v8[0]+s1(w[j-2]) ,v8[0]+s1(w[j-1]) ,v8[0]+s1(w[j-2]) ,v8[0]+s1(w[j-1])
       // At this point, v9[0] and v9[1] are the correct values to be stored at w[0] and w[1]
       // v[2] and v[3] are not considered
       "vshasigmaw 0,9,0,0xf\n\t"        // v0 = s1(w[0]),s1(s(w[1]),... (the rest is undefined)
 
-//      "lvsr       7,0,%2\n\t"
       "vperm 0,0,0,7\n\t"               //TODO: review this!! There must be a more efficient way.
       "vperm 5,5,0,7\n\t"
       "vperm 5,5,5,7\n\t"               // v5 = s1(w[j-2]) ,s1(w[j-1]) ,s1(w[j]) ,s1(w[j+1])
 
       "vadduwm    9,8,5\n\t"            // v9 = v8[0]+s1(w[j-2]) ,v8[0]+s1(w[j-1]) ,v8[0]+s1(w[j]) ,v8[0]+s1(w[j+1])
-      "stvx       9,0,27\n\t"           // store the result in W[j] to W[j+3]
+
+      // Updating v0-v3 to hold the "new previous" 16 values from w.
+      "vmr        0,1\n\t"              // move v1 to v0
+      "vmr        1,2\n\t"              // move v2 to v1
+      "vmr        2,3\n\t"              // move v3 to v2
+      "vmr        3,9\n\t"              // move v9 to v3
+
       "vadduwm    9,9,11\n\t"
       "stvx       9,0,%[kpluswptr]\n\t" // store k[0->3]+w[0->3] to kplusw
       :
@@ -125,7 +138,7 @@ void sha2_transform(base_type* _h, base_type* w) {
        [rc]"r"(Rc)  , [kptr]"r"(k),[wptr]"r"(w),
        [kpluswptr]"r"(kplusw)
       :"r26","r27","v0","v1","v2","v3","v4","v5","v6","v7","v8",
-       "v9","v10","v11","memory"
+       "v9","v10","v11","v12","v13","memory"
     );
     sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[0]);
     sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[1]);
