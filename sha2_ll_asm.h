@@ -23,8 +23,9 @@
 #define SIGMA1(x) (ROTR((x), s1_args[0]) ^ ROTR((x), s1_args[1]) ^ \
   SHR((x), s1_args[2]))
 
-void static inline sha2_round(base_type *a, base_type *b, base_type *c, base_type *d, base_type
-                           *e, base_type *f, base_type *g, base_type *h, base_type kplusw) {
+void static inline sha2_round(base_type* a, base_type* b, base_type* c,
+                              base_type* d, base_type* e, base_type* f,
+                              base_type* g, base_type* h, base_type kplusw) {
 
   base_type tmp1, tmp2;
 
