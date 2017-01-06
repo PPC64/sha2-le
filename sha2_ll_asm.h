@@ -44,6 +44,13 @@ void static inline sha2_round(base_type* a, base_type* b, base_type* c,
 
 void sha2_transform(base_type* _h, base_type* w) {
   base_type a, b, c, d, e, f, g, h;
+  int Rb = 8;
+#if SHA_BITS == 256
+  int Rc = 4;
+  base_type kplusw[4] __attribute__ ((aligned (16))) ;
+#else
+  base_type kplusw[2] __attribute__ ((aligned (16))) ;
+#endif
   int i;
 
   a = _h[0];
@@ -64,8 +71,6 @@ void sha2_transform(base_type* _h, base_type* w) {
 #if SHA_BITS == 256
   // From 16 to W_SIZE (64)
   for (; i < W_SIZE; i=i+4) {
-    int Rb = 8, Rc = 4;
-    base_type kplusw[4] __attribute__ ((aligned (16))) ;
     //int j = W_SIZE; // 64
     __asm__(
       "lvsl       7,0,%[rb]\n\t"
@@ -129,11 +134,63 @@ void sha2_transform(base_type* _h, base_type* w) {
   }
 
 #else
-
   // From 16 to W_SIZE (64)
-  for (; i < W_SIZE; i++) {
-    w[i] = w[i-16] + SIGMA0(w[i-15]) + w[i-7] + SIGMA1(w[i-2]);
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, w[i]+k[i]);
+  for (; i < W_SIZE; i=i+2) {
+    __asm__(
+      "lvsl       7,0,%[rb]\n\t"
+      "sldi       27,%[index],3\n\t"    // j * 4 (word size)
+
+      "add        26,27,%[kptr]\n\t"
+
+      "add        27,27,%[wptr]\n\t"    // alias to W[j] location
+
+      "lvx        11,0,26\n\t"
+
+      "addi       26,27,-128\n\t"
+      "lvx        0,0,26\n\t"           // load 2 dwords to vector: w[j-16] to
+                                        // w[j-15]
+
+      "addi       26,27,-112\n\t"
+      "lvx        1,0,26\n\t"           // load 2 words to vector: w[j-14] to
+                                        // w[j-13]
+
+      "addi       26,27,-64\n\t"
+      "lvx        2,0,26\n\t"           // load 2 words to vector: w[j-8] to
+                                        // w[j-7]
+
+      "addi       26,27,-48\n\t"
+      "lvx        3,0,26\n\t"           // load 2 words to vector: w[j-6] to
+                                        // w[j-5]
+
+      "addi       26,27,-16\n\t"
+      "lvx        4,0,26\n\t"           // load 2 words to vector: w[j-2] to
+                                        // w[j-1]
+
+      "vperm      1,1,0,7\n\t"          // v1 = w[j-15], w[j-14]
+
+      "vperm      2,3,2,7\n\t"          // v2 = w[j-7], w[j-6]
+
+      "vshasigmad 1,1,0,0\n\t"          // v1 = s0(w[j-15]),s0(w[j-14])
+      "vshasigmad 4,4,0,0xf\n\t"        // v4 = s1(w[j-2]) ,s1(w[j-1])
+
+      "vaddudm    1,1,2\n\t"            // v1 = s0(w[j-15])+w[j-7],
+                                        //      s0(w[j-14])+w[j-6]
+      "vaddudm    4,4,0\n\t"            // v4 = s1(w[j-2])+w[j-16],
+                                        //      s1(w[j-1])+w[j-15]
+      "vaddudm    1,1,4\n\t"            // v1 = v1[0]+v4[0],v1[1]+v4[1]
+
+      "stvx       1,0,27\n\t"           // store the result in w[j] to w[j+1]
+      "vaddudm    1,1,11\n\t"
+      "stvx       1,0,%[kpluswptr]\n\t" // store k[0->1]+w[0->1] to kplusw
+      :
+      :[index]"r"(i), [rb]"r"(Rb),"wptr" "r" (w),"kpluswptr" "r" (kplusw),
+       [kptr]"r"(k),[wptr]"r"(w),
+       [kpluswptr]"r"(kplusw)
+      :"r26","r27","v0","v1","v2","v3","v4","memory"
+    );
+
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[0]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[1]);
   }
 #endif
 
