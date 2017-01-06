@@ -1,6 +1,6 @@
 .PHONY: all test tests clean
 
-CFLAGS=-O3 -g -Wall -fPIC -fno-omit-frame-pointer
+CFLAGS=-O3 -g -Wall -fPIC -fno-omit-frame-pointer -fsanitize=address,undefined
 BIN_DIR=./bin
 PERFTXT = $(BIN_DIR)/perfexample.txt
 
@@ -69,9 +69,9 @@ perf:
 		seq 1 100000 >> $(PERFTXT) ;\
 	done
 	echo -n "\n\nC implementation  : " ;\
-	sudo perf stat bin/sha256 $(PERFTXT)  2>&1 | tail -n 2 ;\
+	sudo perf stat -r 10 bin/sha256 $(PERFTXT)  2>&1 | tail -n 2 ;\
 	echo -n "ASM implementation: " ;\
-	sudo perf stat bin/sha256_ll_asm $(PERFTXT) 2>&1 | tail -n 2
+	sudo perf stat -r 10 bin/sha256_ll_asm $(PERFTXT) 2>&1 | tail -n 2
 
 clean:
 	rm -f $(BINS) $(TESTS)
