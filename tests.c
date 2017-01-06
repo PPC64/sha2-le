@@ -8,7 +8,7 @@ void print_error(int line) {
 }
 
 void print_error_arg(int line, size_t arg) {
-  printf("ERROR on line %d! Output: %zu\n", line, arg);
+  printf("ERROR on line %d! Output: %lu\n", line, arg);
   error_occured = 1;
 }
 
@@ -20,18 +20,18 @@ int main () {
 #if SHA_BITS==256
 #if (LOW_LEVEL != 1) && (LOW_LEVEL != 2)
   n = 1; b= 2;
-  if (ROTR(n, b) != 0x40000000) print_error(__LINE__);
+  if (ROTR(n, b) != 0x40000000) print_error_arg(__LINE__, ROTR(n, b));
 
   n = 2; b = 2;
-  if (ROTR(n, b) != 0x80000000) print_error(__LINE__);
+  if (ROTR(n, b) != 0x80000000) print_error_arg(__LINE__, ROTR(n, b));
 
-  if(SIGMA0(0x80000) != 0x11002) print_error(__LINE__);
+  if(SIGMA0(0x80000U) != 0x11002) print_error(__LINE__);
 
-  if(SIGMA1(0x800000) != 0x2050) print_error(__LINE__);
+  if(SIGMA1(0x800000U) != 0x2050) print_error(__LINE__);
 
-  if(BIGSIGMA0(0x8000000) != 0x2004020) print_error(__LINE__);
+  if(BIGSIGMA0(0x8000000U) != 0x2004020) print_error(__LINE__);
 
-  if(BIGSIGMA1(0x8000000) != 0x210004) print_error(__LINE__);
+  if(BIGSIGMA1(0x8000000U) != 0x210004) print_error(__LINE__);
 #endif
 
   size_t size, padded_size;
@@ -81,18 +81,18 @@ int main () {
 #if SHA_BITS==512
 #if (LOW_LEVEL != 1) && (LOW_LEVEL != 2)
   n = 1; b = 2;
-  if (ROTR(n, b) != 0x4000000000000000) print_error_arg(__LINE__, ROTR(1,2));
+  if (ROTR(n, b) != 0x4000000000000000) print_error_arg(__LINE__, ROTR(n,b));
 
   n = 2; b = 2;
-  if (ROTR(n, b) != 0x8000000000000000) print_error_arg(__LINE__, ROTR(2,2));
+  if (ROTR(n, b) != 0x8000000000000000) print_error_arg(__LINE__, ROTR(n,b));
 
-  if (SIGMA0(0x80000) != 0x41800) print_error(__LINE__);
+  if (SIGMA0(0x80000UL) != 0x41800) print_error(__LINE__);
 
-  if (SIGMA1(0x4000000000000000) != 0x100080000000002) print_error(__LINE__);
+  if (SIGMA1(0x4000000000000000UL) != 0x100080000000002) print_error(__LINE__);
 
-  if (BIGSIGMA0(0x4000000000000000) != 0x410800000) print_error(__LINE__);
+  if (BIGSIGMA0(0x4000000000000000UL) != 0x410800000) print_error(__LINE__);
 
-  if (BIGSIGMA1(0x4000000000000000) != 0x1100000200000) print_error(__LINE__);
+  if (BIGSIGMA1(0x4000000000000000UL) != 0x1100000200000) print_error(__LINE__);
 #endif
 
   size_t size, padded_size;
