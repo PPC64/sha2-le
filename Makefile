@@ -2,7 +2,8 @@
 
 CFLAGS=-O3 -g -Wall -fPIC -fno-omit-frame-pointer
 BIN_DIR=./bin
-PERFTXT = $(BIN_DIR)/perfexample.txt
+PERFTXT= $(BIN_DIR)/perfexample.txt
+PERF_ITERS=10 #number of perf stat iterations
 
 BINS  = $(BIN_DIR)/sha256 $(BIN_DIR)/sha256_ll_intrinsics \
 				$(BIN_DIR)/sha256_ll_asm $(BIN_DIR)/sha512 \
@@ -71,14 +72,14 @@ perf:
 
 	echo -n "\n\nSHA 256\n";\
 	echo -n "C implementation  : " ;\
-	sudo perf stat -r 5 bin/sha256 $(PERFTXT)  2>&1 | tail -n 2 ;\
+	sudo perf stat -r $(PERF_ITERS) bin/sha256 $(PERFTXT)  2>&1 | tail -n 2 ;\
 	echo -n "ASM implementation: " ;\
-	sudo perf stat -r 5  bin/sha256_ll_asm $(PERFTXT) 2>&1 | tail -n 2;\
+	sudo perf stat -r $(PERF_ITERS)  bin/sha256_ll_asm $(PERFTXT) 2>&1 | tail -n 2;\
 	echo -n "\n\nSHA 512\n";\
 	echo -n "C implementation  : " ;\
-	sudo perf stat -r 5 bin/sha512 $(PERFTXT)  2>&1 | tail -n 2 ;\
+	sudo perf stat -r $(PERF_ITERS) bin/sha512 $(PERFTXT)  2>&1 | tail -n 2 ;\
 	echo -n "ASM implementation: " ;\
-	sudo perf stat -r 5 bin/sha512_ll_asm $(PERFTXT) 2>&1 | tail -n 2
+	sudo perf stat -r $(PERF_ITERS) bin/sha512_ll_asm $(PERFTXT) 2>&1 | tail -n 2
 
 clean:
 	rm -f $(BINS) $(TESTS)
