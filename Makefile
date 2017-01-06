@@ -68,10 +68,17 @@ perf:
 	do \
 		seq 1 100000 >> $(PERFTXT) ;\
 	done
-	echo -n "\n\nC implementation  : " ;\
-	sudo perf stat -r 10 bin/sha256 $(PERFTXT)  2>&1 | tail -n 2 ;\
+
+	echo -n "\n\nSHA 256\n";\
+	echo -n "C implementation  : " ;\
+	sudo perf stat -r 5 bin/sha256 $(PERFTXT)  2>&1 | tail -n 2 ;\
 	echo -n "ASM implementation: " ;\
-	sudo perf stat -r 10 bin/sha256_ll_asm $(PERFTXT) 2>&1 | tail -n 2
+	sudo perf stat -r 5  bin/sha256_ll_asm $(PERFTXT) 2>&1 | tail -n 2;\
+	echo -n "\n\nSHA 512\n";\
+	echo -n "C implementation  : " ;\
+	sudo perf stat -r 5 bin/sha512 $(PERFTXT)  2>&1 | tail -n 2 ;\
+	echo -n "ASM implementation: " ;\
+	sudo perf stat -r 5 bin/sha512_ll_asm $(PERFTXT) 2>&1 | tail -n 2
 
 clean:
 	rm -f $(BINS) $(TESTS)
