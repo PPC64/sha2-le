@@ -74,12 +74,16 @@ perf:
 	echo -n "C implementation  : " ;\
 	sudo perf stat -r $(PERF_ITERS) bin/sha256 $(PERFTXT)  2>&1 | tail -n 2 ;\
 	echo -n "ASM implementation: " ;\
-	sudo perf stat -r $(PERF_ITERS)  bin/sha256_ll_asm $(PERFTXT) 2>&1 | tail -n 2;\
+	sudo perf stat -r $(PERF_ITERS) bin/sha256_ll_asm $(PERFTXT) 2>&1 | tail -n 2;\
+	echo -n "Intrinsics implementation: " ;\
+	sudo perf stat -r $(PERF_ITERS) bin/sha256_ll_intrinsics $(PERFTXT) 2>&1 | tail -n 2;\
 	echo -n "\n\nSHA 512\n";\
 	echo -n "C implementation  : " ;\
 	sudo perf stat -r $(PERF_ITERS) bin/sha512 $(PERFTXT)  2>&1 | tail -n 2 ;\
 	echo -n "ASM implementation: " ;\
-	sudo perf stat -r $(PERF_ITERS) bin/sha512_ll_asm $(PERFTXT) 2>&1 | tail -n 2
+	sudo perf stat -r $(PERF_ITERS) bin/sha512_ll_asm $(PERFTXT) 2>&1 | tail -n 2 ;\
+	echo -n "Intrinsics implementation: " ;\
+	sudo perf stat -r $(PERF_ITERS) bin/sha512_ll_intrinsics $(PERFTXT) 2>&1 | tail -n 2;\
 
 clean:
 	rm -f $(BINS) $(TESTS)
