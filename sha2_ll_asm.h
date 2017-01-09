@@ -121,9 +121,8 @@ void sha2_transform(base_type* _h, base_type* w) {
       "vadduwm    9,9,11\n\t"
       "stvx       9,0,%[kpluswptr]\n\t" // store k[0->3]+w[0->3] to kplusw
       :
-      :[index]"r"(i), [rb]"r"(Rb),"wptr" "r" (w),"kpluswptr" "r" (kplusw),
-       [rc]"r"(Rc)  , [kptr]"r"(k),[wptr]"r"(w),
-       [kpluswptr]"r"(kplusw)
+      :[index]"r"(i), [rb]  "r"(Rb), [rc]       "r"(Rc),
+       [kptr] "r"(k), [wptr]"r"(w),  [kpluswptr]"r"(kplusw)
       :"r26","r27","v0","v1","v2","v3","v4","v5","v6","v7","v8",
        "v9","v10","v11","memory"
     );
@@ -183,9 +182,8 @@ void sha2_transform(base_type* _h, base_type* w) {
       "vaddudm    1,1,11\n\t"
       "stvx       1,0,%[kpluswptr]\n\t" // store k[0->1]+w[0->1] to kplusw
       :
-      :[index]"r"(i), [rb]"r"(Rb),"wptr" "r" (w),"kpluswptr" "r" (kplusw),
-       [kptr]"r"(k),[wptr]"r"(w),
-       [kpluswptr]"r"(kplusw)
+      :[index]"r"(i), [rb]"r"(Rb), [kptr]"r"(k), [kpluswptr]"r"(kplusw),
+       [wptr] "r"(w)
       :"r26","r27","v0","v1","v2","v3","v4","memory"
     );
 
