@@ -99,12 +99,15 @@ void swap_bytes(char *input, char *output, size_t size) {
   }
 }
 
+// TODO(rcardoso): I am not sure how this algorithm will work for SHA512. How
+// this write the high 64 bits of length?
 void write_size(char *input, size_t size, size_t position) {
   base_type* total_size = (base_type*)&input[position];
-#if SHA_BITS == 256 // for SHA_BITS == 512 it's undefined: uint64_t >> 64
-  *total_size = (base_type)(size >> base_type_size*8) * 8; // higher bits
-#endif
-  *(++total_size) = (base_type)size * 8;                   // lower bits
+  // Undefined for SHA512. Right shift count >= width of type (uint64_t)
+  #if SHA_BITS == 256
+  *total_size = (base_type)((size * 8) >> 32); // higher bits
+  #endif
+  *(++total_size) = (base_type)size * 8; // lower bits
 }
 
 int sha2(char *input, size_t size, size_t padded_size) {
@@ -124,7 +127,7 @@ int sha2(char *input, size_t size, size_t padded_size) {
   write_size(input_swapped, size, padded_size - 2 * base_type_size);
 
   // Sha compression process.
-  for (int i = 0; i < padded_size; i = i + BLOCK_SIZE) {
+  for (size_t i = 0; i < padded_size; i = i + BLOCK_SIZE) {
     base_type w[W_SIZE] __attribute__ ((aligned (16)));
     memcpy(w, input_swapped + i, 16 * sizeof(base_type));
     sha2_transform(_h, w);
