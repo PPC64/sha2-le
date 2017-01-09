@@ -70,9 +70,11 @@ void sha2_transform(base_type* _h, base_type* w) {
   }
 #elif SHA_BITS == 512
   for (; t < W_SIZE; t++) {
-    //sig0  = w[t-15];
-    //sig1  = w[t-2];
-    sigma = (vector_base_type) { w[t-15], w[t-2] };
+   // TODO(rcardoso): for some reason fill vector using
+   // sigma = (vector_base_type) { w[t-15], w[t-2] } give us wrong result
+   // for sha512 when compile with -O3.
+   sigma[0] = w[t-15];
+   sigma[1] = w[t-2];
     sigma = __builtin_crypto_vshasigmad(sigma, 0, 0xD);
     w[t] = sigma[1] + w[t-7] + sigma[0] + w[t-16];
     sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[t], w[t]);
