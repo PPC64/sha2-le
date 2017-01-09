@@ -147,59 +147,80 @@ void sha2_transform(base_type* _h, base_type* w) {
   }
 
 #else
+  // Load 16 elements from w out of the loop
+  __asm__ volatile(
+    "lvsl       8,0,%[rb]\n\t"
+    "sldi       27,%[index],3\n\t"    // j * 4 (word size)
+
+    "add        27,27,%[wptr]\n\t"    // alias to W[j] location
+
+    "addi       26,27,-128\n\t"
+    "lvx        0,0,26\n\t"           // load 4 words to vector: w[j-16] to w[j-15]
+
+    "addi       26,27,-112\n\t"
+    "lvx        1,0,26\n\t"           // load 4 words to vector: w[j-14] to w[j-13]
+
+    "addi       26,27,-96\n\t"
+    "lvx        2,0,26\n\t"           // load 4 words to vector: w[j-12] to w[j-11]
+
+    "addi       26,27,-80\n\t"
+    "lvx        3,0,26\n\t"           // load 4 words to vector: w[j-10] to w[j-9]
+
+    "addi       26,27,-64\n\t"
+    "lvx        4,0,26\n\t"           // load 4 words to vector: w[j-8] to w[j-7]
+
+    "addi       26,27,-48\n\t"
+    "lvx        5,0,26\n\t"           // load 4 words to vector: w[j-6] to w[j-5]
+
+    "addi       26,27,-32\n\t"
+    "lvx        6,0,26\n\t"           // load 4 words to vector: w[j-4] to w[j-3]
+
+    "addi       26,27,-16\n\t"
+    "lvx        7,0,26\n\t"           // load 4 words to vector: w[j-2] to w[j-1]
+    :
+    : [index] "r" (i), [rb] "r" (Rb), [wptr] "r" (w)
+    : "memory", "v0", "v1", "v2", "v3", "v4",
+      "v5", "v6", "v7","v8", "r26", "r27"
+  );
+
   // From 16 to W_SIZE (64)
   for (; i < W_SIZE; i=i+2) {
     __asm__(
-      "lvsl       7,0,%[rb]\n\t"
       "sldi       27,%[index],3\n\t"    // j * 4 (word size)
 
       "add        26,27,%[kptr]\n\t"
 
-      "add        27,27,%[wptr]\n\t"    // alias to W[j] location
-
       "lvx        11,0,26\n\t"
 
-      "addi       26,27,-128\n\t"
-      "lvx        0,0,26\n\t"           // load 2 dwords to vector: w[j-16] to
-                                        // w[j-15]
+      "vperm      9,1,0,8\n\t"          // v9 = w[j-15], w[j-14]
 
-      "addi       26,27,-112\n\t"
-      "lvx        1,0,26\n\t"           // load 2 words to vector: w[j-14] to
-                                        // w[j-13]
+      "vperm      10,5,4,8\n\t"         // v10 = w[j-7], w[j-6]
 
-      "addi       26,27,-64\n\t"
-      "lvx        2,0,26\n\t"           // load 2 words to vector: w[j-8] to
-                                        // w[j-7]
+      "vshasigmad 9,9,0,0\n\t"          // v9 = s0(w[j-15]),s0(w[j-14])
+      "vshasigmad 12,7,0,0xf\n\t"       // v12 = s1(w[j-2]) ,s1(w[j-1])
 
-      "addi       26,27,-48\n\t"
-      "lvx        3,0,26\n\t"           // load 2 words to vector: w[j-6] to
-                                        // w[j-5]
-
-      "addi       26,27,-16\n\t"
-      "lvx        4,0,26\n\t"           // load 2 words to vector: w[j-2] to
-                                        // w[j-1]
-
-      "vperm      1,1,0,7\n\t"          // v1 = w[j-15], w[j-14]
-
-      "vperm      2,3,2,7\n\t"          // v2 = w[j-7], w[j-6]
-
-      "vshasigmad 1,1,0,0\n\t"          // v1 = s0(w[j-15]),s0(w[j-14])
-      "vshasigmad 4,4,0,0xf\n\t"        // v4 = s1(w[j-2]) ,s1(w[j-1])
-
-      "vaddudm    1,1,2\n\t"            // v1 = s0(w[j-15])+w[j-7],
+      "vaddudm    9,9,10\n\t"           // v9 = s0(w[j-15])+w[j-7],
                                         //      s0(w[j-14])+w[j-6]
-      "vaddudm    4,4,0\n\t"            // v4 = s1(w[j-2])+w[j-16],
+      "vaddudm    0,12,0\n\t"           // v0 = s1(w[j-2])+w[j-16],
                                         //      s1(w[j-1])+w[j-15]
-      "vaddudm    1,1,4\n\t"            // v1 = v1[0]+v4[0],v1[1]+v4[1]
+      "vaddudm    9,9,0\n\t"            // v9 = v1[0]+v4[0],v1[1]+v4[1]
 
-      "stvx       1,0,27\n\t"           // store the result in w[j] to w[j+1]
-      "vaddudm    1,1,11\n\t"
-      "stvx       1,0,%[kpluswptr]\n\t" // store k[0->1]+w[0->1] to kplusw
+      "vmr        0,1\n\t"
+      "vmr        1,2\n\t"
+      "vmr        2,3\n\t"
+      "vmr        3,4\n\t"
+      "vmr        4,5\n\t"
+      "vmr        5,6\n\t"
+      "vmr        6,7\n\t"
+      "vmr        7,9\n\t"
+
+      "vaddudm    9,9,11\n\t"           // Add w+k
+      "stvx       9,0,%[kpluswptr]\n\t" // store k[0->1]+w[0->1] to kplusw
       :
-      :[index]"r"(i), [rb]"r"(Rb),"wptr" "r" (w),"kpluswptr" "r" (kplusw),
-       [kptr]"r"(k),[wptr]"r"(w),
+      :[index]"r"(i) ,"kpluswptr" "r" (kplusw), [kptr]"r"(k),
        [kpluswptr]"r"(kplusw)
-      :"r26","r27","v0","v1","v2","v3","v4","memory"
+      :"r26","r27","v0","v1","v2","v3","v4",
+       "v5","v6","v7","v8","v9","v10","v11","v12","memory"
     );
 
     sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[0]);
