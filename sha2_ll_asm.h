@@ -126,10 +126,10 @@ void sha2_transform(base_type* _h, base_type* w) {
       "vadduwm    9,8,5\n\t"            // v9 = v8[0]+s1(w[j-2]) ,v8[0]+s1(w[j-1]) ,v8[0]+s1(w[j]) ,v8[0]+s1(w[j+1])
 
       // Updating v0-v3 to hold the "new previous" 16 values from w.
-      "vmr        0,1\n\t"              // move v1 to v0
-      "vmr        1,2\n\t"              // move v2 to v1
-      "vmr        2,3\n\t"              // move v3 to v2
-      "vmr        3,9\n\t"              // move v9 to v3
+      "vor        0,1,1\n\t"              // move v1 to v0
+      "vor        1,2,2\n\t"              // move v2 to v1
+      "vor        2,3,3\n\t"              // move v3 to v2
+      "vor        3,9,9\n\t"              // move v9 to v3
 
       "vadduwm    9,9,11\n\t"
       "stvx       9,0,%[kpluswptr]\n\t" // store k[0->3]+w[0->3] to kplusw
@@ -205,14 +205,14 @@ void sha2_transform(base_type* _h, base_type* w) {
                                         //      s1(w[j-1])+w[j-15]
       "vaddudm    9,9,0\n\t"            // v9 = v1[0]+v4[0],v1[1]+v4[1]
 
-      "vmr        0,1\n\t"
-      "vmr        1,2\n\t"
-      "vmr        2,3\n\t"
-      "vmr        3,4\n\t"
-      "vmr        4,5\n\t"
-      "vmr        5,6\n\t"
-      "vmr        6,7\n\t"
-      "vmr        7,9\n\t"
+      "vor        0,1,1\n\t"
+      "vor        1,2,2\n\t"
+      "vor        2,3,3\n\t"
+      "vor        3,4,4\n\t"
+      "vor        4,5,5\n\t"
+      "vor        5,6,6\n\t"
+      "vor        6,7,7\n\t"
+      "vor        7,9,9\n\t"
 
       "vaddudm    9,9,11\n\t"           // Add w+k
       "stvx       9,0,%[kpluswptr]\n\t" // store k[0->1]+w[0->1] to kplusw
