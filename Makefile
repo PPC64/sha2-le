@@ -1,9 +1,10 @@
-.PHONY: all test tests clean
+.PHONY: all test tests clean perf
 
 CFLAGS=-O3 -g -Wall -fPIC -fno-omit-frame-pointer
 BIN_DIR=./bin
-PERFTXT= $(BIN_DIR)/perfexample.txt
-PERF_ITERS=10 #number of perf stat iterations
+PERFTXT=$(BIN_DIR)/perfexample.txt
+# Number of perf stat iterations
+PERF_ITERS=10
 
 BINS  = $(BIN_DIR)/sha256 $(BIN_DIR)/sha256_ll_intrinsics \
 				$(BIN_DIR)/sha256_ll_asm $(BIN_DIR)/sha512 \
@@ -62,28 +63,28 @@ test: $(BINS) $(TESTS)
 
 tests: test
 
-perf:
-	# Generating a 56M file
-	rm -f $(PERFTXT) ;\
-	for i in `seq 99` ;\
-	do \
-		seq 1 100000 >> $(PERFTXT) ;\
+perf: all
+	@# Generating a 56M file
+	@rm -f $(PERFTXT)
+	@for i in `seq 99`; do        \
+		seq 1 100000 >> $(PERFTXT); \
 	done
 
-	echo -n "\n\nSHA 256\n";\
-	echo -n "C implementation  : " ;\
-	sudo perf stat -r $(PERF_ITERS) bin/sha256 $(PERFTXT)  2>&1 | tail -n 2 ;\
-	echo -n "ASM implementation: " ;\
-	sudo perf stat -r $(PERF_ITERS) bin/sha256_ll_asm $(PERFTXT) 2>&1 | tail -n 2;\
-	echo -n "Intrinsics implementation: " ;\
-	sudo perf stat -r $(PERF_ITERS) bin/sha256_ll_intrinsics $(PERFTXT) 2>&1 | tail -n 2;\
-	echo -n "\n\nSHA 512\n";\
-	echo -n "C implementation  : " ;\
-	sudo perf stat -r $(PERF_ITERS) bin/sha512 $(PERFTXT)  2>&1 | tail -n 2 ;\
-	echo -n "ASM implementation: " ;\
-	sudo perf stat -r $(PERF_ITERS) bin/sha512_ll_asm $(PERFTXT) 2>&1 | tail -n 2 ;\
-	echo -n "Intrinsics implementation: " ;\
-	sudo perf stat -r $(PERF_ITERS) bin/sha512_ll_intrinsics $(PERFTXT) 2>&1 | tail -n 2;\
+	@echo "SHA 256"
+	@echo -n "C implementation:          "
+	@sudo perf stat -r $(PERF_ITERS) bin/sha256               $(PERFTXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
+	@echo -n "ASM implementation:        "
+	@sudo perf stat -r $(PERF_ITERS) bin/sha256_ll_asm        $(PERFTXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
+	@echo -n "Intrinsics implementation: "
+	@sudo perf stat -r $(PERF_ITERS) bin/sha256_ll_intrinsics $(PERFTXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
+
+	@echo "\nSHA 512"
+	@echo -n "C implementation:          "
+	@sudo perf stat -r $(PERF_ITERS) bin/sha512               $(PERFTXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
+	@echo -n "ASM implementation:        "
+	@sudo perf stat -r $(PERF_ITERS) bin/sha512_ll_asm        $(PERFTXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
+	@echo -n "Intrinsics implementation: "
+	@sudo perf stat -r $(PERF_ITERS) bin/sha512_ll_intrinsics $(PERFTXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
 
 clean:
 	rm -f $(BINS) $(TESTS)
