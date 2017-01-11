@@ -47,7 +47,7 @@ void sha2_transform(base_type* _h, base_type* w) {
   vector_base_type kplusw;
   int Rb = 8;
   vector int vRb;
-  int i;
+  int j;
 
   a = _h[0];
   b = _h[1];
@@ -59,8 +59,8 @@ void sha2_transform(base_type* _h, base_type* w) {
   h = _h[7];
 
   // Loop unrolling, from 0 to 15
-  for (i = 0; i < 16; i++) {
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i] + w[i]);
+  for (j = 0; j < 16; j++) {
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[j] + w[j]);
   }
 
 #if SHA_BITS == 256
@@ -101,7 +101,7 @@ void sha2_transform(base_type* _h, base_type* w) {
       [vrb] "=v" (vRb),
       [vrc] "=v" (vRc)
     : // input list
-      [index] "r" (i),
+      [index] "r" (j),
       [rb] "r" (Rb),
       [rc] "r" (Rc),
       [wptr] "r" (w)
@@ -110,8 +110,7 @@ void sha2_transform(base_type* _h, base_type* w) {
   );
 
   // From 16 to W_SIZE (64)
-  for (; i < W_SIZE; i=i+4) {
-    //int j = W_SIZE; // 64
+  for (; j < W_SIZE; j = j + 4) {
     __asm__ volatile (
       "sldi       27,%[index],2\n\t"        // j * 4 (word size)
 
@@ -184,7 +183,7 @@ void sha2_transform(base_type* _h, base_type* w) {
         [w3_out] "=v" (w3),
         [kplusw] "=v" (kplusw)
       : // input list
-        [index] "r" (i),
+        [index] "r" (j),
         [vrb] "v" (vRb),
         [vrc] "v" (vRc),
         [kptr] "r" (k),
@@ -256,7 +255,7 @@ void sha2_transform(base_type* _h, base_type* w) {
       [w6] "=v" (w6),
       [w7] "=v" (w7)
     : // input list
-      [index] "r" (i),
+      [index] "r" (j),
       [rb] "r" (Rb),
       [wptr] "r" (w)
     : // clobber list
@@ -264,7 +263,7 @@ void sha2_transform(base_type* _h, base_type* w) {
   );
 
   // From 16 to W_SIZE (64)
-  for (; i < W_SIZE; i = i + 2) {
+  for (; j < W_SIZE; j = j + 2) {
     __asm__ volatile (
       "sldi       27,%[index],3\n\t"          // j * 8 (doubleword size)
       "add        26,27,%[kptr]\n\t"          // alias to k[j] location
@@ -308,7 +307,7 @@ void sha2_transform(base_type* _h, base_type* w) {
         [w7_out] "=v" (w7),
         [kplusw] "=v" (kplusw)
       : // input list
-        [index] "r" (i),
+        [index] "r" (j),
         [kptr] "r" (k),
         [vrb] "v" (vRb),
         [w0] "[w0_out]" (w0),
