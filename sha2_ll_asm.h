@@ -44,13 +44,9 @@ void static inline sha2_round(base_type* a, base_type* b, base_type* c,
 
 void sha2_transform(base_type* _h, base_type* w) {
   base_type a, b, c, d, e, f, g, h;
+  vector_base_type kplusw;
   int Rb = 8;
   vector int vRb;
-#if SHA_BITS == 256
-  base_type kplusw[4] __attribute__ ((aligned (16))) ;
-#else
-  base_type kplusw[2] __attribute__ ((aligned (16))) ;
-#endif
   int i;
 
   a = _h[0];
@@ -179,21 +175,20 @@ void sha2_transform(base_type* _h, base_type* w) {
       "vor        %[w3_out],9,9\n\t"
 
       // store k + w to kplusw (4 values at once)
-      "vadduwm    9,9,11\n\t"
-      "stvx       9,0,%[kpluswptr]\n\t"
+      "vadduwm    %[kplusw],9,11\n\t"
 
       : // output list
         [w0_out] "=v" (w0),
         [w1_out] "=v" (w1),
         [w2_out] "=v" (w2),
-        [w3_out] "=v" (w3)
+        [w3_out] "=v" (w3),
+        [kplusw] "=v" (kplusw)
       : // input list
         [index] "r" (i),
         [vrb] "v" (vRb),
         [vrc] "v" (vRc),
         [kptr] "r" (k),
         [wptr] "r" (w),
-        [kpluswptr] "r" (kplusw),
         [w0] "[w0_out]" (w0),
         [w1] "[w1_out]" (w1),
         [w2] "[w2_out]" (w2),
@@ -300,8 +295,7 @@ void sha2_transform(base_type* _h, base_type* w) {
       "vor        %[w7_out],9,9\n\t"
 
       // store k + w to kplusw (2 values at once)
-      "vaddudm    9,9,11\n\t"
-      "stvx       9,0,%[kpluswptr]\n\t"
+      "vaddudm    %[kplusw],9,11\n\t"
 
       : // output list
         [w0_out] "=v" (w0),
@@ -311,10 +305,10 @@ void sha2_transform(base_type* _h, base_type* w) {
         [w4_out] "=v" (w4),
         [w5_out] "=v" (w5),
         [w6_out] "=v" (w6),
-        [w7_out] "=v" (w7)
+        [w7_out] "=v" (w7),
+        [kplusw] "=v" (kplusw)
       : // input list
         [index] "r" (i),
-        [kpluswptr] "r" (kplusw),
         [kptr] "r" (k),
         [vrb] "v" (vRb),
         [w0] "[w0_out]" (w0),
