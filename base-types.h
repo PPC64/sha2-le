@@ -6,8 +6,8 @@
 
 #if SHA_BITS == 256
 
-typedef uint32_t base_type;
-typedef vector unsigned int vector_base_type;
+// Using define instead of typedef due to 'vector base_type' on clang
+#define base_type unsigned int
 
 static const base_type k[64] __attribute__ ((aligned (16))) = {
   0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
@@ -40,8 +40,8 @@ static const base_type s1_args[] = {17, 19, 10};
 
 #elif SHA_BITS == 512
 
-typedef uint64_t base_type;
-typedef vector unsigned long vector_base_type;
+// Using define instead of typedef due to 'vector base_type' on clang
+#define base_type unsigned long long
 
 static const base_type k[80] __attribute__ ((aligned (16))) = {
   0x428a2f98d728ae22, 0x7137449123ef65cd, 0xb5c0fbcfec4d3b2f,
@@ -89,6 +89,7 @@ static const base_type s1_args[] = {19, 61,  6};
 
 static const size_t base_type_size = sizeof(base_type);
 extern base_type _h[8];
+typedef vector base_type vector_base_type;
 
 #define Ch(e, f, g) (((e) & (f)) ^ ((~e) & (g)))
 #define Maj(a, b, c) (((a) & (b)) ^ ((a) & (c)) ^ ((b) & (c)))

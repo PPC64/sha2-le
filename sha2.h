@@ -137,7 +137,7 @@ int sha2(char *input, size_t size, size_t padded_size) {
 #if SHA_BITS == 256
   "%08x%08x%08x%08x%08x%08x%08x%08x\n",
 #elif SHA_BITS == 512
-  "%016lx%016lx%016lx%016lx%016lx%016lx%016lx%016lx\n",
+  "%016llx%016llx%016llx%016llx%016llx%016llx%016llx%016llx\n",
 #endif
    _h[0],_h[1],_h[2],_h[3],_h[4],_h[5],_h[6],_h[7]);
   return 0;
