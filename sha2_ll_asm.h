@@ -68,12 +68,13 @@ void sha2_transform(base_type* _h, base_type* w) {
   }
 
 #if SHA_BITS == 256
-  // Load 16 elements from w out of the loop
+
   vector_base_type w0, w1, w2, w3;
 
   int Rc = 4;
   vector int vRc;
 
+  // Load 16 elements from w out of the loop
   __asm__ volatile (
     "lvsl       %[vrb],0,%[rb]\n\t"   // parameter for vperm
     "lvsr       %[vrc],0,%[rc]\n\t"   // parameter for vperm
@@ -95,6 +96,7 @@ void sha2_transform(base_type* _h, base_type* w) {
     // load 4 words to vector: w[j-4] to w[j-1]
     "addi       26,27,-16\n\t"
     "lvx        %[w3],0,26\n\t"
+
     : // output list
       [w0] "=v" (w0),
       [w1] "=v" (w1),
@@ -140,43 +142,46 @@ void sha2_transform(base_type* _h, base_type* w) {
       //      s0(w[j-13]) + w[j-5],
       //      s0(w[j-12]) + w[j-4]
       "vadduwm    6,4,12\n\t"
-      // v8 = v4[0] + w[j-16],
-      //      v4[1] + w[j-15],
-      //      v4[2] + w[j-14],
-      //      v4[3] + w[j-13]
+      // v8 = s0(w[j-15]) + w[j-7] + w[j-16],
+      //      s0(w[j-14]) + w[j-6] + w[j-15],
+      //      s0(w[j-13]) + w[j-5] + w[j-14],
+      //      s0(w[j-12]) + w[j-4] + w[j-13]
       "vadduwm    8,6,%[w0]\n\t"
-      // v9 = v8[0] + s1(w[j-2]),
-      //      v8[0] + s1(w[j-1]),
-      //      v8[0] + s1(w[j-2]),
-      //      v8[0] + s1(w[j-1])
+      // v9 = s0(w[j-15]) + w[j-7] + w[j-16] + s1(w[j-2]), // w[j]
+      //      s0(w[j-14]) + w[j-6] + w[j-15] + s1(w[j-1]), // w[j+1]
+      //      s0(w[j-13]) + w[j-5] + w[j-14] + s1(w[j-4]), // UNDEFINED
+      //      s0(w[j-12]) + w[j-4] + w[j-13] + s1(w[j-3])  // UNDEFINED
       "vadduwm    9,8,5\n\t"
 
       // At this point, v9[0] and v9[1] are the correct values to be stored at
-      // w[0] and w[1]. v[2] and v[3] are not considered
+      // w[j] and w[j+1].
+      // v9[2] and v9[3] are not considered
 
-      // v0 = s1(w[0]) , s1(s(w[1]) , UNDEFINED , UNDEFINED
-      "vshasigmaw %[w0_out],9,0,0xf\n\t"
+      // v3 = s1(w[j]) , s1(s(w[j+1]) , UNDEFINED , UNDEFINED
+      "vshasigmaw 3,9,0,0xf\n\t"
 
       // TODO: review this!! There must be a more efficient way.
       // v5 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j]) , s1(w[j+1])
-      "vperm      %[w0_out],%[w0],%[w0],%[vrb]\n\t"
-      "vperm      5,5,%[w0],%[vrb]\n\t"
+      "vperm      3,3,3,%[vrb]\n\t"
+      "vperm      5,5,3,%[vrb]\n\t"
       "vperm      5,5,5,%[vrb]\n\t"
 
-      // v9 = v8[0] + s1(w[j-2]),
-      //      v8[0] + s1(w[j-1]),
-      //      v8[0] + s1(w[j]),
-      //      v8[0] + s1(w[j+1])
+      // v9 = s0(w[j-15]) + w[j-7] + w[j-16] + s1(w[j-2]), // w[j]
+      //      s0(w[j-14]) + w[j-6] + w[j-15] + s1(w[j-1]), // w[j+1]
+      //      s0(w[j-13]) + w[j-5] + w[j-14] + s1(w[j]),   // w[j+2]
+      //      s0(w[j-12]) + w[j-4] + w[j-13] + s1(w[j+1])  // w[j+4]
       "vadduwm    9,8,5\n\t"
 
-      // Updating v0-v3 to hold the "new previous" 16 values from w.
-      "vor        %[w0_out],%[w1],%[w1]\n\t"  // move v1 to v0
-      "vor        %[w1_out],%[w2],%[w2]\n\t"  // move v2 to v1
-      "vor        %[w2_out],%[w3],%[w3]\n\t"  // move v3 to v2
-      "vor        %[w3_out],9,9\n\t"          // move v9 to v3
+      // Updating w0 to w3 to hold the "new previous" 16 values from w.
+      "vor        %[w0_out],%[w1],%[w1]\n\t"
+      "vor        %[w1_out],%[w2],%[w2]\n\t"
+      "vor        %[w2_out],%[w3],%[w3]\n\t"
+      "vor        %[w3_out],9,9\n\t"
 
+      // store k + w to kplusw (4 values at once)
       "vadduwm    9,9,11\n\t"
-      "stvx       9,0,%[kpluswptr]\n\t"     // store k[0->3]+w[0->3] to kplusw
+      "stvx       9,0,%[kpluswptr]\n\t"
+
       : // output list
         [w0_out] "=v" (w0),
         [w1_out] "=v" (w1),
@@ -194,7 +199,7 @@ void sha2_transform(base_type* _h, base_type* w) {
         [w2] "[w2_out]" (w2),
         [w3] "[w3_out]" (w3)
       : // clobber list
-        "v0", "v4", "v5", "v6", "v8", "v9", "v11", "v12", "v13", "r26", "r27",
+        "v3", "v4", "v5", "v6", "v8", "v9", "v11", "v12", "v13", "r26", "r27",
         "memory"
     );
     sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[0]);
@@ -203,7 +208,8 @@ void sha2_transform(base_type* _h, base_type* w) {
     sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[3]);
   }
 
-#else
+#else // SHA_BITS == 512
+
   vector_base_type w0, w1, w2, w3, w4, w5, w6, w7;
 
   // Load 16 elements from w out of the loop
@@ -243,6 +249,7 @@ void sha2_transform(base_type* _h, base_type* w) {
     // load 4 words to vector: w[j-2] to w[j-1]
     "addi       26,27,-16\n\t"
     "lvx        %[w7],0,26\n\t"
+
     : // output list
       [vrb] "=v" (vRb),
       [w0] "=v" (w0),
@@ -276,11 +283,13 @@ void sha2_transform(base_type* _h, base_type* w) {
 
       // v9 = s0(w[j-15]) + w[j-7] , s0(w[j-14]) + w[j-6]
       "vaddudm    9,9,10\n\t"
-      // v0 = s1(w[j-2]) + w[j-16] , s1(w[j-1]) + w[j-15]
-      "vaddudm    %[w0_out],12,%[w0]\n\t"
-      // v9 = v1[0] + v4[0] , v1[1] + v4[1]
-      "vaddudm    9,9,%[w0]\n\t"
+      // v8 = s1(w[j-2]) + w[j-16] , s1(w[j-1]) + w[j-15]
+      "vaddudm    8,12,%[w0]\n\t"
+      // v9 = s0(w[j-15]) + w[j-7] + s1(w[j-2]) + w[j-16],  // w[j]
+      //      s0(w[j-14]) + w[j-6] + s1(w[j-1]) + w[j-15]   // w[j+1]
+      "vaddudm    9,9,8\n\t"
 
+      // Updating w0 to w7 to hold the "new previous" 16 values from w.
       "vor        %[w0_out],%[w1],%[w1]\n\t"
       "vor        %[w1_out],%[w2],%[w2]\n\t"
       "vor        %[w2_out],%[w3],%[w3]\n\t"
@@ -290,8 +299,10 @@ void sha2_transform(base_type* _h, base_type* w) {
       "vor        %[w6_out],%[w7],%[w7]\n\t"
       "vor        %[w7_out],9,9\n\t"
 
-      "vaddudm    9,9,11\n\t"                 // Add w + k to kplusw
+      // store k + w to kplusw (2 values at once)
+      "vaddudm    9,9,11\n\t"
       "stvx       9,0,%[kpluswptr]\n\t"
+
       : // output list
         [w0_out] "=v" (w0),
         [w1_out] "=v" (w1),
@@ -315,7 +326,7 @@ void sha2_transform(base_type* _h, base_type* w) {
         [w6] "[w6_out]" (w6),
         [w7] "[w7_out]" (w7)
       : // clobber list
-        "r26", "r27", "v9", "v10", "v11", "v12", "memory"
+        "r26", "r27", "v8", "v9", "v10", "v11", "v12", "memory"
     );
 
     sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[0]);
