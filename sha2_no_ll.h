@@ -25,9 +25,12 @@ void static inline sha2_round(base_type* a, base_type* b, base_type* c,
                               base_type w) {
 
   base_type tmp1, tmp2;
-
-  tmp1 = *h + BIGSIGMA1(*e) + Ch(*e, *f, *g) + k + w;
-  tmp2 = BIGSIGMA0(*a) + Maj(*a, *b, *c);
+  base_type ch = Ch(*e,*f,*g);
+  base_type maj = Maj(*a,*b,*c);
+  base_type bigsigma1 = BIGSIGMA1(*e);
+  base_type bigsigma0 = BIGSIGMA0(*a);
+  tmp1 = *h + bigsigma1 + ch + k + w;
+  tmp2 = bigsigma0 + maj;
 
   *h = *g;
   *g = *f;

@@ -29,10 +29,31 @@ void static inline sha2_round(base_type* a, base_type* b, base_type* c,
                               base_type* d, base_type* e, base_type* f,
                               base_type* g, base_type* h, base_type kplusw) {
 
+  vector_base_type bsigma;
   base_type tmp1, tmp2;
 
-  tmp1 = *h + BIGSIGMA1(*e) + Ch(*e, *f, *g) + kplusw;
-  tmp2 = BIGSIGMA0(*a) + Maj(*a, *b, *c);
+  bsigma[0] = *a;
+  bsigma[1] = *e;
+#if SHA_BITS == 256
+  bsigma = __builtin_crypto_vshasigmaw(bsigma, 1, 0xE);
+  tmp1 =  *h + bsigma[1] + Ch(*e, *f, *g) + kplusw;
+  tmp2 = bsigma[0] + Maj(*a, *b, *c);
+#elif SHA_BITS == 512
+  vector_base_type v0 = vec_and( (vector_base_type){bsigma[1], bsigma[0]},
+      (vector_base_type){*f, *b} );
+
+  vector_base_type v1 = vec_and( (vector_base_type){~bsigma[1],bsigma[0]},
+      (vector_base_type){*g,*c} );
+
+
+  bsigma = __builtin_crypto_vshasigmad(bsigma, 1, 0xD);
+
+
+  vector_base_type v2 = (vector_base_type){0,(*b & *c)} ^ v0 ^ v1;
+  tmp1 = *h + bsigma[1] + v2[0] +kplusw;
+  tmp2 = bsigma[0] + v2[1];
+#endif
+
 
   *h = *g;
   *g = *f;
