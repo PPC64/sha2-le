@@ -25,62 +25,60 @@
 #define SIGMA1(x) (ROTR((x), s1_args[0]) ^ ROTR((x), s1_args[1]) ^ \
     SHR((x), s1_args[2]))
 
-void static inline sha2_round(base_type* a, base_type* b, base_type* c,
-                              base_type* d, base_type* e, base_type* f,
-                              base_type* g, base_type* h, base_type kplusw) {
+#define a 0
+#define b 1
+#define c 2
+#define d 3
+#define e 4
+#define f 5
+#define g 6
+#define h 7
+
+void static inline sha2_round(base_type* _ha, base_type kplusw) {
 
   vector_base_type bsigma;
   base_type tmp1, tmp2;
 
-  bsigma[0] = *a;
-  bsigma[1] = *e;
+  bsigma[0] = _ha[a];
+  bsigma[1] = _ha[e];
 #if SHA_BITS == 256
   bsigma = __builtin_crypto_vshasigmaw(bsigma, 1, 0xE);
-  tmp1 =  *h + bsigma[1] + Ch(*e, *f, *g) + kplusw;
-  tmp2 = bsigma[0] + Maj(*a, *b, *c);
+  tmp1 =  _ha[h] + bsigma[1] + Ch(_ha[e], _ha[f], _ha[g]) + kplusw;
+  tmp2 = bsigma[0] + Maj(_ha[a], _ha[b], _ha[c]);
 #elif SHA_BITS == 512
   vector_base_type v0 = vec_and( (vector_base_type){bsigma[1], bsigma[0]},
-      (vector_base_type){*f, *b} );
+      (vector_base_type){_ha[f], _ha[b]} );
 
   vector_base_type v1 = vec_and( (vector_base_type){~bsigma[1],bsigma[0]},
-      (vector_base_type){*g,*c} );
+      (vector_base_type){_ha[g],_ha[c]} );
 
 
   bsigma = __builtin_crypto_vshasigmad(bsigma, 1, 0xD);
 
 
-  vector_base_type v2 = (vector_base_type){0,(*b & *c)} ^ v0 ^ v1;
-  tmp1 = *h + bsigma[1] + v2[0] +kplusw;
+  vector_base_type v2 = (vector_base_type){0,(_ha[b] & _ha[c])} ^ v0 ^ v1;
+  tmp1 = _ha[h] + bsigma[1] + v2[0] +kplusw;
   tmp2 = bsigma[0] + v2[1];
 #endif
 
-
-  *h = *g;
-  *g = *f;
-  *f = *e;
-  *e = *d + tmp1;
-  *d = *c;
-  *c = *b;
-  *b = *a;
-  *a = tmp1 + tmp2;
+  _ha[h] = _ha[g];
+  _ha[g] = _ha[f];
+  _ha[f] = _ha[e];
+  _ha[e] = _ha[d] + tmp1;
+  _ha[d] = _ha[c];
+  _ha[c] = _ha[b];
+  _ha[b] = _ha[a];
+  _ha[a] = tmp1 + tmp2;
 }
 
 void sha2_transform(base_type* _h, base_type* w) {
-  base_type a, b, c, d, e, f, g, h;
   int i;
-
-  a = _h[0];
-  b = _h[1];
-  c = _h[2];
-  d = _h[3];
-  e = _h[4];
-  f = _h[5];
-  g = _h[6];
-  h = _h[7];
+  base_type _ha[8]  __attribute__ ((aligned (16))) =
+    { _h[a],_h[b],_h[c],_h[d],_h[e],_h[f],_h[g],_h[h] };
 
   // Loop unrolling, from 0 to 15
   for (i = 0; i < 16; i++) {
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i]+w[i]);
+    sha2_round(_ha, k[i]+w[i]);
   }
 
 #if SHA_BITS == 256
@@ -131,10 +129,10 @@ void sha2_transform(base_type* _h, base_type* w) {
     v2 = v3;
     v3 = result;
 
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[0]+k[i+0] );
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[1]+k[i+1] );
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[2]+k[i+2] );
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[3]+k[i+3] );
+    sha2_round(_ha, result[0]+k[i+0] );
+    sha2_round(_ha, result[1]+k[i+1] );
+    sha2_round(_ha, result[2]+k[i+2] );
+    sha2_round(_ha, result[3]+k[i+3] );
   }
 
 #else
@@ -182,18 +180,18 @@ void sha2_transform(base_type* _h, base_type* w) {
     v6 = v7;
     v7 = result;
 
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[0]+k[i+0]);
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[1]+k[i+1]);
+    sha2_round(_ha, result[0]+k[i+0]);
+    sha2_round(_ha, result[1]+k[i+1]);
   }
 #endif
-  _h[0] += a;
-  _h[1] += b;
-  _h[2] += c;
-  _h[3] += d;
-  _h[4] += e;
-  _h[5] += f;
-  _h[6] += g;
-  _h[7] += h;
+  _h[0] += _ha[a];
+  _h[1] += _ha[b];
+  _h[2] += _ha[c];
+  _h[3] += _ha[d];
+  _h[4] += _ha[e];
+  _h[5] += _ha[f];
+  _h[6] += _ha[g];
+  _h[7] += _ha[h];
 }
 
 #endif // _PPC64_LE_SHA2_LL_INTRINSICS_H_
