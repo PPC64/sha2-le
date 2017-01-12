@@ -3,7 +3,7 @@
 BIN_DIR=./bin
 CC=gcc
 COMPILERS=gcc clang-3.8 clang-3.9
-CFLAGS=-O3 -g -Wall -fPIC -fno-omit-frame-pointer -maltivec -std=c99
+CFLAGS=-O3 -g -Wall -Werror -maltivec -std=c99
 PERF_TXT=$(BIN_DIR)/perfexample.txt
 # Number of perf stat iterations
 PERF_ITERS=10
