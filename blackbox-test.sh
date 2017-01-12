@@ -11,9 +11,9 @@ RET_CODE=0
 function cmp() {
     diff -u $1 _ref > _out
     if [[ $? -eq 0 ]]; then
-      echo "$1 is Ok"
+      echo -en "$2 is Ok\t"
     else
-      echo "$1 is NOK!"
+      echo -en "$2 is NOK\t"
       tail -n2 _out
       RET_CODE=1
     fi
@@ -22,15 +22,24 @@ function cmp() {
 
 for sha_bits in 256 512; do
   echo "Running tests for SHA-${sha_bits}:";
+
+  c_bin=sha${sha_bits}_${CC}
+  ll_intrinsics_bin=sha${sha_bits}_ll_intrinsics_${CC}
+  ll_asm_bin=sha${sha_bits}_ll_asm_${CC}
+  ctr=1
   for file in $a $b $c $d; do
     echo -n $file > _tmp
-    ${bin_dir}/sha${sha_bits} _tmp > _c
-    ${bin_dir}/sha${sha_bits}_ll_intrinsics _tmp > _intrinsics
-    ${bin_dir}/sha${sha_bits}_ll_asm _tmp > _asm
+    ${bin_dir}/${c_bin} _tmp > _c
+    ${bin_dir}/${ll_intrinsics_bin} _tmp > _intrinsics
+    ${bin_dir}/${ll_asm_bin} _tmp > _asm
     sha${sha_bits}sum _tmp | cut -d\  -f1 > _ref
-    cmp _c
-    cmp _intrinsics
-    cmp _asm
+    echo -en "Test #"${ctr}":\t"
+    cmp _c c
+    cmp _intrinsics intrinsics
+    cmp _asm asm
+    #TODO: fix this ugly hack
+    ctr=$(echo $ctr + 1 | bc)
+    echo ""
     rm -f _ref _c _intrinsics _asm _tmp
   done
   echo ""
