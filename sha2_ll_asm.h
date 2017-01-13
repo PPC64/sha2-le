@@ -44,7 +44,6 @@ void static inline sha2_round(base_type* a, base_type* b, base_type* c,
 
 void sha2_transform(base_type* _h, base_type* w) {
   base_type a, b, c, d, e, f, g, h;
-  vector_base_type kplusw;
   int Rb = 8;
   vector int vRb;
   int j;
@@ -64,7 +63,7 @@ void sha2_transform(base_type* _h, base_type* w) {
   }
 
 #if SHA_BITS == 256
-
+  base_type kpw0, kpw1, kpw2, kpw3;
   vector_base_type w0, w1, w2, w3;
 
   int Rc = 4;
@@ -173,15 +172,35 @@ void sha2_transform(base_type* _h, base_type* w) {
       "vor        %[w2_out],%[w3],%[w3]\n\t"
       "vor        %[w3_out],9,9\n\t"
 
-      // store k + w to kplusw (4 values at once)
-      "vadduwm    %[kplusw],9,11\n\t"
+      // store k + w to v9 (4 values at once)
+      "vadduwm    9,9,11\n\t"
+
+      // Move first doubleword in v9 to kpw1
+      "mfvsrd     %[kpw2], 41\n\t"
+      // Move low word to kpw0
+      "srdi       %[kpw3], %[kpw2], 32\n\t"
+      // Clear low word. Keep high word.
+      "clrldi     %[kpw2], %[kpw2], 32\n\t"
+
+      //Move higher double word to low.
+      "vperm      9,9,9,%[vrb]\n\t"
+      // Move first doubleword in v9 to kpw2
+      "mfvsrd     %[kpw0], 41\n\t"
+      // Move low word to kpw2
+      "srdi       %[kpw1], %[kpw0], 32\n\t"
+      // Clear low word. Keep high word.
+      "clrldi     %[kpw2], %[kpw2], 32\n\t"
+
 
       : // output list
         [w0_out] "=v" (w0),
         [w1_out] "=v" (w1),
         [w2_out] "=v" (w2),
         [w3_out] "=v" (w3),
-        [kplusw] "=v" (kplusw)
+        [kpw0] "=r" (kpw0),
+        [kpw1] "=r" (kpw1),
+        [kpw2] "=r" (kpw2),
+        [kpw3] "=r" (kpw3)
       : // input list
         [index] "r" (j),
         [vrb] "v" (vRb),
@@ -196,15 +215,15 @@ void sha2_transform(base_type* _h, base_type* w) {
         "v3", "v4", "v5", "v6", "v8", "v9", "v11", "v12", "v13", "r26", "r27",
         "memory"
     );
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[0]);
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[1]);
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[2]);
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[3]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kpw0);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kpw1);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kpw2);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kpw3);
   }
 
 #else // SHA_BITS == 512
-
   vector_base_type w0, w1, w2, w3, w4, w5, w6, w7;
+  base_type kpw0, kpw1;
 
   // Load 16 elements from w out of the loop
   __asm__ volatile(
@@ -293,8 +312,17 @@ void sha2_transform(base_type* _h, base_type* w) {
       "vor        %[w6_out],%[w7],%[w7]\n\t"
       "vor        %[w7_out],9,9\n\t"
 
-      // store k + w to kplusw (2 values at once)
-      "vaddudm    %[kplusw],9,11\n\t"
+
+      // store k + w to v9 (2 values at once)
+      "vaddudm    9,9,11\n\t"
+
+      // Move first doubleword in v9 to kpw1
+      "mfvsrd     %[kpw1], 41\n\t"
+
+      //Move higher double word to low.
+      "vperm      9,9,9,%[vrb]\n\t"
+      // Move first doubleword in v9 to kpw0
+      "mfvsrd     %[kpw0], 41\n\t"
 
       : // output list
         [w0_out] "=v" (w0),
@@ -305,7 +333,8 @@ void sha2_transform(base_type* _h, base_type* w) {
         [w5_out] "=v" (w5),
         [w6_out] "=v" (w6),
         [w7_out] "=v" (w7),
-        [kplusw] "=v" (kplusw)
+        [kpw0] "=r" (kpw0),
+        [kpw1] "=r" (kpw1)
       : // input list
         [index] "r" (j),
         [kptr] "r" (k),
@@ -322,8 +351,8 @@ void sha2_transform(base_type* _h, base_type* w) {
         "r26", "r27", "v8", "v9", "v10", "v11", "v12", "memory"
     );
 
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[0]);
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kplusw[1]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kpw0);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, kpw1);
   }
 #endif
 
