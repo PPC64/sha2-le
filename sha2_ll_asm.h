@@ -154,11 +154,10 @@ void sha2_transform(base_type* _h, base_type* w) {
       // v3 = s1(w[j]) , s1(s(w[j+1]) , UNDEFINED , UNDEFINED
       "vshasigmaw 3,9,0,0xf\n\t"
 
-      // TODO: review this!! There must be a more efficient way.
       // v5 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j]) , s1(w[j+1])
-      "vperm      3,3,3,%[vrb]\n\t"
-      "vperm      5,5,3,%[vrb]\n\t"
-      "vperm      5,5,5,%[vrb]\n\t"
+      // vs37 corresponds to v5
+      // vs33 corresponds to v3
+      "xxpermdi     37,35,37,3\n\t"
 
       // v9 = s0(w[j-15]) + w[j-7] + w[j-16] + s1(w[j-2]), // w[j]
       //      s0(w[j-14]) + w[j-6] + w[j-15] + s1(w[j-1]), // w[j+1]
