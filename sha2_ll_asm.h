@@ -175,6 +175,7 @@ void sha2_transform(base_type* _h, base_type* w) {
       "vadduwm    9,9,11\n\t"
 
       // Move first doubleword in v9 to kpw1
+      // vs41 corresponds to v9
       "mfvsrd     %[kpw2], 41\n\t"
       // Move low word to kpw0
       "srdi       %[kpw3], %[kpw2], 32\n\t"
@@ -184,6 +185,7 @@ void sha2_transform(base_type* _h, base_type* w) {
       //Move higher double word to low.
       "vperm      9,9,9,%[vrb]\n\t"
       // Move first doubleword in v9 to kpw2
+      // vs41 corresponds to v9
       "mfvsrd     %[kpw0], 41\n\t"
       // Move low word to kpw2
       "srdi       %[kpw1], %[kpw0], 32\n\t"
