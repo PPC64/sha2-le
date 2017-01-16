@@ -9,23 +9,30 @@
 
 #include "base-types.h"
 
+#define ROTR(n, b) (((n) >> (b)) | ((n) << ((base_type_size * 8) - (b))))
+
+#define SHR(x, n) ((x) >> (n))
+
+#define BIGSIGMA0(x) (ROTR((x), S0_args[0]) ^ ROTR((x), S0_args[1]) ^ \
+      ROTR((x), S0_args[2]))
+
+#define BIGSIGMA1(x) (ROTR((x), S1_args[0]) ^ ROTR((x), S1_args[1]) ^ \
+      ROTR((x), S1_args[2]))
+
+#define SIGMA0(x) (ROTR((x), s0_args[0]) ^ ROTR((x), s0_args[1]) ^ \
+      SHR((x), s0_args[2]))
+
+#define SIGMA1(x) (ROTR((x), s1_args[0]) ^ ROTR((x), s1_args[1]) ^ \
+    SHR((x), s1_args[2]))
+
 void static inline sha2_round(base_type* a, base_type* b, base_type* c,
                               base_type* d, base_type* e, base_type* f,
-                              base_type* g, base_type* h, base_type k,
-                              base_type w) {
+                              base_type* g, base_type* h, base_type kplusw) {
 
-  vector_base_type bsigma;
   base_type tmp1, tmp2;
 
-  bsigma[0] = *a;
-  bsigma[1] = *e;
-#if SHA_BITS == 256
-  bsigma = __builtin_crypto_vshasigmaw(bsigma, 1, 0xE);
-#elif SHA_BITS == 512
-  bsigma = __builtin_crypto_vshasigmad(bsigma, 1, 0xD);
-#endif
-  tmp1 =  *h + bsigma[1] + Ch(*e, *f, *g) + w + k;
-  tmp2 = bsigma[0] + Maj(*a, *b, *c);
+  tmp1 = *h + BIGSIGMA1(*e) + Ch(*e, *f, *g) + kplusw;
+  tmp2 = BIGSIGMA0(*a) + Maj(*a, *b, *c);
 
   *h = *g;
   *g = *f;
@@ -38,9 +45,8 @@ void static inline sha2_round(base_type* a, base_type* b, base_type* c,
 }
 
 void sha2_transform(base_type* _h, base_type* w) {
-  vector_base_type sigma; // small sigma vector
-  base_type a, b, c, d, e, f, g, h; // compression registers
-  uint32_t t;
+  base_type a, b, c, d, e, f, g, h;
+  int i;
 
   a = _h[0];
   b = _h[1];
@@ -51,36 +57,114 @@ void sha2_transform(base_type* _h, base_type* w) {
   g = _h[6];
   h = _h[7];
 
-  for (t = 0; t < 16; t++) {
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[t], w[t]);
+  // Loop unrolling, from 0 to 15
+  for (i = 0; i < 16; i++) {
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i]+w[i]);
   }
+
 #if SHA_BITS == 256
-  // Expand two message blocks per loop cycle
-  for (; t < W_SIZE; t += 2) {
-    //sig0  = w[t-15];
-    //sig1  = w[t-2];
-    //sig0' = w[t-14];
-    //sig1' = w[t-1];
-    sigma = (vector_base_type) { w[t-15], w[t-2], w[t-14], w[t-1] };
-    sigma = __builtin_crypto_vshasigmaw(sigma, 0, 0xA);
-    w[t] = sigma[1] + w[t-7] + sigma[0] + w[t-16];
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[t], w[t]);
-    w[t+1] = sigma[3] + w[t-6] + sigma[2] + w[t-15];
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[t+1], w[t+1]);
+  // Load 16 elements from w out of the loop
+  vector_base_type v0,v1,v2,v3,v4,v5,sigma0,
+                   sigma1,sigma12, result;
+  v0[0] = w[i-16];
+  v0[1] = w[i-15];
+  v0[2] = w[i-14];
+  v0[3] = w[i-13];
+
+  v1[0] = w[i-12];
+  v1[1] = w[i-11];
+  v1[2] = w[i-10];
+  v1[3] = w[i-9];
+
+  v2[0] = w[i-8];
+  v2[1] = w[i-7];
+  v2[2] = w[i-6];
+  v2[3] = w[i-5];
+
+  v3[0] = w[i-4];
+  v3[1] = w[i-3];
+  v3[2] = w[i-2];
+  v3[3] = w[i-1];
+  // BEWARE!!! we do *not* have a strong guarantee that the v register won't
+  // get dirty in between this two __asm__ calls.
+  // As of now, this is just a quick experiment and SHOULD be fixed.
+
+  // From 16 to W_SIZE (64)
+  for (; i < W_SIZE; i=i+4) {
+    v4 = (vector_base_type) { v0[1],v0[2],v0[3],v1[0] };
+    v5 = (vector_base_type) { v2[1],v2[2],v2[3],v3[0] };
+    sigma0 = __builtin_crypto_vshasigmaw(v4, 0, 0x0);
+    sigma1 = __builtin_crypto_vshasigmaw(v3, 0, 0xf);
+
+    result = (vector_base_type){ sigma0[0] + sigma1[2] + v0[0] + v5[0],
+       sigma0[1] + sigma1[3] + v0[1] + v5[1],
+       sigma0[2] + sigma1[2] + v0[2] + v5[2],
+       sigma0[3] + sigma1[3] + v0[3] + v5[3] };
+
+    sigma12 = __builtin_crypto_vshasigmaw(result, 0, 0xf);
+    result = (vector_base_type){sigma1[2],sigma1[3],sigma12[0],sigma12[1]}+
+      sigma0 + v0 +v5;
+
+    v0 = v1;
+    v1 = v2;
+    v2 = v3;
+    v3 = result;
+
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[0]+k[i+0] );
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[1]+k[i+1] );
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[2]+k[i+2] );
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[3]+k[i+3] );
   }
-#elif SHA_BITS == 512
-  for (; t < W_SIZE; t++) {
-    // TODO(rcardoso): for some reason fill vector using
-    // sigma = (vector_base_type) { w[t-15], w[t-2] } give us wrong result
-    // for sha512 when compile with -O3.
-    sigma[0] = w[t-15];
-    sigma[1] = w[t-2];
-    sigma = __builtin_crypto_vshasigmad(sigma, 0, 0xD);
-    w[t] = sigma[1] + w[t-7] + sigma[0] + w[t-16];
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[t], w[t]);
+
+#else
+  // Load 16 elements from w out of the loop
+  vector_base_type v0,v1,v2,v3,v4,v5,v6,v7,sigma0,
+                   sigma1, result;
+  v0[0] = w[i-16];
+  v0[1] = w[i-15];
+
+  v1[0] = w[i-14];
+  v1[1] = w[i-13];
+
+  v2[0] = w[i-12];
+  v2[1] = w[i-11];
+
+  v3[0] = w[i-10];
+  v3[1] = w[i-9];
+
+  v4[0] = w[i-8];
+  v4[1] = w[i-7];
+
+  v5[0] = w[i-6];
+  v5[1] = w[i-5];
+
+  v6[0] = w[i-4];
+  v6[1] = w[i-3];
+
+  v7[0] = w[i-2];
+  v7[1] = w[i-1];
+
+  // From 16 to W_SIZE (64)
+  for (; i < W_SIZE; i=i+2) {
+    sigma0 = __builtin_crypto_vshasigmad((vector_base_type){v0[1],v1[0]},
+        0, 0x0);
+    sigma1 = __builtin_crypto_vshasigmad((vector_base_type){v7[0],v7[1]},
+        0, 0xf);
+    result = sigma0 + sigma1 + v0 + (vector_base_type){v4[1], v5[0]};
+
+    v0 = v1;
+    v1 = v2;
+    v2 = v3;
+    v3 = v4;
+    v4 = v5;
+    v5 = v6;
+    v6 = v7;
+    v7 = result;
+
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[0]+k[i+0]);
+    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[1]+k[i+1]);
   }
 #endif
-
   _h[0] += a;
   _h[1] += b;
   _h[2] += c;
@@ -90,4 +174,5 @@ void sha2_transform(base_type* _h, base_type* w) {
   _h[6] += g;
   _h[7] += h;
 }
+
 #endif // _PPC64_LE_SHA2_LL_INTRINSICS_H_
