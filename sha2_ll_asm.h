@@ -27,6 +27,115 @@ void static inline sha2_round(base_type* a, base_type* b, base_type* c,
                               base_type* d, base_type* e, base_type* f,
                               base_type* g, base_type* h, base_type kplusw) {
 
+#if SHA_BITS == 256
+
+  base_type _a = *a;
+  base_type _b = *b;
+  base_type _c = *c;
+  base_type _d = *d;
+  base_type _e = *e;
+  base_type _f = *f;
+  base_type _g = *g;
+  base_type _h = *h;
+
+  __asm__ volatile (
+#if 1 // instruction scheduled version - performance is better
+    "rotlwi  10,%[e],26\n\t"    // r10 = ROTR(e, 6)
+    "rotlwi  8,%[e],21\n\t"     // r8  = ROTR(e, 11)
+    "and     7,%[f],%[e]\n\t"   // r7  = e & f
+    "xor     8,10,8\n\t"        // r8  = ROTR(e, 6) ^ ROTR(e, 11)
+    "andc    9,%[g],%[e]\n\t"   // r9  = !e & g
+    "rotlwi  10,%[e],7\n\t"     // r10 = ROTR(e, 25)
+    "rotlwi  6,%[a],30\n\t"     // r6  = ROTR(a, 2)
+    "xor     10,8,10\n\t"       // r10 = S1(e)
+    "xor     9,9,7\n\t"         // r9  = Ch(e, f, g)
+    "xor     23,%[c],%[b]\n\t"  // r23 = c ^ b
+    "rotlwi  8,%[a],19\n\t"     // r8  = ROTR(a, 13)
+    "add     9,10,9\n\t"        // r9  = S1(e) + Ch(e, f, g)
+    "xor     7,6,8\n\t"         // r8  = ROTR(a, 2) ^ ROTR(a, 13)
+    "and     6,23,%[a]\n\t"     // r6  = (c ^ b) & a
+    "rotlwi  8,%[a],10\n\t"     // r8  = ROTR(a, 22)
+    "and     10,%[b],%[c]\n\t"  // r10 = b & c
+    "xor     8,7,8\n\t"         // r8  = S0(a)
+    "xor     10,6,10\n\t"       // r10 = Maj(a,b,c)
+    "add     9,9,%[kpw]\n\t"    // r9  = S1(e) + Ch(e, f, g) + K[j] + W[j]
+    "add     10,8,10\n\t"       // r10 = T2 = S0(a) + Maj(a,b,c)
+    "add     9,9,%[h]\n\t"      // r9  = T1
+    "mr      %[h],%[g]\n\t"     // h'  = g
+    "add     8,%[d],9\n\t"      // r8 = d + T1
+    "mr      %[g],%[f]\n\t"     // g'  = f
+    "mr      %[f],%[e]\n\t"     // f'  = e
+    "mr      %[d],%[c]\n\t"     // d'  = c
+    "mr      %[c],%[b]\n\t"     // c'  = b
+    "clrldi  %[e],8,32\n\t"     // e'  = (base_type)(d + T1)
+    "add     9,10,9\n\t"        // r9  = T2 + T1
+    "mr      %[b],%[a]\n\t"     // b'  = a
+    "clrldi  %[a],9,32\n\t"     // a'  = (base_type)(T2 + T1)
+#else // easy to read version - performance is worse
+    "rotlwi  10,%[e],26\n\t"    // r10 = ROTR(e, 6)
+    "rotlwi  8,%[e],21\n\t"     // r8  = ROTR(e, 11)
+    "xor     8,10,8\n\t"        // r8  = ROTR(e, 6) ^ ROTR(e, 11)
+    "rotlwi  10,%[e],7\n\t"     // r10 = ROTR(e, 25)
+    "xor     10,8,10\n\t"       // r10 = S1(e)
+
+    "andc    9,%[g],%[e]\n\t"   // r9  = !e & g
+    "and     7,%[f],%[e]\n\t"   // r7  = e & f
+    "xor     9,9,7\n\t"         // r9  = Ch(e, f, g)
+
+    "add     9,10,9\n\t"        // r9  = S1(e) + Ch(e, f, g)
+    "add     9,9,%[kpw]\n\t"    // r9  = S1(e) + Ch(e, f, g) + K[j] + W[j]
+    "add     9,9,%[h]\n\t"      // r9  = T1 = h + S1(e) + Ch(e, f, g) + ...
+
+    "rotlwi  6,%[a],30\n\t"     // r6  = ROTR(a, 2)
+    "rotlwi  8,%[a],19\n\t"     // r8  = ROTR(a, 13)
+    "xor     7,6,8\n\t"         // r8  = ROTR(a, 2) ^ ROTR(a, 13)
+    "rotlwi  8,%[a],10\n\t"     // r8  = ROTR(a, 22)
+    "xor     8,7,8\n\t"         // r8  = S0(a)
+
+    "xor     23,%[c],%[b]\n\t"  // r23 = c ^ b
+    "and     6,23,%[a]\n\t"     // r6  = (c ^ b) & a
+    "and     10,%[b],%[c]\n\t"  // r10 = b & c
+    "xor     10,6,10\n\t"       // r10 = Maj(a,b,c)
+
+    "add     10,8,10\n\t"       // r10 = T2 = S0(a) + Maj(a,b,c)
+    "add     8,%[d],9\n\t"      // r8 = d + T1
+    "add     9,10,9\n\t"        // r9  = T2 + T1
+
+    "mr      %[h],%[g]\n\t"     // h'  = g
+    "mr      %[g],%[f]\n\t"     // g'  = f
+    "mr      %[f],%[e]\n\t"     // f'  = e
+    "clrldi  %[e],8,32\n\t"     // e'  = (base_type)(d + T1)
+    "mr      %[d],%[c]\n\t"     // d'  = c
+    "mr      %[c],%[b]\n\t"     // c'  = b
+    "mr      %[b],%[a]\n\t"     // b'  = a
+    "clrldi  %[a],9,32\n\t"     // a'  = (base_type)(T2 + T1)
+#endif
+    : // output list
+      [a] "+r" (_a),
+      [b] "+r" (_b),
+      [c] "+r" (_c),
+      [d] "+r" (_d),
+      [e] "+r" (_e),
+      [f] "+r" (_f),
+      [g] "+r" (_g),
+      [h] "+r" (_h)
+    : // input list
+      [kpw] "r" (kplusw)
+    : // clobber list
+      "r6", "r7", "r8", "r9", "r10", "r23"
+  );
+
+  *a = _a;
+  *b = _b;
+  *c = _c;
+  *d = _d;
+  *e = _e;
+  *f = _f;
+  *g = _g;
+  *h = _h;
+
+#else // SHA_BITS == 512
+
   base_type tmp1, tmp2;
 
   tmp1 = *h + BIGSIGMA1(*e) + Ch(*e, *f, *g) + kplusw;
@@ -40,6 +149,9 @@ void static inline sha2_round(base_type* a, base_type* b, base_type* c,
   *c = *b;
   *b = *a;
   *a = tmp1 + tmp2;
+
+#endif
+
 }
 
 void sha2_transform(base_type* _h, base_type* w) {
