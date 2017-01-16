@@ -80,20 +80,49 @@
 #else // SHA_BITS == 512
 
 #define SHA2_ROUND(_a, _b, _c, _d, _e, _f, _g, _h, _kplusw) do {              \
-  base_type tmp1, tmp2;                                                       \
-                                                                              \
-  tmp1 = (_h) + BIGSIGMA1((_e)) + Ch((_e), (_f), (_g)) + (_kplusw);           \
-  tmp2 = BIGSIGMA0((_a)) + Maj((_a), (_b), (_c));                             \
-                                                                              \
-  (_d) = (_d) + tmp1;                                                         \
-  (_h) = tmp1 + tmp2;                                                         \
-} while(0)
+  __asm__ volatile (                                                          \
+    "rotldi  10,%[e],50\n\t"    /* r10 = ROTR(e, 14)                       */ \
+    "rotldi  8,%[e],46\n\t"     /* r8  = ROTR(e, 18)                       */ \
+    "and     7,%[f],%[e]\n\t"   /* r7  = e & f                             */ \
+    "xor     8,10,8\n\t"        /* r8  = ROTR(e, 14) ^ ROTR(e, 18)         */ \
+    "andc    9,%[g],%[e]\n\t"   /* r9  = !e & g                            */ \
+    "rotldi  10,%[e],23\n\t"    /* r10 = ROTR(e, 41)                       */ \
+    "rotldi  6,%[a],36\n\t"     /* r6  = ROTR(a, 28)                       */ \
+    "xor     10,8,10\n\t"       /* r10 = S1(e)                             */ \
+    "xor     9,9,7\n\t"         /* r9  = Ch(e, f, g)                       */ \
+    "xor     23,%[c],%[b]\n\t"  /* r23 = c ^ b                             */ \
+    "rotldi  8,%[a],30\n\t"     /* r8  = ROTR(a, 34)                       */ \
+    "add     9,10,9\n\t"        /* r9  = S1(e) + Ch(e, f, g)               */ \
+    "xor     7,6,8\n\t"         /* r8  = ROTR(a, 2) ^ ROTR(a, 13)          */ \
+    "and     6,23,%[a]\n\t"     /* r6  = (c ^ b) & a                       */ \
+    "rotldi  8,%[a],25\n\t"     /* r8  = ROTR(a, 39)                       */ \
+    "and     10,%[b],%[c]\n\t"  /* r10 = b & c                             */ \
+    "xor     8,7,8\n\t"         /* r8  = S0(a)                             */ \
+    "xor     10,6,10\n\t"       /* r10 = Maj(a,b,c)                        */ \
+    "add     9,9,%[kpw]\n\t"    /* r9  = S1(e) + Ch(e, f, g) + K[j] + W[j] */ \
+    "add     10,8,10\n\t"       /* r10 = T2 = S0(a) + Maj(a,b,c)           */ \
+    "add     9,9,%[h]\n\t"      /* r9  = T1                                */ \
+    "add     %[d],%[d],9\n\t"   /* d'  = d + T1                            */ \
+    "add     %[h],10,9\n\t"     /* h'  = T2 + T1                           */ \
+    : /* output list */                                                       \
+      [d] "+r" ((_d)),                                                        \
+      [h] "+r" ((_h))                                                         \
+    : /* input list */                                                        \
+      [a] "r" ((_a)),                                                         \
+      [b] "r" ((_b)),                                                         \
+      [c] "r" ((_c)),                                                         \
+      [e] "r" ((_e)),                                                         \
+      [f] "r" ((_f)),                                                         \
+      [g] "r" ((_g)),                                                         \
+      [kpw] "r" ((_kplusw))                                                   \
+    : /* clobber list */                                                      \
+      "r6", "r7", "r8", "r9", "r10", "r23"                                    \
+  ); } while (0)
 
 #endif
 
 void sha2_transform(base_type* _h, base_type* w) {
   base_type a, b, c, d, e, f, g, h;
-  vector_base_type kplusw;
   int Rb = 8;
   vector int vRb;
   int j = 16;
@@ -126,7 +155,7 @@ void sha2_transform(base_type* _h, base_type* w) {
   SHA2_ROUND(b, c, d, e, f, g, h, a, k[15] + w[15]);
 
 #if SHA_BITS == 256
-
+  base_type kpw0, kpw1, kpw2, kpw3;
   vector_base_type w0, w1, w2, w3;
 
   int Rc = 4;
@@ -235,15 +264,35 @@ void sha2_transform(base_type* _h, base_type* w) {
       "vor        %[w2_out],%[w3],%[w3]\n\t"
       "vor        %[w3_out],9,9\n\t"
 
-      // store k + w to kplusw (4 values at once)
-      "vadduwm    %[kplusw],9,11\n\t"
+      // store k + w to v9 (4 values at once)
+      "vadduwm    9,9,11\n\t"
+
+      // Move first doubleword in v9 to kpw1
+      "mfvsrd     %[kpw2], 41\n\t"
+      // Move low word to kpw0
+      "srdi       %[kpw3], %[kpw2], 32\n\t"
+      // Clear low word. Keep high word.
+      "clrldi     %[kpw2], %[kpw2], 32\n\t"
+
+      //Move higher double word to low.
+      "vperm      9,9,9,%[vrb]\n\t"
+      // Move first doubleword in v9 to kpw2
+      "mfvsrd     %[kpw0], 41\n\t"
+      // Move low word to kpw2
+      "srdi       %[kpw1], %[kpw0], 32\n\t"
+      // Clear low word. Keep high word.
+      "clrldi     %[kpw2], %[kpw2], 32\n\t"
+
 
       : // output list
         [w0_out] "=v" (w0),
         [w1_out] "=v" (w1),
         [w2_out] "=v" (w2),
         [w3_out] "=v" (w3),
-        [kplusw] "=v" (kplusw)
+        [kpw0] "=r" (kpw0),
+        [kpw1] "=r" (kpw1),
+        [kpw2] "=r" (kpw2),
+        [kpw3] "=r" (kpw3)
       : // input list
         [index] "r" (j),
         [vrb] "v" (vRb),
@@ -259,21 +308,21 @@ void sha2_transform(base_type* _h, base_type* w) {
         "memory"
     );
     if (0 == (j % 8)) {
-      SHA2_ROUND(a, b, c, d, e, f, g, h, kplusw[0]);
-      SHA2_ROUND(h, a, b, c, d, e, f, g, kplusw[1]);
-      SHA2_ROUND(g, h, a, b, c, d, e, f, kplusw[2]);
-      SHA2_ROUND(f, g, h, a, b, c, d, e, kplusw[3]);
+      SHA2_ROUND(a, b, c, d, e, f, g, h, kpw0);
+      SHA2_ROUND(h, a, b, c, d, e, f, g, kpw1);
+      SHA2_ROUND(g, h, a, b, c, d, e, f, kpw2);
+      SHA2_ROUND(f, g, h, a, b, c, d, e, kpw3);
     } else {
-      SHA2_ROUND(e, f, g, h, a, b, c, d, kplusw[0]);
-      SHA2_ROUND(d, e, f, g, h, a, b, c, kplusw[1]);
-      SHA2_ROUND(c, d, e, f, g, h, a, b, kplusw[2]);
-      SHA2_ROUND(b, c, d, e, f, g, h, a, kplusw[3]);
+      SHA2_ROUND(e, f, g, h, a, b, c, d, kpw0);
+      SHA2_ROUND(d, e, f, g, h, a, b, c, kpw1);
+      SHA2_ROUND(c, d, e, f, g, h, a, b, kpw2);
+      SHA2_ROUND(b, c, d, e, f, g, h, a, kpw3);
     }
   }
 
 #else // SHA_BITS == 512
-
   vector_base_type w0, w1, w2, w3, w4, w5, w6, w7;
+  base_type kpw0, kpw1;
 
   // Load 16 elements from w out of the loop
   __asm__ volatile(
@@ -362,8 +411,17 @@ void sha2_transform(base_type* _h, base_type* w) {
       "vor        %[w6_out],%[w7],%[w7]\n\t"
       "vor        %[w7_out],9,9\n\t"
 
-      // store k + w to kplusw (2 values at once)
-      "vaddudm    %[kplusw],9,11\n\t"
+
+      // store k + w to v9 (2 values at once)
+      "vaddudm    9,9,11\n\t"
+
+      // Move first doubleword in v9 to kpw1
+      "mfvsrd     %[kpw1], 41\n\t"
+
+      //Move higher double word to low.
+      "vperm      9,9,9,%[vrb]\n\t"
+      // Move first doubleword in v9 to kpw0
+      "mfvsrd     %[kpw0], 41\n\t"
 
       : // output list
         [w0_out] "=v" (w0),
@@ -374,7 +432,8 @@ void sha2_transform(base_type* _h, base_type* w) {
         [w5_out] "=v" (w5),
         [w6_out] "=v" (w6),
         [w7_out] "=v" (w7),
-        [kplusw] "=v" (kplusw)
+        [kpw0] "=r" (kpw0),
+        [kpw1] "=r" (kpw1)
       : // input list
         [index] "r" (j),
         [kptr] "r" (k),
@@ -393,20 +452,20 @@ void sha2_transform(base_type* _h, base_type* w) {
 
     switch ((j / 2) % 4) {
       case 0:
-        SHA2_ROUND(a, b, c, d, e, f, g, h, kplusw[0]);
-        SHA2_ROUND(h, a, b, c, d, e, f, g, kplusw[1]);
+        SHA2_ROUND(a, b, c, d, e, f, g, h, kpw0);
+        SHA2_ROUND(h, a, b, c, d, e, f, g, kpw1);
         break;
       case 1:
-        SHA2_ROUND(g, h, a, b, c, d, e, f, kplusw[0]);
-        SHA2_ROUND(f, g, h, a, b, c, d, e, kplusw[1]);
+        SHA2_ROUND(g, h, a, b, c, d, e, f, kpw0);
+        SHA2_ROUND(f, g, h, a, b, c, d, e, kpw1);
         break;
       case 2:
-        SHA2_ROUND(e, f, g, h, a, b, c, d, kplusw[0]);
-        SHA2_ROUND(d, e, f, g, h, a, b, c, kplusw[1]);
+        SHA2_ROUND(e, f, g, h, a, b, c, d, kpw0);
+        SHA2_ROUND(d, e, f, g, h, a, b, c, kpw1);
         break;
       case 3:
-        SHA2_ROUND(c, d, e, f, g, h, a, b, kplusw[0]);
-        SHA2_ROUND(b, c, d, e, f, g, h, a, kplusw[1]);
+        SHA2_ROUND(c, d, e, f, g, h, a, b, kpw0);
+        SHA2_ROUND(b, c, d, e, f, g, h, a, kpw1);
         break;
     }
   }
