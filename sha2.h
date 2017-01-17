@@ -143,4 +143,4 @@ int sha2(char *input, size_t size, size_t padded_size) {
   return 0;
 }
 
-#endif // _PPC64_LE_BASE_TYPES_H_
+#endif // _PPC64_LE_SHA2_H_

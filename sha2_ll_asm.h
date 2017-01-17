@@ -1,5 +1,5 @@
-#ifndef _PPC64_LE_SHA2_NO_LL_H_
-#define _PPC64_LE_SHA2_NO_LL_H_
+#ifndef _PPC64_LE_SHA2_LL_ASM_H_
+#define _PPC64_LE_SHA2_LL_ASM_H_
 
 #if LOW_LEVEL != 2
 #error "The sha2_ll_asm.h header should only be included on LOW_LEVEL == 2"
@@ -434,4 +434,4 @@ void sha2_transform(base_type* _h, base_type* w) {
   _h[7] += h;
 }
 
-#endif // _PPC64_LE_SHA2_NO_LL_H_
+#endif // _PPC64_LE_SHA2_LL_ASM_H_
