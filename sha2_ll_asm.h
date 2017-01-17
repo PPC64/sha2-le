@@ -235,6 +235,100 @@
       "r6", "r7", "r8", "r9", "r10", "r23"                                    \
   ); } while (0)
 
+#define LOAD_W(_w0, _w1, _w2, _w3, _w4, _w5, _w6, _w7, _vRb, _j, _Rb, _w) do {\
+  __asm__ volatile (                                                          \
+    "lvsl    %[vrb],0,%[rb]\n\t"   /* parameter for vperm                  */ \
+    "sldi    27,%[index],3\n\t"    /* j * 8 (double word size)             */ \
+    "add     27,27,%[wptr]\n\t"    /* alias to W[j] location               */ \
+    "addi    26,27,-128\n\t"                                                  \
+    "lvx     %[w0],0,26\n\t"       /* load w[j-16] and w[j-15] to vector   */ \
+    "addi    26,27,-112\n\t"                                                  \
+    "lvx     %[w1],0,26\n\t"       /* load w[j-14] and w[j-13] to vector   */ \
+    "addi    26,27,-96\n\t"                                                   \
+    "lvx     %[w2],0,26\n\t"       /* load w[j-12] and w[j-11] to vector   */ \
+    "addi    26,27,-80\n\t"                                                   \
+    "lvx     %[w3],0,26\n\t"       /* load w[j-10] and w[j-9] to vector    */ \
+    "addi    26,27,-64\n\t"                                                   \
+    "lvx     %[w4],0,26\n\t"       /* load w[j-8] and w[j-7] to vector     */ \
+    "addi    26,27,-48\n\t"                                                   \
+    "lvx     %[w5],0,26\n\t"       /* load w[j-6] and w[j-5] to vector     */ \
+    "addi    26,27,-32\n\t"                                                   \
+    "lvx     %[w6],0,26\n\t"       /* load w[j-4] and w[j-3] to vector     */ \
+    "addi    26,27,-16\n\t"                                                   \
+    "lvx     %[w7],0,26\n\t"       /* load w[j-2] and w[j-1] to vector     */ \
+    : /* output list */                                                       \
+      [vrb] "=v" ((_vRb)),                                                    \
+      [w0] "=v" ((_w0)),                                                      \
+      [w1] "=v" ((_w1)),                                                      \
+      [w2] "=v" ((_w2)),                                                      \
+      [w3] "=v" ((_w3)),                                                      \
+      [w4] "=v" ((_w4)),                                                      \
+      [w5] "=v" ((_w5)),                                                      \
+      [w6] "=v" ((_w6)),                                                      \
+      [w7] "=v" ((_w7))                                                       \
+    : /* input list */                                                        \
+      [index] "r" ((_j)),                                                     \
+      [rb] "r" ((_Rb)),                                                       \
+      [wptr] "r" ((_w))                                                       \
+    : /* clobber list */                                                      \
+      "memory", "r26", "r27"                                                  \
+  ); } while (0)
+
+#define CALC_2W(_w0, _w1, _w2, _w3, _w4, _w5, _w6, _w7, _kpw0, _kpw1,         \
+                _j, _vRb, _k) do {                                            \
+  __asm__ volatile (                                                          \
+    "sldi       27,%[index],3\n\t"          /* j * 8 (doubleword size)     */ \
+    "add        26,27,%[kptr]\n\t"          /* alias to k[j] location      */ \
+    "lvx        11,0,26\n\t"                                                  \
+    "vperm      9,%[w1],%[w0],%[vrb]\n\t"   /* v9 = w[j-15] , w[j-14]      */ \
+    "vperm      10,%[w5],%[w4],%[vrb]\n\t"  /* v10 = w[j-7] , w[j-6]       */ \
+    /* v9 = s0(w[j-15]) , s0(w[j-14])                                      */ \
+    "vshasigmad 9,9,0,0\n\t"                                                  \
+    /* v12 = s1(w[j-2]) , s1(w[j-1])                                       */ \
+    "vshasigmad 12,%[w7],0,0xf\n\t"                                           \
+    /* v9 = s0(w[j-15]) + w[j-7] , s0(w[j-14]) + w[j-6]                    */ \
+    "vaddudm    9,9,10\n\t"                                                   \
+    /* v8 = s1(w[j-2]) + w[j-16] , s1(w[j-1]) + w[j-15]                    */ \
+    "vaddudm    8,12,%[w0]\n\t"                                               \
+    /* v9 = s0(w[j-15]) + w[j-7] + s1(w[j-2]) + w[j-16],  // w[j]          */ \
+    /*      s0(w[j-14]) + w[j-6] + s1(w[j-1]) + w[j-15]   // w[j+1]        */ \
+    "vaddudm    9,9,8\n\t"                                                    \
+    /* Updating w0 to w7 to hold the "new previous" 16 values from w.      */ \
+    "vor        %[w0],%[w1],%[w1]\n\t"                                        \
+    "vor        %[w1],%[w2],%[w2]\n\t"                                        \
+    "vor        %[w2],%[w3],%[w3]\n\t"                                        \
+    "vor        %[w3],%[w4],%[w4]\n\t"                                        \
+    "vor        %[w4],%[w5],%[w5]\n\t"                                        \
+    "vor        %[w5],%[w6],%[w6]\n\t"                                        \
+    "vor        %[w6],%[w7],%[w7]\n\t"                                        \
+    "vor        %[w7],9,9\n\t"                                                \
+    /* store k + w to v9 (2 values at once)                                */ \
+    "vaddudm    9,9,11\n\t"                                                   \
+    /* Move first doubleword in v9 to kpw1                                 */ \
+    "mfvsrd     %[kpw1], 41\n\t"                                              \
+    /* Move higher double word to low.                                     */ \
+    "vperm      9,9,9,%[vrb]\n\t"                                             \
+    /* Move first doubleword in v9 to kpw0                                 */ \
+    "mfvsrd     %[kpw0], 41\n\t"                                              \
+  : /* output list */                                                         \
+    [w0] "+v" ((_w0)),                                                        \
+    [w1] "+v" ((_w1)),                                                        \
+    [w2] "+v" ((_w2)),                                                        \
+    [w3] "+v" ((_w3)),                                                        \
+    [w4] "+v" ((_w4)),                                                        \
+    [w5] "+v" ((_w5)),                                                        \
+    [w6] "+v" ((_w6)),                                                        \
+    [w7] "+v" ((_w7)),                                                        \
+    [kpw0] "=r" ((_kpw0)),                                                    \
+    [kpw1] "=r" ((_kpw1))                                                     \
+  : /* input list */                                                          \
+    [index] "r" ((_j)),                                                       \
+    [kptr] "r" ((_k)),                                                        \
+    [vrb] "v" ((_vRb))                                                        \
+  : /* clobber list */                                                        \
+    "r26", "r27", "v8", "v9", "v10", "v11", "v12", "memory"                   \
+  ); } while (0)
+
 #endif
 
 void sha2_transform(base_type* _h, base_type* w) {
@@ -298,154 +392,35 @@ void sha2_transform(base_type* _h, base_type* w) {
   }
 
 #else // SHA_BITS == 512
+
   vector_base_type w0, w1, w2, w3, w4, w5, w6, w7;
   base_type kpw0, kpw1;
-  int j = 16;
 
   // Load 16 elements from w out of the loop
-  __asm__ volatile(
-    "lvsl       %[vrb],0,%[rb]\n\t"   // parameter for vperm
-    "sldi       27,%[index],3\n\t"    // j * 8 (double word size)
-    "add        27,27,%[wptr]\n\t"    // alias to W[j] location
+  int j = 16;
+  LOAD_W(w0, w1, w2, w3, w4, w5, w6, w7, vRb, j, Rb, w);
 
-    // load 2 doublewords to vector: w[j-16] and w[j-15]
-    "addi       26,27,-128\n\t"
-    "lvx        %[w0],0,26\n\t"
+  // From 16 to W_SIZE (64) in 8 steps
+  while (j < W_SIZE) {
+    CALC_2W(w0, w1, w2, w3, w4, w5, w6, w7, kpw0, kpw1, j, vRb, k);
+    SHA2_ROUND(a, b, c, d, e, f, g, h, kpw0);
+    SHA2_ROUND(h, a, b, c, d, e, f, g, kpw1);
+    j += 2;
 
-    // load 2 doublewords to vector: w[j-14] and w[j-13]
-    "addi       26,27,-112\n\t"
-    "lvx        %[w1],0,26\n\t"
+    CALC_2W(w0, w1, w2, w3, w4, w5, w6, w7, kpw0, kpw1, j, vRb, k);
+    SHA2_ROUND(g, h, a, b, c, d, e, f, kpw0);
+    SHA2_ROUND(f, g, h, a, b, c, d, e, kpw1);
+    j += 2;
 
-    // load 2 doublewords to vector: w[j-12] and w[j-11]
-    "addi       26,27,-96\n\t"
-    "lvx        %[w2],0,26\n\t"
+    CALC_2W(w0, w1, w2, w3, w4, w5, w6, w7, kpw0, kpw1, j, vRb, k);
+    SHA2_ROUND(e, f, g, h, a, b, c, d, kpw0);
+    SHA2_ROUND(d, e, f, g, h, a, b, c, kpw1);
+    j += 2;
 
-    // load 2 doublewords to vector: w[j-10] and w[j-9]
-    "addi       26,27,-80\n\t"
-    "lvx        %[w3],0,26\n\t"
-
-    // load 2 doublewords to vector: w[j-8] and w[j-7]
-    "addi       26,27,-64\n\t"
-    "lvx        %[w4],0,26\n\t"
-
-    // load 2 doublewords to vector: w[j-6] and w[j-5]
-    "addi       26,27,-48\n\t"
-    "lvx        %[w5],0,26\n\t"
-
-    // load 2 doublewords to vector: w[j-4] and w[j-3]
-    "addi       26,27,-32\n\t"
-    "lvx        %[w6],0,26\n\t"
-
-    // load 4 words to vector: w[j-2] to w[j-1]
-    "addi       26,27,-16\n\t"
-    "lvx        %[w7],0,26\n\t"
-
-    : // output list
-      [vrb] "=v" (vRb),
-      [w0] "=v" (w0),
-      [w1] "=v" (w1),
-      [w2] "=v" (w2),
-      [w3] "=v" (w3),
-      [w4] "=v" (w4),
-      [w5] "=v" (w5),
-      [w6] "=v" (w6),
-      [w7] "=v" (w7)
-    : // input list
-      [index] "r" (j),
-      [rb] "r" (Rb),
-      [wptr] "r" (w)
-    : // clobber list
-      "memory", "r26", "r27"
-  );
-
-  // From 16 to W_SIZE (64)
-  for (; j < W_SIZE; j = j + 2) {
-    __asm__ volatile (
-      "sldi       27,%[index],3\n\t"          // j * 8 (doubleword size)
-      "add        26,27,%[kptr]\n\t"          // alias to k[j] location
-      "lvx        11,0,26\n\t"
-
-      "vperm      9,%[w1],%[w0],%[vrb]\n\t"   // v9 = w[j-15] , w[j-14]
-      "vperm      10,%[w5],%[w4],%[vrb]\n\t"  // v10 = w[j-7] , w[j-6]
-
-      "vshasigmad 9,9,0,0\n\t"                // v9 = s0(w[j-15]) , s0(w[j-14])
-      "vshasigmad 12,%[w7],0,0xf\n\t"         // v12 = s1(w[j-2]) , s1(w[j-1])
-
-      // v9 = s0(w[j-15]) + w[j-7] , s0(w[j-14]) + w[j-6]
-      "vaddudm    9,9,10\n\t"
-      // v8 = s1(w[j-2]) + w[j-16] , s1(w[j-1]) + w[j-15]
-      "vaddudm    8,12,%[w0]\n\t"
-      // v9 = s0(w[j-15]) + w[j-7] + s1(w[j-2]) + w[j-16],  // w[j]
-      //      s0(w[j-14]) + w[j-6] + s1(w[j-1]) + w[j-15]   // w[j+1]
-      "vaddudm    9,9,8\n\t"
-
-      // Updating w0 to w7 to hold the "new previous" 16 values from w.
-      "vor        %[w0_out],%[w1],%[w1]\n\t"
-      "vor        %[w1_out],%[w2],%[w2]\n\t"
-      "vor        %[w2_out],%[w3],%[w3]\n\t"
-      "vor        %[w3_out],%[w4],%[w4]\n\t"
-      "vor        %[w4_out],%[w5],%[w5]\n\t"
-      "vor        %[w5_out],%[w6],%[w6]\n\t"
-      "vor        %[w6_out],%[w7],%[w7]\n\t"
-      "vor        %[w7_out],9,9\n\t"
-
-
-      // store k + w to v9 (2 values at once)
-      "vaddudm    9,9,11\n\t"
-
-      // Move first doubleword in v9 to kpw1
-      "mfvsrd     %[kpw1], 41\n\t"
-
-      //Move higher double word to low.
-      "vperm      9,9,9,%[vrb]\n\t"
-      // Move first doubleword in v9 to kpw0
-      "mfvsrd     %[kpw0], 41\n\t"
-
-      : // output list
-        [w0_out] "=v" (w0),
-        [w1_out] "=v" (w1),
-        [w2_out] "=v" (w2),
-        [w3_out] "=v" (w3),
-        [w4_out] "=v" (w4),
-        [w5_out] "=v" (w5),
-        [w6_out] "=v" (w6),
-        [w7_out] "=v" (w7),
-        [kpw0] "=r" (kpw0),
-        [kpw1] "=r" (kpw1)
-      : // input list
-        [index] "r" (j),
-        [kptr] "r" (k),
-        [vrb] "v" (vRb),
-        [w0] "[w0_out]" (w0),
-        [w1] "[w1_out]" (w1),
-        [w2] "[w2_out]" (w2),
-        [w3] "[w3_out]" (w3),
-        [w4] "[w4_out]" (w4),
-        [w5] "[w5_out]" (w5),
-        [w6] "[w6_out]" (w6),
-        [w7] "[w7_out]" (w7)
-      : // clobber list
-        "r26", "r27", "v8", "v9", "v10", "v11", "v12", "memory"
-    );
-
-    switch ((j / 2) % 4) {
-      case 0:
-        SHA2_ROUND(a, b, c, d, e, f, g, h, kpw0);
-        SHA2_ROUND(h, a, b, c, d, e, f, g, kpw1);
-        break;
-      case 1:
-        SHA2_ROUND(g, h, a, b, c, d, e, f, kpw0);
-        SHA2_ROUND(f, g, h, a, b, c, d, e, kpw1);
-        break;
-      case 2:
-        SHA2_ROUND(e, f, g, h, a, b, c, d, kpw0);
-        SHA2_ROUND(d, e, f, g, h, a, b, c, kpw1);
-        break;
-      case 3:
-        SHA2_ROUND(c, d, e, f, g, h, a, b, kpw0);
-        SHA2_ROUND(b, c, d, e, f, g, h, a, kpw1);
-        break;
-    }
+    CALC_2W(w0, w1, w2, w3, w4, w5, w6, w7, kpw0, kpw1, j, vRb, k);
+    SHA2_ROUND(c, d, e, f, g, h, a, b, kpw0);
+    SHA2_ROUND(b, c, d, e, f, g, h, a, kpw1);
+    j += 2;
   }
 #endif
 
