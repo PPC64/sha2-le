@@ -7,23 +7,6 @@
 
 #include "base-types.h"
 
-#define ROTR(n, b) (((n) >> (b)) | ((n) << ((base_type_size * 8) - (b))))
-
-#define SHR(x, n) ((x) >> (n))
-
-#define BIGSIGMA0(x) (ROTR((x), S0_args[0]) ^ ROTR((x), S0_args[1]) ^ \
-  ROTR((x), S0_args[2]))
-
-#define BIGSIGMA1(x) (ROTR((x), S1_args[0]) ^ ROTR((x), S1_args[1]) ^ \
-  ROTR((x), S1_args[2]))
-
-#define SIGMA0(x) (ROTR((x), s0_args[0]) ^ ROTR((x), s0_args[1]) ^ \
-  SHR((x), s0_args[2]))
-
-#define SIGMA1(x) (ROTR((x), s1_args[0]) ^ ROTR((x), s1_args[1]) ^ \
-  SHR((x), s1_args[2]))
-
-
 /*
  * As SHA2_ROUND is only defining the new elements and the rest is being
  * handled outside the macro, the new elements that should be 'a' and 'e' are
@@ -364,6 +347,7 @@ void sha2_transform(base_type* _h, base_type* w) {
   SHA2_ROUND(b, c, d, e, f, g, h, a, k[15] + w[15]);
 
 #if SHA_BITS == 256
+
   base_type kpw0, kpw1, kpw2, kpw3;
   vector_base_type w0, w1, w2, w3;
 
@@ -422,6 +406,7 @@ void sha2_transform(base_type* _h, base_type* w) {
     SHA2_ROUND(b, c, d, e, f, g, h, a, kpw1);
     j += 2;
   }
+
 #endif
 
   _h[0] += a;
