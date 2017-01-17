@@ -400,7 +400,7 @@ void sha2_transform(base_type* _h, base_type* w) {
   int j = 16;
   LOAD_W(w0, w1, w2, w3, w4, w5, w6, w7, vRb, j, Rb, w);
 
-  // From 16 to W_SIZE (64) in 8 steps
+  // From 16 to W_SIZE (80) in 8 steps
   while (j < W_SIZE) {
     CALC_2W(w0, w1, w2, w3, w4, w5, w6, w7, kpw0, kpw1, j, vRb, k);
     SHA2_ROUND(a, b, c, d, e, f, g, h, kpw0);
