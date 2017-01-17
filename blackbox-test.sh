@@ -13,7 +13,7 @@ function cmp() {
     if [[ $? -eq 0 ]]; then
       echo -en "$2 is Ok\t"
     else
-      echo -en "$2 is NOK\t"
+      echo -en "$2 is NOK\n"
       tail -n2 _out
       RET_CODE=1
     fi
