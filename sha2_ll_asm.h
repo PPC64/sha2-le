@@ -77,6 +77,122 @@
       "r6", "r7", "r8", "r9", "r10", "r23"                                    \
   ); } while (0)
 
+#define LOAD_W(_w0, _w1, _w2, _w3, _vRb, _vRc, _j, _Rb, _Rc, _w) do {         \
+  __asm__ volatile (                                                          \
+    "lvsl    %[vrb],0,%[rb]\n\t"   /* parameter for vperm                  */ \
+    "lvsr    %[vrc],0,%[rc]\n\t"   /* parameter for vperm                  */ \
+    "sldi    27,%[index],2\n\t"    /* j * 4 (word size)                    */ \
+    "add     27,27,%[wptr]\n\t"    /* alias to W[j] location               */ \
+    "addi    26,27,-64\n\t"                                                   \
+    "lvx     %[w0],0,26\n\t"       /* load w[j-16] to w[j-13] to vector    */ \
+    "addi    26,27,-48\n\t"                                                   \
+    "lvx     %[w1],0,26\n\t"       /* load w[j-12] to w[j-9] to vector     */ \
+    "addi    26,27,-32\n\t"                                                   \
+    "lvx     %[w2],0,26\n\t"       /* load w[j-8] to w[j-5] to vector      */ \
+    "addi    26,27,-16\n\t"                                                   \
+    "lvx     %[w3],0,26\n\t"       /* load w[j-4] to w[j-1] to vector      */ \
+    : /* output list */                                                       \
+      [w0] "=v" ((_w0)),                                                      \
+      [w1] "=v" ((_w1)),                                                      \
+      [w2] "=v" ((_w2)),                                                      \
+      [w3] "=v" ((_w3)),                                                      \
+      [vrb] "=v" ((_vRb)),                                                    \
+      [vrc] "=v" ((_vRc))                                                     \
+    : /* input list */                                                        \
+      [index] "r" ((_j)),                                                     \
+      [rb] "r" ((_Rb)),                                                       \
+      [rc] "r" ((_Rc)),                                                       \
+      [wptr] "r" ((_w))                                                       \
+    : /* clobber list */                                                      \
+      "r26", "r27", "memory"                                                  \
+  ); } while (0)
+
+#define CALC_4W(_w0, _w1, _w2, _w3, _kpw0, _kpw1, _kpw2, _kpw3,               \
+                _j, _vRb, _vRc, _k) do {                                      \
+  __asm__ volatile (                                                          \
+    "sldi       27,%[index],2\n\t"        /* j * 4 (word size)             */ \
+    "add        26,27,%[kptr]\n\t"        /* alias to k[j] location        */ \
+    "lvx        11,0,26\n\t"                                                  \
+    /* v4 = w[j-15], w[j-14], w[j-13], w[j-12]                             */ \
+    "vperm      4,%[w1],%[w0],%[vrc]\n\t"                                     \
+    /* v12 = w[j-7], w[j-6], w[j-5], w[j-4]                                */ \
+    "vperm      12,%[w3],%[w2],%[vrc]\n\t"                                    \
+    /* v13 = w[j-2], w[j-1], w[j-4], w[j-3]                                */ \
+    "vperm      13,%[w3],%[w3],%[vrb]\n\t"                                    \
+    /* v4 = s0(w[j-15]) , s0(w[j-14]) , s0(w[j-13]) , s0(w[j-12])          */ \
+    "vshasigmaw 4,4,0,0\n\t"                                                  \
+    /* v5 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j-4]) , s1(w[j-3])              */ \
+    "vshasigmaw 5,13,0,0xf\n\t"                                               \
+    /* v6 = s0(w[j-15]) + w[j-7],                                          */ \
+    /*      s0(w[j-14]) + w[j-6],                                          */ \
+    /*      s0(w[j-13]) + w[j-5],                                          */ \
+    /*      s0(w[j-12]) + w[j-4]                                           */ \
+    "vadduwm    6,4,12\n\t"                                                   \
+    /* v8 = s0(w[j-15]) + w[j-7] + w[j-16],                                */ \
+    /*      s0(w[j-14]) + w[j-6] + w[j-15],                                */ \
+    /*      s0(w[j-13]) + w[j-5] + w[j-14],                                */ \
+    /*      s0(w[j-12]) + w[j-4] + w[j-13]                                 */ \
+    "vadduwm    8,6,%[w0]\n\t"                                                \
+    /* v9 = s0(w[j-15]) + w[j-7] + w[j-16] + s1(w[j-2]), // w[j]           */ \
+    /*      s0(w[j-14]) + w[j-6] + w[j-15] + s1(w[j-1]), // w[j+1]         */ \
+    /*      s0(w[j-13]) + w[j-5] + w[j-14] + s1(w[j-4]), // UNDEFINED      */ \
+    /*      s0(w[j-12]) + w[j-4] + w[j-13] + s1(w[j-3])  // UNDEFINED      */ \
+    "vadduwm    9,8,5\n\t"                                                    \
+    /* At this point, v9[0] and v9[1] are the correct values to be         */ \
+    /* stored at w[j] and w[j+1].                                          */ \
+    /* v9[2] and v9[3] are not considered                                  */ \
+    /* v3 = s1(w[j]) , s1(s(w[j+1]) , UNDEFINED , UNDEFINED                */ \
+    "vshasigmaw 3,9,0,0xf\n\t"                                                \
+    /* TODO: review this!! There must be a more efficient way.             */ \
+    /* v5 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j]) , s1(w[j+1])                */ \
+    "vperm      3,3,3,%[vrb]\n\t"                                             \
+    "vperm      5,5,3,%[vrb]\n\t"                                             \
+    "vperm      5,5,5,%[vrb]\n\t"                                             \
+    /* v9 = s0(w[j-15]) + w[j-7] + w[j-16] + s1(w[j-2]), // w[j]           */ \
+    /*      s0(w[j-14]) + w[j-6] + w[j-15] + s1(w[j-1]), // w[j+1]         */ \
+    /*      s0(w[j-13]) + w[j-5] + w[j-14] + s1(w[j]),   // w[j+2]         */ \
+    /*      s0(w[j-12]) + w[j-4] + w[j-13] + s1(w[j+1])  // w[j+4]         */ \
+    "vadduwm    9,8,5\n\t"                                                    \
+    /* Updating w0 to w3 to hold the "new previous" 16 values from w.      */ \
+    "vor        %[w0],%[w1],%[w1]\n\t"                                        \
+    "vor        %[w1],%[w2],%[w2]\n\t"                                        \
+    "vor        %[w2],%[w3],%[w3]\n\t"                                        \
+    "vor        %[w3],9,9\n\t"                                                \
+    /* store k + w to v9 (4 values at once)                                */ \
+    "vadduwm    9,9,11\n\t"                                                   \
+    /* Move first doubleword in v9 to kpw1                                 */ \
+    "mfvsrd     %[kpw2], 41\n\t"                                              \
+    /* Move low word to kpw0                                               */ \
+    "srdi       %[kpw3], %[kpw2], 32\n\t"                                     \
+    /* Clear low word. Keep high word.                                     */ \
+    "clrldi     %[kpw2], %[kpw2], 32\n\t"                                     \
+    /* Move higher double word to low.                                     */ \
+    "vperm      9,9,9,%[vrb]\n\t"                                             \
+    /* Move first doubleword in v9 to kpw2                                 */ \
+    "mfvsrd     %[kpw0], 41\n\t"                                              \
+    /* Move low word to kpw2                                               */ \
+    "srdi       %[kpw1], %[kpw0], 32\n\t"                                     \
+    /* Clear low word. Keep high word.                                     */ \
+    "clrldi     %[kpw2], %[kpw2], 32\n\t"                                     \
+    : /* output list */                                                       \
+      [w0] "+v" ((_w0)),                                                      \
+      [w1] "+v" ((_w1)),                                                      \
+      [w2] "+v" ((_w2)),                                                      \
+      [w3] "+v" ((_w3)),                                                      \
+      [kpw0] "=r" ((_kpw0)),                                                  \
+      [kpw1] "=r" ((_kpw1)),                                                  \
+      [kpw2] "=r" ((_kpw2)),                                                  \
+      [kpw3] "=r" ((_kpw3))                                                   \
+    : /* input list */                                                        \
+      [index] "r" ((_j)),                                                     \
+      [vrb] "v" ((_vRb)),                                                     \
+      [vrc] "v" ((_vRc)),                                                     \
+      [kptr] "r" ((_k))                                                       \
+    : /* clobber list */                                                      \
+      "v3", "v4", "v5", "v6", "v8", "v9", "v11", "v12", "v13", "r26", "r27",  \
+      "memory"                                                                \
+  ); } while (0)
+
 #else // SHA_BITS == 512
 
 #define SHA2_ROUND(_a, _b, _c, _d, _e, _f, _g, _h, _kplusw) do {              \
@@ -125,7 +241,6 @@ void sha2_transform(base_type* _h, base_type* w) {
   base_type a, b, c, d, e, f, g, h;
   int Rb = 8;
   vector int vRb;
-  int j = 16;
 
   a = _h[0];
   b = _h[1];
@@ -162,167 +277,30 @@ void sha2_transform(base_type* _h, base_type* w) {
   vector int vRc;
 
   // Load 16 elements from w out of the loop
-  __asm__ volatile (
-    "lvsl       %[vrb],0,%[rb]\n\t"   // parameter for vperm
-    "lvsr       %[vrc],0,%[rc]\n\t"   // parameter for vperm
-    "sldi       27,%[index],2\n\t"    // j * 4 (word size)
-    "add        27,27,%[wptr]\n\t"    // alias to W[j] location
+  int j = 16;
+  LOAD_W(w0, w1, w2, w3, vRb, vRc, j, Rb, Rc, w);
 
-    // load 4 words to vector: w[j-16] to w[j-13]
-    "addi       26,27,-64\n\t"
-    "lvx        %[w0],0,26\n\t"
+  // From 16 to W_SIZE (64) in 8 steps
+  while (j < W_SIZE) {
+    CALC_4W(w0, w1, w2, w3, kpw0, kpw1, kpw2, kpw3, j, vRb, vRc, k);
+    SHA2_ROUND(a, b, c, d, e, f, g, h, kpw0);
+    SHA2_ROUND(h, a, b, c, d, e, f, g, kpw1);
+    SHA2_ROUND(g, h, a, b, c, d, e, f, kpw2);
+    SHA2_ROUND(f, g, h, a, b, c, d, e, kpw3);
+    j += 4;
 
-    // load 4 words to vector: w[j-12] to w[j-9]
-    "addi       26,27,-48\n\t"
-    "lvx        %[w1],0,26\n\t"
-
-    // load 4 words to vector: w[j-8] to w[j-5]
-    "addi       26,27,-32\n\t"
-    "lvx        %[w2],0,26\n\t"
-
-    // load 4 words to vector: w[j-4] to w[j-1]
-    "addi       26,27,-16\n\t"
-    "lvx        %[w3],0,26\n\t"
-
-    : // output list
-      [w0] "=v" (w0),
-      [w1] "=v" (w1),
-      [w2] "=v" (w2),
-      [w3] "=v" (w3),
-      [vrb] "=v" (vRb),
-      [vrc] "=v" (vRc)
-    : // input list
-      [index] "r" (j),
-      [rb] "r" (Rb),
-      [rc] "r" (Rc),
-      [wptr] "r" (w)
-    : // clobber list
-      "r26", "r27", "memory"
-  );
-
-  // From 16 to W_SIZE (64)
-  for (; j < W_SIZE; j = j + 4) {
-    __asm__ volatile (
-      "sldi       27,%[index],2\n\t"        // j * 4 (word size)
-
-      "add        26,27,%[kptr]\n\t"        // alias to k[j] location
-      "lvx        11,0,26\n\t"
-
-      // v4 = w[j-15], w[j-14], w[j-13], w[j-12]
-      "vperm      4,%[w1],%[w0],%[vrc]\n\t"
-
-      // v12 = w[j-7], w[j-6], w[j-5], w[j-4]
-      "vperm      12,%[w3],%[w2],%[vrc]\n\t"
-
-      // v13 = w[j-2], w[j-1], w[j-4], w[j-3]
-      "vperm      13,%[w3],%[w3],%[vrb]\n\t"
-
-      // v4 = s0(w[j-15]) , s0(w[j-14]) , s0(w[j-13]) , s0(w[j-12])
-      "vshasigmaw 4,4,0,0\n\t"
-
-      // v5 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j-4]) , s1(w[j-3])
-      "vshasigmaw 5,13,0,0xf\n\t"
-
-      // v6 = s0(w[j-15]) + w[j-7],
-      //      s0(w[j-14]) + w[j-6],
-      //      s0(w[j-13]) + w[j-5],
-      //      s0(w[j-12]) + w[j-4]
-      "vadduwm    6,4,12\n\t"
-      // v8 = s0(w[j-15]) + w[j-7] + w[j-16],
-      //      s0(w[j-14]) + w[j-6] + w[j-15],
-      //      s0(w[j-13]) + w[j-5] + w[j-14],
-      //      s0(w[j-12]) + w[j-4] + w[j-13]
-      "vadduwm    8,6,%[w0]\n\t"
-      // v9 = s0(w[j-15]) + w[j-7] + w[j-16] + s1(w[j-2]), // w[j]
-      //      s0(w[j-14]) + w[j-6] + w[j-15] + s1(w[j-1]), // w[j+1]
-      //      s0(w[j-13]) + w[j-5] + w[j-14] + s1(w[j-4]), // UNDEFINED
-      //      s0(w[j-12]) + w[j-4] + w[j-13] + s1(w[j-3])  // UNDEFINED
-      "vadduwm    9,8,5\n\t"
-
-      // At this point, v9[0] and v9[1] are the correct values to be stored at
-      // w[j] and w[j+1].
-      // v9[2] and v9[3] are not considered
-
-      // v3 = s1(w[j]) , s1(s(w[j+1]) , UNDEFINED , UNDEFINED
-      "vshasigmaw 3,9,0,0xf\n\t"
-
-      // TODO: review this!! There must be a more efficient way.
-      // v5 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j]) , s1(w[j+1])
-      "vperm      3,3,3,%[vrb]\n\t"
-      "vperm      5,5,3,%[vrb]\n\t"
-      "vperm      5,5,5,%[vrb]\n\t"
-
-      // v9 = s0(w[j-15]) + w[j-7] + w[j-16] + s1(w[j-2]), // w[j]
-      //      s0(w[j-14]) + w[j-6] + w[j-15] + s1(w[j-1]), // w[j+1]
-      //      s0(w[j-13]) + w[j-5] + w[j-14] + s1(w[j]),   // w[j+2]
-      //      s0(w[j-12]) + w[j-4] + w[j-13] + s1(w[j+1])  // w[j+4]
-      "vadduwm    9,8,5\n\t"
-
-      // Updating w0 to w3 to hold the "new previous" 16 values from w.
-      "vor        %[w0_out],%[w1],%[w1]\n\t"
-      "vor        %[w1_out],%[w2],%[w2]\n\t"
-      "vor        %[w2_out],%[w3],%[w3]\n\t"
-      "vor        %[w3_out],9,9\n\t"
-
-      // store k + w to v9 (4 values at once)
-      "vadduwm    9,9,11\n\t"
-
-      // Move first doubleword in v9 to kpw1
-      "mfvsrd     %[kpw2], 41\n\t"
-      // Move low word to kpw0
-      "srdi       %[kpw3], %[kpw2], 32\n\t"
-      // Clear low word. Keep high word.
-      "clrldi     %[kpw2], %[kpw2], 32\n\t"
-
-      //Move higher double word to low.
-      "vperm      9,9,9,%[vrb]\n\t"
-      // Move first doubleword in v9 to kpw2
-      "mfvsrd     %[kpw0], 41\n\t"
-      // Move low word to kpw2
-      "srdi       %[kpw1], %[kpw0], 32\n\t"
-      // Clear low word. Keep high word.
-      "clrldi     %[kpw2], %[kpw2], 32\n\t"
-
-
-      : // output list
-        [w0_out] "=v" (w0),
-        [w1_out] "=v" (w1),
-        [w2_out] "=v" (w2),
-        [w3_out] "=v" (w3),
-        [kpw0] "=r" (kpw0),
-        [kpw1] "=r" (kpw1),
-        [kpw2] "=r" (kpw2),
-        [kpw3] "=r" (kpw3)
-      : // input list
-        [index] "r" (j),
-        [vrb] "v" (vRb),
-        [vrc] "v" (vRc),
-        [kptr] "r" (k),
-        [wptr] "r" (w),
-        [w0] "[w0_out]" (w0),
-        [w1] "[w1_out]" (w1),
-        [w2] "[w2_out]" (w2),
-        [w3] "[w3_out]" (w3)
-      : // clobber list
-        "v3", "v4", "v5", "v6", "v8", "v9", "v11", "v12", "v13", "r26", "r27",
-        "memory"
-    );
-    if (0 == (j % 8)) {
-      SHA2_ROUND(a, b, c, d, e, f, g, h, kpw0);
-      SHA2_ROUND(h, a, b, c, d, e, f, g, kpw1);
-      SHA2_ROUND(g, h, a, b, c, d, e, f, kpw2);
-      SHA2_ROUND(f, g, h, a, b, c, d, e, kpw3);
-    } else {
-      SHA2_ROUND(e, f, g, h, a, b, c, d, kpw0);
-      SHA2_ROUND(d, e, f, g, h, a, b, c, kpw1);
-      SHA2_ROUND(c, d, e, f, g, h, a, b, kpw2);
-      SHA2_ROUND(b, c, d, e, f, g, h, a, kpw3);
-    }
+    CALC_4W(w0, w1, w2, w3, kpw0, kpw1, kpw2, kpw3, j, vRb, vRc, k);
+    SHA2_ROUND(e, f, g, h, a, b, c, d, kpw0);
+    SHA2_ROUND(d, e, f, g, h, a, b, c, kpw1);
+    SHA2_ROUND(c, d, e, f, g, h, a, b, kpw2);
+    SHA2_ROUND(b, c, d, e, f, g, h, a, kpw3);
+    j += 4;
   }
 
 #else // SHA_BITS == 512
   vector_base_type w0, w1, w2, w3, w4, w5, w6, w7;
   base_type kpw0, kpw1;
+  int j = 16;
 
   // Load 16 elements from w out of the loop
   __asm__ volatile(
