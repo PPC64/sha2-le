@@ -141,20 +141,20 @@
     "vor        %[w3],9,9\n\t"                                                \
     /* store k + w to v9 (4 values at once)                                */ \
     "vadduwm    9,9,11\n\t"                                                   \
-    /* Move first doubleword in v9 to kpw1 (vs41 corresponds to v9)        */ \
+    /* Move low doubleword in v9 to kpw2 (vs41 corresponds to v9)          */ \
     "mfvsrd     %[kpw2], 41\n\t"                                              \
-    /* Move low word to kpw0                                               */ \
+    /* Move low word to kpw3                                               */ \
     "srdi       %[kpw3], %[kpw2], 32\n\t"                                     \
     /* Clear low word. Keep high word.                                     */ \
     "clrldi     %[kpw2], %[kpw2], 32\n\t"                                     \
-    /* Move higher double word to low.                                     */ \
+    /* Move high doubleword to low.                                        */ \
     "vperm      9,9,9,%[vrb]\n\t"                                             \
-    /* Move first doubleword in v9 to kpw2 (vs41 corresponds to v9)        */ \
+    /* Move high doubleword in v9 to kpw0 (vs41 corresponds to v9)         */ \
     "mfvsrd     %[kpw0], 41\n\t"                                              \
-    /* Move low word to kpw2                                               */ \
+    /* Move higher word to kpw2                                            */ \
     "srdi       %[kpw1], %[kpw0], 32\n\t"                                     \
-    /* Clear low word. Keep high word.                                     */ \
-    "clrldi     %[kpw2], %[kpw2], 32\n\t"                                     \
+    /* Clear higher word. Keep highest word.                               */ \
+    "clrldi     %[kpw0], %[kpw0], 32\n\t"                                     \
     : /* output list */                                                       \
       [w0] "+v" ((_w0)),                                                      \
       [w1] "+v" ((_w1)),                                                      \
