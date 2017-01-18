@@ -126,11 +126,9 @@
     /* v9[2] and v9[3] are not considered                                  */ \
     /* v3 = s1(w[j]) , s1(s(w[j+1]) , UNDEFINED , UNDEFINED                */ \
     "vshasigmaw 3,9,0,0xf\n\t"                                                \
-    /* TODO: review this!! There must be a more efficient way.             */ \
     /* v5 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j]) , s1(w[j+1])                */ \
-    "vperm      3,3,3,%[vrb]\n\t"                                             \
-    "vperm      5,5,3,%[vrb]\n\t"                                             \
-    "vperm      5,5,5,%[vrb]\n\t"                                             \
+    /*  NOTE: vs37 corresponds to v5 and vs35 corresponds to v3            */ \
+    "xxpermdi   37,35,37,3\n\t"                                               \
     /* v9 = s0(w[j-15]) + w[j-7] + w[j-16] + s1(w[j-2]), // w[j]           */ \
     /*      s0(w[j-14]) + w[j-6] + w[j-15] + s1(w[j-1]), // w[j+1]         */ \
     /*      s0(w[j-13]) + w[j-5] + w[j-14] + s1(w[j]),   // w[j+2]         */ \
@@ -143,7 +141,7 @@
     "vor        %[w3],9,9\n\t"                                                \
     /* store k + w to v9 (4 values at once)                                */ \
     "vadduwm    9,9,11\n\t"                                                   \
-    /* Move first doubleword in v9 to kpw1                                 */ \
+    /* Move first doubleword in v9 to kpw1 (vs41 corresponds to v9)        */ \
     "mfvsrd     %[kpw2], 41\n\t"                                              \
     /* Move low word to kpw0                                               */ \
     "srdi       %[kpw3], %[kpw2], 32\n\t"                                     \
@@ -151,7 +149,7 @@
     "clrldi     %[kpw2], %[kpw2], 32\n\t"                                     \
     /* Move higher double word to low.                                     */ \
     "vperm      9,9,9,%[vrb]\n\t"                                             \
-    /* Move first doubleword in v9 to kpw2                                 */ \
+    /* Move first doubleword in v9 to kpw2 (vs41 corresponds to v9)        */ \
     "mfvsrd     %[kpw0], 41\n\t"                                              \
     /* Move low word to kpw2                                               */ \
     "srdi       %[kpw1], %[kpw0], 32\n\t"                                     \
