@@ -60,10 +60,37 @@
       "r6", "r7", "r8", "r9", "r10", "r23"                                    \
   ); } while (0)
 
-#define LOAD_W(_w0, _w1, _w2, _w3, _vRb, _vRc, _j, _Rb, _Rc, _w) do {         \
+#define DEQUE(_k, _kpw0, _kpw1, _kpw2, _kpw3,  _vrb) do {                     \
   __asm__ volatile (                                                          \
-    "lvsl    %[vrb],0,%[rb]\n\t"   /* parameter for vperm                  */ \
-    "lvsr    %[vrc],0,%[rc]\n\t"   /* parameter for vperm                  */ \
+    /* Move first doubleword in v0 to kpw1                                 */ \
+    "mfvrd      %[kpw2], %[k]\n\t"                                            \
+    /* Move low word to kpw3                                               */ \
+    "srdi       %[kpw3], %[kpw2], 32\n\t"                                     \
+    /* Clear low word. Keep high word.                                     */ \
+    "clrldi     %[kpw2], %[kpw2], 32\n\t"                                     \
+    /* Move higher double word to low.                                     */ \
+    "vperm      0, %[k], %[k], %[vrb]\n\t"                                    \
+    /* Move first doubleword in v0 to kpw0                                 */ \
+    "mfvrd      %[kpw0], 0\n\t"                                               \
+    /* Move low word to kpw1                                               */ \
+    "srdi       %[kpw1], %[kpw0], 32\n\t"                                     \
+    /* Clear low word. Keep high word.                                     */ \
+    "clrldi     %[kpw0], %[kpw0], 32\n\t"                                     \
+    : /* output list */                                                       \
+      [kpw0] "=r" ((_kpw0)),                                                  \
+      [kpw1] "=r" ((_kpw1)),                                                  \
+      [kpw2] "=r" ((_kpw2)),                                                  \
+      [kpw3] "=r" ((_kpw3))                                                   \
+    : /* input list */                                                        \
+      [k] "v" ((_k)),                                                         \
+      [vrb] "v" ((_vrb))                                                      \
+    : /* clobber list */                                                      \
+      "v0", "memory"                                                          \
+  ); } while (0)
+
+#define LOAD_W_PLUS_K(_k0, _k1, _k2, _k3, _w0, _w1, _w2, _w3, _vRb, _vRc, _j,  \
+    _Rb, _Rc, _w, _k) do {                                                    \
+  __asm__ volatile (                                                          \
     "sldi    27,%[index],2\n\t"    /* j * 4 (word size)                    */ \
     "add     27,27,%[wptr]\n\t"    /* alias to W[j] location               */ \
     "addi    26,27,-64\n\t"                                                   \
@@ -74,7 +101,30 @@
     "lvx     %[w2],0,26\n\t"       /* load w[j-8] to w[j-5] to vector      */ \
     "addi    26,27,-16\n\t"                                                   \
     "lvx     %[w3],0,26\n\t"       /* load w[j-4] to w[j-1] to vector      */ \
+    /* Load 4*4 k values                                                   */ \
+    "sldi    27,%[index],2\n\t"    /* j * 4 (word size)                    */ \
+    "add     27,27,%[kptr]\n\t"    /* alias to k[j] location               */ \
+    "addi    26,27,-64\n\t"                                                   \
+    "lvx     0,0,26\n\t"       /* load k[j-16] to k[j-13] to vector        */ \
+    "addi    26,27,-48\n\t"                                                   \
+    "lvx     1,0,26\n\t"       /* load k[j-12] to k[j-9] to vector         */ \
+    "addi    26,27,-32\n\t"                                                   \
+    "lvx     2,0,26\n\t"       /* load k[j-8] to k[j-5] to vector          */ \
+    "addi    26,27,-16\n\t"                                                   \
+    "lvx     3,0,26\n\t"       /* load k[j-4] to k[j-1] to vector          */ \
+                                                                              \
+    "lvsl    %[vrb],0,%[rb]\n\t"   /* parameter for vperm                  */ \
+    "lvsr    %[vrc],0,%[rc]\n\t"   /* parameter for vperm                  */ \
+    /* Add _w to k                                                         */ \
+    "vadduwm    %[k0],0,%[w0]\n\t"                                            \
+    "vadduwm    %[k1],1,%[w1]\n\t"                                            \
+    "vadduwm    %[k2],2,%[w2]\n\t"                                            \
+    "vadduwm    %[k3],3,%[w3]\n\t"                                            \
     : /* output list */                                                       \
+      [k0] "=v" ((_k0)),                                                      \
+      [k1] "=v" ((_k1)),                                                      \
+      [k2] "=v" ((_k2)),                                                      \
+      [k3] "=v" ((_k3)),                                                      \
       [w0] "=v" ((_w0)),                                                      \
       [w1] "=v" ((_w1)),                                                      \
       [w2] "=v" ((_w2)),                                                      \
@@ -85,9 +135,10 @@
       [index] "r" ((_j)),                                                     \
       [rb] "r" ((_Rb)),                                                       \
       [rc] "r" ((_Rc)),                                                       \
-      [wptr] "r" ((_w))                                                       \
+      [wptr] "r" ((_w)),                                                      \
+      [kptr] "r" ((_k))                                                       \
     : /* clobber list */                                                      \
-      "r26", "r27", "memory"                                                  \
+      "r26", "r27", "v0", "v1", "v2", "v3", "memory"                          \
   ); } while (0)
 
 #define CALC_4W(_w0, _w1, _w2, _w3, _kpw0, _kpw1, _kpw2, _kpw3,               \
@@ -326,35 +377,44 @@ void sha2_transform(base_type* _h, base_type* w) {
   g = _h[6];
   h = _h[7];
 
-  // Loop unrolling, from 0 to 15
-  SHA2_ROUND(a, b, c, d, e, f, g, h, k[0] + w[0]);
-  SHA2_ROUND(h, a, b, c, d, e, f, g, k[1] + w[1]);
-  SHA2_ROUND(g, h, a, b, c, d, e, f, k[2] + w[2]);
-  SHA2_ROUND(f, g, h, a, b, c, d, e, k[3] + w[3]);
-  SHA2_ROUND(e, f, g, h, a, b, c, d, k[4] + w[4]);
-  SHA2_ROUND(d, e, f, g, h, a, b, c, k[5] + w[5]);
-  SHA2_ROUND(c, d, e, f, g, h, a, b, k[6] + w[6]);
-  SHA2_ROUND(b, c, d, e, f, g, h, a, k[7] + w[7]);
-  SHA2_ROUND(a, b, c, d, e, f, g, h, k[8] + w[8]);
-  SHA2_ROUND(h, a, b, c, d, e, f, g, k[9] + w[9]);
-  SHA2_ROUND(g, h, a, b, c, d, e, f, k[10] + w[10]);
-  SHA2_ROUND(f, g, h, a, b, c, d, e, k[11] + w[11]);
-  SHA2_ROUND(e, f, g, h, a, b, c, d, k[12] + w[12]);
-  SHA2_ROUND(d, e, f, g, h, a, b, c, k[13] + w[13]);
-  SHA2_ROUND(c, d, e, f, g, h, a, b, k[14] + w[14]);
-  SHA2_ROUND(b, c, d, e, f, g, h, a, k[15] + w[15]);
 
 #if SHA_BITS == 256
 
   base_type kpw0, kpw1, kpw2, kpw3;
-  vector_base_type w0, w1, w2, w3;
 
-  int Rc = 4;
-  vector int vRc;
+  vector_base_type w0, w1, w2, w3;
+  vector_base_type kplusw0, kplusw1, kplusw2, kplusw3;
 
   // Load 16 elements from w out of the loop
+  int Rc = 4;
+  vector int vRc;
   int j = 16;
-  LOAD_W(w0, w1, w2, w3, vRb, vRc, j, Rb, Rc, w);
+  LOAD_W_PLUS_K(kplusw0, kplusw1, kplusw2, kplusw3, w0, w1, w2, w3, vRb, vRc, j, Rb, Rc, w, k);
+
+  // Loop unrolling, from 0 to 15
+  DEQUE  (kplusw0, kpw0, kpw1, kpw2, kpw3, vRb);
+  SHA2_ROUND(a, b, c, d, e, f, g, h, kpw0);
+  SHA2_ROUND(h, a, b, c, d, e, f, g, kpw1);
+  SHA2_ROUND(g, h, a, b, c, d, e, f, kpw2);
+  SHA2_ROUND(f, g, h, a, b, c, d, e, kpw3);
+
+  DEQUE  (kplusw1, kpw0, kpw1, kpw2, kpw3, vRb);
+  SHA2_ROUND(e, f, g, h, a, b, c, d, kpw0);
+  SHA2_ROUND(d, e, f, g, h, a, b, c, kpw1);
+  SHA2_ROUND(c, d, e, f, g, h, a, b, kpw2);
+  SHA2_ROUND(b, c, d, e, f, g, h, a, kpw3);
+
+  DEQUE  (kplusw2, kpw0, kpw1, kpw2, kpw3, vRb);
+  SHA2_ROUND(a, b, c, d, e, f, g, h, kpw0);
+  SHA2_ROUND(h, a, b, c, d, e, f, g, kpw1);
+  SHA2_ROUND(g, h, a, b, c, d, e, f, kpw2);
+  SHA2_ROUND(f, g, h, a, b, c, d, e, kpw3);
+
+  DEQUE  (kplusw3, kpw0, kpw1, kpw2, kpw3, vRb);
+  SHA2_ROUND(e, f, g, h, a, b, c, d, kpw0);
+  SHA2_ROUND(d, e, f, g, h, a, b, c, kpw1);
+  SHA2_ROUND(c, d, e, f, g, h, a, b, kpw2);
+  SHA2_ROUND(b, c, d, e, f, g, h, a, kpw3);
 
   // From 16 to W_SIZE (64) in 8 steps
   while (j < W_SIZE) {
@@ -377,6 +437,24 @@ void sha2_transform(base_type* _h, base_type* w) {
 
   vector_base_type w0, w1, w2, w3, w4, w5, w6, w7;
   base_type kpw0, kpw1;
+
+  // Loop unrolling, from 0 to 15
+  SHA2_ROUND(a, b, c, d, e, f, g, h, k[0] + w[0]);
+  SHA2_ROUND(h, a, b, c, d, e, f, g, k[1] + w[1]);
+  SHA2_ROUND(g, h, a, b, c, d, e, f, k[2] + w[2]);
+  SHA2_ROUND(f, g, h, a, b, c, d, e, k[3] + w[3]);
+  SHA2_ROUND(e, f, g, h, a, b, c, d, k[4] + w[4]);
+  SHA2_ROUND(d, e, f, g, h, a, b, c, k[5] + w[5]);
+  SHA2_ROUND(c, d, e, f, g, h, a, b, k[6] + w[6]);
+  SHA2_ROUND(b, c, d, e, f, g, h, a, k[7] + w[7]);
+  SHA2_ROUND(a, b, c, d, e, f, g, h, k[8] + w[8]);
+  SHA2_ROUND(h, a, b, c, d, e, f, g, k[9] + w[9]);
+  SHA2_ROUND(g, h, a, b, c, d, e, f, k[10] + w[10]);
+  SHA2_ROUND(f, g, h, a, b, c, d, e, k[11] + w[11]);
+  SHA2_ROUND(e, f, g, h, a, b, c, d, k[12] + w[12]);
+  SHA2_ROUND(d, e, f, g, h, a, b, c, k[13] + w[13]);
+  SHA2_ROUND(c, d, e, f, g, h, a, b, k[14] + w[14]);
+  SHA2_ROUND(b, c, d, e, f, g, h, a, k[15] + w[15]);
 
   // Load 16 elements from w out of the loop
   int j = 16;
