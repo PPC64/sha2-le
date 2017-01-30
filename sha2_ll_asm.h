@@ -18,49 +18,62 @@
 
 #if SHA_BITS == 256
 
-#define SHA2_ROUND(_a, _b, _c, _d, _e, _f, _g, _h, _kplusw) do {              \
-  __asm__ volatile (                                                          \
-    "rotlwi  10,%[e],26\n\t"    /* r10 = ROTR(e, 6)                        */ \
-    "rotlwi  8,%[e],21\n\t"     /* r8  = ROTR(e, 11)                       */ \
-    "and     7,%[f],%[e]\n\t"   /* r7  = e & f                             */ \
-    "xor     8,10,8\n\t"        /* r8  = ROTR(e, 6) ^ ROTR(e, 11)          */ \
-    "andc    9,%[g],%[e]\n\t"   /* r9  = !e & g                            */ \
-    "rotlwi  10,%[e],7\n\t"     /* r10 = ROTR(e, 25)                       */ \
-    "rotlwi  6,%[a],30\n\t"     /* r6  = ROTR(a, 2)                        */ \
-    "xor     10,8,10\n\t"       /* r10 = S1(e)                             */ \
-    "xor     9,9,7\n\t"         /* r9  = Ch(e, f, g)                       */ \
-    "xor     23,%[c],%[b]\n\t"  /* r23 = c ^ b                             */ \
-    "rotlwi  8,%[a],19\n\t"     /* r8  = ROTR(a, 13)                       */ \
-    "add     9,10,9\n\t"        /* r9  = S1(e) + Ch(e, f, g)               */ \
-    "xor     7,6,8\n\t"         /* r8  = ROTR(a, 2) ^ ROTR(a, 13)          */ \
-    "and     6,23,%[a]\n\t"     /* r6  = (c ^ b) & a                       */ \
-    "rotlwi  8,%[a],10\n\t"     /* r8  = ROTR(a, 22)                       */ \
-    "and     10,%[b],%[c]\n\t"  /* r10 = b & c                             */ \
-    "xor     8,7,8\n\t"         /* r8  = S0(a)                             */ \
-    "xor     10,6,10\n\t"       /* r10 = Maj(a,b,c)                        */ \
-    "add     9,9,%[kpw]\n\t"    /* r9  = S1(e) + Ch(e, f, g) + K[j] + W[j] */ \
-    "add     10,8,10\n\t"       /* r10 = T2 = S0(a) + Maj(a,b,c)           */ \
-    "add     9,9,%[h]\n\t"      /* r9  = T1                                */ \
-    "add     8,%[d],9\n\t"      /* r8 = d + T1                             */ \
-    "clrldi  %[d],8,32\n\t"     /* d'  = (base_type)(d + T1)               */ \
-    "add     9,10,9\n\t"        /* r9  = T2 + T1                           */ \
-    "clrldi  %[h],9,32\n\t"     /* h'  = (base_type)(T2 + T1)              */ \
-    : /* output list */                                                       \
-      [d] "+r" ((_d)),                                                        \
-      [h] "+r" ((_h))                                                         \
-    : /* input list */                                                        \
-      [a] "r" ((_a)),                                                         \
-      [b] "r" ((_b)),                                                         \
-      [c] "r" ((_c)),                                                         \
-      [e] "r" ((_e)),                                                         \
-      [f] "r" ((_f)),                                                         \
-      [g] "r" ((_g)),                                                         \
-      [kpw] "r" ((_kplusw))                                                   \
-    : /* clobber list */                                                      \
-      "r6", "r7", "r8", "r9", "r10", "r23"                                    \
+#define SHA2_ROUND(_a, _b, _c, _d, _e, _f, _g, _h, _kplusw) do {                   \
+  base_type t0;                                                                    \
+  base_type t1;                                                                    \
+  base_type t2;                                                                    \
+  base_type t3;                                                                    \
+  base_type t4;                                                                    \
+  base_type t5;                                                                    \
+  __asm__ volatile (                                                               \
+    "rotlwi  %[t4],%[e],26\n\t"      /* t4  = ROTR(e, 6)                        */ \
+    "rotlwi  %[t2],%[e],21\n\t"      /* t2  = ROTR(e, 11)                       */ \
+    "and     %[t1],%[f],%[e]\n\t"    /* t1  = e & f                             */ \
+    "xor     %[t2],%[t4],%[t2]\n\t"  /* t2  = ROTR(e, 6) ^ ROTR(e, 11)          */ \
+    "andc    %[t3],%[g],%[e]\n\t"    /* t3  = !e & g                            */ \
+    "rotlwi  %[t4],%[e],7\n\t"       /* t4  = ROTR(e, 25)                       */ \
+    "rotlwi  %[t0],%[a],30\n\t"      /* t0  = ROTR(a, 2)                        */ \
+    "xor     %[t4],%[t2],%[t4]\n\t"  /* t4  = S1(e)                             */ \
+    "xor     %[t3],%[t3],%[t1]\n\t"  /* t3  = Ch(e, f, g)                       */ \
+    "xor     %[t5],%[c],%[b]\n\t"    /* t5  = c ^ b                             */ \
+    "rotlwi  %[t2],%[a],19\n\t"      /* t2  = ROTR(a, 13)                       */ \
+    "add     %[t3],%[t4],%[t3]\n\t"  /* t3  = S1(e) + Ch(e, f, g)               */ \
+    "xor     %[t1],%[t0],%[t2]\n\t"  /* t1  = ROTR(a, 2) ^ ROTR(a, 13)          */ \
+    "and     %[t0],%[t5],%[a]\n\t"   /* t0  = (c ^ b) & a                       */ \
+    "rotlwi  %[t2],%[a],10\n\t"      /* t2  = ROTR(a, 22)                       */ \
+    "and     %[t4],%[b],%[c]\n\t"    /* t4  = b & c                             */ \
+    "xor     %[t2],%[t1],%[t2]\n\t"  /* t2  = S0(a)                             */ \
+    "xor     %[t4],%[t0],%[t4]\n\t"  /* t4  = Maj(a,b,c)                        */ \
+    "add     %[t3],%[t3],%[kpw]\n\t" /* t3  = S1(e) + Ch(e, f, g) + K[j] + W[j] */ \
+    "add     %[t4],%[t2],%[t4]\n\t"  /* t4  = T2 = S0(a) + Maj(a,b,c)           */ \
+    "add     %[t3],%[t3],%[h]\n\t"   /* t3  = T1                                */ \
+    "add     %[t2],%[d],%[t3]\n\t"   /* t2 = d + T1                             */ \
+    "clrldi  %[d],%[t2],32\n\t"      /* d'  = (base_type)(d + T1)               */ \
+    "add     %[t3],%[t4],%[t3]\n\t"  /* t3  = T2 + T1                           */ \
+    "clrldi  %[h],%[t3],32\n\t"      /* h'  = (base_type)(T2 + T1)              */ \
+    : /* output list */                                                            \
+      [d] "+r" ((_d)),                                                             \
+      [h] "+r" ((_h)),                                                             \
+      [t0] "=&r" (t0),                                                             \
+      [t1] "=&r" (t1),                                                             \
+      [t2] "=&r" (t2),                                                             \
+      [t3] "=&r" (t3),                                                             \
+      [t4] "=&r" (t4),                                                             \
+      [t5] "=&r" (t5)                                                              \
+    : /* input list */                                                             \
+      [a] "r" ((_a)),                                                              \
+      [b] "r" ((_b)),                                                              \
+      [c] "r" ((_c)),                                                              \
+      [e] "r" ((_e)),                                                              \
+      [f] "r" ((_f)),                                                              \
+      [g] "r" ((_g)),                                                              \
+      [kpw] "r" ((_kplusw))                                                        \
+    : /* clobber list */                                                           \
+                                                                                   \
   ); } while (0)
 
 #define DEQUE(_k, _kpw0, _kpw1, _kpw2, _kpw3,  _vrb) do {                     \
+  vector_base_type vt0;                                                       \
   __asm__ volatile (                                                          \
     /* Move first doubleword in v0 to kpw1                                 */ \
     "mfvrd      %[kpw2], %[k]\n\t"                                            \
@@ -69,9 +82,9 @@
     /* Clear low word. Keep high word.                                     */ \
     "clrldi     %[kpw2], %[kpw2], 32\n\t"                                     \
     /* Move higher double word to low.                                     */ \
-    "vperm      0, %[k], %[k], %[vrb]\n\t"                                    \
+    "vperm      %[vt0], %[k], %[k], %[vrb]\n\t"                               \
     /* Move first doubleword in v0 to kpw0                                 */ \
-    "mfvrd      %[kpw0], 0\n\t"                                               \
+    "mfvrd      %[kpw0], %[vt0]\n\t"                                          \
     /* Move low word to kpw1                                               */ \
     "srdi       %[kpw1], %[kpw0], 32\n\t"                                     \
     /* Clear low word. Keep high word.                                     */ \
@@ -80,128 +93,152 @@
       [kpw0] "=r" ((_kpw0)),                                                  \
       [kpw1] "=r" ((_kpw1)),                                                  \
       [kpw2] "=r" ((_kpw2)),                                                  \
-      [kpw3] "=r" ((_kpw3))                                                   \
+      [kpw3] "=r" ((_kpw3)),                                                  \
+      [vt0]  "=&v" (vt0)                                                      \
     : /* input list */                                                        \
       [k] "v" ((_k)),                                                         \
       [vrb] "v" ((_vrb))                                                      \
     : /* clobber list */                                                      \
-      "v0", "memory"                                                          \
+      "memory"                                                                \
   ); } while (0)
 
-#define LOAD_W_PLUS_K(_k0, _k1, _k2, _k3, _w0, _w1, _w2, _w3, _vRb, _vRc, _j,  \
-    _Rb, _Rc, _w, _k) do {                                                    \
-  __asm__ volatile (                                                          \
-    "sldi    27,%[index],2\n\t"    /* j * 4 (word size)                    */ \
-    "add     27,27,%[wptr]\n\t"    /* alias to W[j] location               */ \
-    "addi    26,27,-64\n\t"                                                   \
-    "lvx     %[w0],0,26\n\t"       /* load w[j-16] to w[j-13] to vector    */ \
-    "addi    26,27,-48\n\t"                                                   \
-    "lvx     %[w1],0,26\n\t"       /* load w[j-12] to w[j-9] to vector     */ \
-    "addi    26,27,-32\n\t"                                                   \
-    "lvx     %[w2],0,26\n\t"       /* load w[j-8] to w[j-5] to vector      */ \
-    "addi    26,27,-16\n\t"                                                   \
-    "lvx     %[w3],0,26\n\t"       /* load w[j-4] to w[j-1] to vector      */ \
-    /* Load 4*4 k values                                                   */ \
-    "sldi    27,%[index],2\n\t"    /* j * 4 (word size)                    */ \
-    "add     27,27,%[kptr]\n\t"    /* alias to k[j] location               */ \
-    "addi    26,27,-64\n\t"                                                   \
-    "lvx     0,0,26\n\t"           /* load k[j-16] to k[j-13] to vector    */ \
-    "addi    26,27,-48\n\t"                                                   \
-    "lvx     1,0,26\n\t"           /* load k[j-12] to k[j-9] to vector     */ \
-    "addi    26,27,-32\n\t"                                                   \
-    "lvx     2,0,26\n\t"           /* load k[j-8] to k[j-5] to vector      */ \
-    "addi    26,27,-16\n\t"                                                   \
-    "lvx     3,0,26\n\t"           /* load k[j-4] to k[j-1] to vector      */ \
-                                                                              \
-    "lvsl    %[vrb],0,%[rb]\n\t"   /* parameter for vperm                  */ \
-    "lvsr    %[vrc],0,%[rc]\n\t"   /* parameter for vperm                  */ \
-    /* Add _w to k                                                         */ \
-    "vadduwm    %[k0],0,%[w0]\n\t"                                            \
-    "vadduwm    %[k1],1,%[w1]\n\t"                                            \
-    "vadduwm    %[k2],2,%[w2]\n\t"                                            \
-    "vadduwm    %[k3],3,%[w3]\n\t"                                            \
-    : /* output list */                                                       \
-      [k0] "=v" ((_k0)),                                                      \
-      [k1] "=v" ((_k1)),                                                      \
-      [k2] "=v" ((_k2)),                                                      \
-      [k3] "=v" ((_k3)),                                                      \
-      [w0] "=v" ((_w0)),                                                      \
-      [w1] "=v" ((_w1)),                                                      \
-      [w2] "=v" ((_w2)),                                                      \
-      [w3] "=v" ((_w3)),                                                      \
-      [vrb] "=v" ((_vRb)),                                                    \
-      [vrc] "=v" ((_vRc))                                                     \
-    : /* input list */                                                        \
-      [index] "r" ((_j)),                                                     \
-      [rb] "r" ((_Rb)),                                                       \
-      [rc] "r" ((_Rc)),                                                       \
-      [wptr] "r" ((_w)),                                                      \
-      [kptr] "r" ((_k))                                                       \
-    : /* clobber list */                                                      \
-      "r26", "r27", "v0", "v1", "v2", "v3", "memory"                          \
+#define LOAD_W_PLUS_K(_k0, _k1, _k2, _k3, _w0, _w1, _w2, _w3, _vRb, _vRc, _j,   \
+    _Rb, _Rc, _w, _k) do {                                                      \
+  base_type t0;                                                                 \
+  base_type t1;                                                                 \
+  vector_base_type vt0;                                                         \
+  vector_base_type vt1;                                                         \
+  vector_base_type vt2;                                                         \
+  vector_base_type vt3;                                                         \
+  __asm__ volatile (                                                            \
+    "sldi    %[t1],%[index],2\n\t"      /* j * 4 (word size)                 */ \
+    "add     %[t1],%[t1],%[wptr]\n\t"   /* alias to W[j] location            */ \
+    "addi    %[t0],%[t1],-64\n\t"                                               \
+    "lvx     %[w0],0,%[t0]\n\t"         /* load w[j-16] to w[j-13] to vector */ \
+    "addi    %[t0],%[t1],-48\n\t"                                               \
+    "lvx     %[w1],0,%[t0]\n\t"         /* load w[j-12] to w[j-9] to vector  */ \
+    "addi    %[t0],%[t1],-32\n\t"                                               \
+    "lvx     %[w2],0,%[t0]\n\t"         /* load w[j-8] to w[j-5] to vector   */ \
+    "addi    %[t0],%[t1],-16\n\t"                                               \
+    "lvx     %[w3],0,%[t0]\n\t"         /* load w[j-4] to w[j-1] to vector   */ \
+    /* Load 4*4 k values                                                     */ \
+    "sldi    %[t1],%[index],2\n\t"      /* j * 4 (word size)                 */ \
+    "add     %[t1],%[t1],%[kptr]\n\t"   /* alias to k[j] location            */ \
+    "addi    %[t0],%[t1],-64\n\t"                                               \
+    "lvx     %[vt0],0,%[t0]\n\t"        /* load k[j-16] to k[j-13] to vector */ \
+    "addi    %[t0],%[t1],-48\n\t"                                               \
+    "lvx     %[vt1],0,%[t0]\n\t"        /* load k[j-12] to k[j-9] to vector  */ \
+    "addi    %[t0],%[t1],-32\n\t"                                               \
+    "lvx     %[vt2],0,%[t0]\n\t"        /* load k[j-8] to k[j-5] to vector   */ \
+    "addi    %[t0],%[t1],-16\n\t"                                               \
+    "lvx     %[vt3],0,%[t0]\n\t"        /* load k[j-4] to k[j-1] to vector   */ \
+                                                                                \
+    "lvsl    %[vrb],0,%[rb]\n\t"        /* parameter for vperm               */ \
+    "lvsr    %[vrc],0,%[rc]\n\t"        /* parameter for vperm               */ \
+    /* Add _w to k                                                           */ \
+    "vadduwm    %[k0],%[vt0],%[w0]\n\t"                                         \
+    "vadduwm    %[k1],%[vt1],%[w1]\n\t"                                         \
+    "vadduwm    %[k2],%[vt2],%[w2]\n\t"                                         \
+    "vadduwm    %[k3],%[vt3],%[w3]\n\t"                                         \
+    : /* output list */                                                         \
+      [k0] "=v" ((_k0)),                                                        \
+      [k1] "=v" ((_k1)),                                                        \
+      [k2] "=v" ((_k2)),                                                        \
+      [k3] "=v" ((_k3)),                                                        \
+      [w0] "=v" ((_w0)),                                                        \
+      [w1] "=v" ((_w1)),                                                        \
+      [w2] "=v" ((_w2)),                                                        \
+      [w3] "=v" ((_w3)),                                                        \
+      [vrb] "=v" ((_vRb)),                                                      \
+      [vrc] "=v" ((_vRc)),                                                      \
+      [t0] "=&r" (t0),                                                          \
+      [t1] "=&r" (t1),                                                          \
+      [vt0] "=&v" (vt0),                                                        \
+      [vt1] "=&v" (vt1),                                                        \
+      [vt2] "=&v" (vt2),                                                        \
+      [vt3] "=&v" (vt3)                                                         \
+    : /* input list */                                                          \
+      [index] "r" ((_j)),                                                       \
+      [rb] "r" ((_Rb)),                                                         \
+      [rc] "r" ((_Rc)),                                                         \
+      [wptr] "r" ((_w)),                                                        \
+      [kptr] "r" ((_k))                                                         \
+    : /* clobber list */                                                        \
+      "memory"                                                                  \
   ); } while (0)
 
 #define CALC_4W(_w0, _w1, _w2, _w3, _kpw0, _kpw1, _kpw2, _kpw3,               \
                 _j, _vRb, _vRc, _k) do {                                      \
+  base_type t0;                                                               \
+  base_type t1;                                                               \
+  vector_base_type vt0;                                                       \
+  vector_base_type vt1;                                                       \
+  vector_base_type vt2;                                                       \
+  vector_base_type vt3;                                                       \
+  vector_base_type vt4;                                                       \
+  vector_base_type vt5;                                                       \
+  vector_base_type vt6;                                                       \
+  vector_base_type vt7;                                                       \
+  vector_base_type vt8;                                                       \
   __asm__ volatile (                                                          \
-    "sldi       27,%[index],2\n\t"        /* j * 4 (word size)             */ \
-    "add        26,27,%[kptr]\n\t"        /* alias to k[j] location        */ \
-    "lvx        11,0,26\n\t"                                                  \
-    /* v4 = w[j-15], w[j-14], w[j-13], w[j-12]                             */ \
-    "vperm      4,%[w1],%[w0],%[vrc]\n\t"                                     \
-    /* v12 = w[j-7], w[j-6], w[j-5], w[j-4]                                */ \
-    "vperm      12,%[w3],%[w2],%[vrc]\n\t"                                    \
-    /* v13 = w[j-2], w[j-1], w[j-4], w[j-3]                                */ \
-    "vperm      13,%[w3],%[w3],%[vrb]\n\t"                                    \
-    /* v4 = s0(w[j-15]) , s0(w[j-14]) , s0(w[j-13]) , s0(w[j-12])          */ \
-    "vshasigmaw 4,4,0,0\n\t"                                                  \
-    /* v5 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j-4]) , s1(w[j-3])              */ \
-    "vshasigmaw 5,13,0,0xf\n\t"                                               \
-    /* v6 = s0(w[j-15]) + w[j-7],                                          */ \
-    /*      s0(w[j-14]) + w[j-6],                                          */ \
-    /*      s0(w[j-13]) + w[j-5],                                          */ \
-    /*      s0(w[j-12]) + w[j-4]                                           */ \
-    "vadduwm    6,4,12\n\t"                                                   \
-    /* v8 = s0(w[j-15]) + w[j-7] + w[j-16],                                */ \
-    /*      s0(w[j-14]) + w[j-6] + w[j-15],                                */ \
-    /*      s0(w[j-13]) + w[j-5] + w[j-14],                                */ \
-    /*      s0(w[j-12]) + w[j-4] + w[j-13]                                 */ \
-    "vadduwm    8,6,%[w0]\n\t"                                                \
-    /* v9 = s0(w[j-15]) + w[j-7] + w[j-16] + s1(w[j-2]), // w[j]           */ \
-    /*      s0(w[j-14]) + w[j-6] + w[j-15] + s1(w[j-1]), // w[j+1]         */ \
-    /*      s0(w[j-13]) + w[j-5] + w[j-14] + s1(w[j-4]), // UNDEFINED      */ \
-    /*      s0(w[j-12]) + w[j-4] + w[j-13] + s1(w[j-3])  // UNDEFINED      */ \
-    "vadduwm    9,8,5\n\t"                                                    \
+    "sldi       %[t1],%[index],2\n\t"           /* j * 4 (word size)       */ \
+    "add        %[t0],%[t1],%[kptr]\n\t"        /* alias to k[j] location  */ \
+    "lvx        %[vt6],0,%[t0]\n\t"                                           \
+    /* vt1 = w[j-15], w[j-14], w[j-13], w[j-12]                            */ \
+    "vperm      %[vt1],%[w1],%[w0],%[vrc]\n\t"                                \
+    /* vt7 = w[j-7], w[j-6], w[j-5], w[j-4]                                */ \
+    "vperm      %[vt7],%[w3],%[w2],%[vrc]\n\t"                                \
+    /* vt8 = w[j-2], w[j-1], w[j-4], w[j-3]                                */ \
+    "vperm      %[vt8],%[w3],%[w3],%[vrb]\n\t"                                \
+    /* vt1 = s0(w[j-15]) , s0(w[j-14]) , s0(w[j-13]) , s0(w[j-12])         */ \
+    "vshasigmaw %[vt1],%[vt1],0,0\n\t"                                        \
+    /* vt2 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j-4]) , s1(w[j-3])             */ \
+    "vshasigmaw %[vt2],%[vt8],0,0xf\n\t"                                      \
+    /* vt3 = s0(w[j-15]) + w[j-7],                                         */ \
+    /*       s0(w[j-14]) + w[j-6],                                         */ \
+    /*       s0(w[j-13]) + w[j-5],                                         */ \
+    /*       s0(w[j-12]) + w[j-4]                                          */ \
+    "vadduwm    %[vt3],%[vt1],%[vt7]\n\t"                                     \
+    /* vt4 = s0(w[j-15]) + w[j-7] + w[j-16],                               */ \
+    /*       s0(w[j-14]) + w[j-6] + w[j-15],                               */ \
+    /*       s0(w[j-13]) + w[j-5] + w[j-14],                               */ \
+    /*       s0(w[j-12]) + w[j-4] + w[j-13]                                */ \
+    "vadduwm    %[vt4],%[vt3],%[w0]\n\t"                                      \
+    /* vt5 = s0(w[j-15]) + w[j-7] + w[j-16] + s1(w[j-2]), // w[j]          */ \
+    /*       s0(w[j-14]) + w[j-6] + w[j-15] + s1(w[j-1]), // w[j+1]        */ \
+    /*       s0(w[j-13]) + w[j-5] + w[j-14] + s1(w[j-4]), // UNDEFINED     */ \
+    /*       s0(w[j-12]) + w[j-4] + w[j-13] + s1(w[j-3])  // UNDEFINED     */ \
+    "vadduwm    %[vt5],%[vt4],%[vt2]\n\t"                                     \
     /* At this point, v9[0] and v9[1] are the correct values to be         */ \
     /* stored at w[j] and w[j+1].                                          */ \
-    /* v9[2] and v9[3] are not considered                                  */ \
-    /* v3 = s1(w[j]) , s1(s(w[j+1]) , UNDEFINED , UNDEFINED                */ \
-    "vshasigmaw 3,9,0,0xf\n\t"                                                \
-    /* v5 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j]) , s1(w[j+1])                */ \
-    /*  NOTE: vs37 corresponds to v5 and vs35 corresponds to v3            */ \
-    "xxpermdi   37,35,37,3\n\t"                                               \
-    /* v9 = s0(w[j-15]) + w[j-7] + w[j-16] + s1(w[j-2]), // w[j]           */ \
-    /*      s0(w[j-14]) + w[j-6] + w[j-15] + s1(w[j-1]), // w[j+1]         */ \
-    /*      s0(w[j-13]) + w[j-5] + w[j-14] + s1(w[j]),   // w[j+2]         */ \
-    /*      s0(w[j-12]) + w[j-4] + w[j-13] + s1(w[j+1])  // w[j+4]         */ \
-    "vadduwm    9,8,5\n\t"                                                    \
+    /* vt5[2] and vt5[3] are not considered                                */ \
+    /* vt0 = s1(w[j]) , s1(s(w[j+1]) , UNDEFINED , UNDEFINED               */ \
+    "vshasigmaw %[vt0],%[vt5],0,0xf\n\t"                                      \
+    /* vt2 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j]) , s1(w[j+1])               */ \
+    /*  NOTE: %x[vtN] corresponds to the equivalent VSX register           */ \
+    "xxpermdi   %x[vt2],%x[vt0],%x[vt2],3\n\t"                                \
+    /* vt5 = s0(w[j-15]) + w[j-7] + w[j-16] + s1(w[j-2]), // w[j]          */ \
+    /*       s0(w[j-14]) + w[j-6] + w[j-15] + s1(w[j-1]), // w[j+1]        */ \
+    /*       s0(w[j-13]) + w[j-5] + w[j-14] + s1(w[j]),   // w[j+2]        */ \
+    /*       s0(w[j-12]) + w[j-4] + w[j-13] + s1(w[j+1])  // w[j+4]        */ \
+    "vadduwm    %[vt5],%[vt4],%[vt2]\n\t"                                     \
     /* Updating w0 to w3 to hold the "new previous" 16 values from w.      */ \
     "vor        %[w0],%[w1],%[w1]\n\t"                                        \
     "vor        %[w1],%[w2],%[w2]\n\t"                                        \
     "vor        %[w2],%[w3],%[w3]\n\t"                                        \
-    "vor        %[w3],9,9\n\t"                                                \
-    /* store k + w to v9 (4 values at once)                                */ \
-    "vadduwm    9,9,11\n\t"                                                   \
-    /* Move low doubleword in v9 to kpw2 (vs41 corresponds to v9)          */ \
-    "mfvsrd     %[kpw2], 41\n\t"                                              \
+    "vor        %[w3],%[vt5],%[vt5]\n\t"                                      \
+    /* store k + w to vt5 (4 values at once)                               */ \
+    "vadduwm    %[vt5],%[vt5],%[vt6]\n\t"                                     \
+    /* Move low doubleword in vt5 to kpw2                                  */ \
+    "mfvsrd     %[kpw2], %x[vt5]\n\t"                                         \
     /* Move low word to kpw3                                               */ \
     "srdi       %[kpw3], %[kpw2], 32\n\t"                                     \
     /* Clear low word. Keep high word.                                     */ \
     "clrldi     %[kpw2], %[kpw2], 32\n\t"                                     \
     /* Move high doubleword to low.                                        */ \
-    "vperm      9,9,9,%[vrb]\n\t"                                             \
-    /* Move high doubleword in v9 to kpw0 (vs41 corresponds to v9)         */ \
-    "mfvsrd     %[kpw0], 41\n\t"                                              \
+    "vperm      %[vt5],%[vt5],%[vt5],%[vrb]\n\t"                              \
+    /* Move high doubleword in vt5 to kpw0                                 */ \
+    "mfvsrd     %[kpw0], %x[vt5]\n\t"                                         \
     /* Move higher word to kpw2                                            */ \
     "srdi       %[kpw1], %[kpw0], 32\n\t"                                     \
     /* Clear higher word. Keep highest word.                               */ \
@@ -214,14 +251,24 @@
       [kpw0] "=r" ((_kpw0)),                                                  \
       [kpw1] "=r" ((_kpw1)),                                                  \
       [kpw2] "=r" ((_kpw2)),                                                  \
-      [kpw3] "=r" ((_kpw3))                                                   \
+      [kpw3] "=r" ((_kpw3)),                                                  \
+      [t0] "=&r" (t0),                                                        \
+      [t1] "=&r" (t1),                                                        \
+      [vt0] "=&v" (vt0),                                                      \
+      [vt1] "=&v" (vt1),                                                      \
+      [vt2] "=&v" (vt2),                                                      \
+      [vt3] "=&v" (vt3),                                                      \
+      [vt4] "=&v" (vt4),                                                      \
+      [vt5] "=&v" (vt5),                                                      \
+      [vt6] "=&v" (vt6),                                                      \
+      [vt7] "=&v" (vt7),                                                      \
+      [vt8] "=&v" (vt8)                                                       \
     : /* input list */                                                        \
       [index] "r" ((_j)),                                                     \
       [vrb] "v" ((_vRb)),                                                     \
       [vrc] "v" ((_vRc)),                                                     \
       [kptr] "r" ((_k))                                                       \
     : /* clobber list */                                                      \
-      "v3", "v4", "v5", "v6", "v8", "v9", "v11", "v12", "v13", "r26", "r27",  \
       "memory"                                                                \
   ); } while (0)
 
