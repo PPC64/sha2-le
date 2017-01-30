@@ -105,13 +105,13 @@
     "sldi    27,%[index],2\n\t"    /* j * 4 (word size)                    */ \
     "add     27,27,%[kptr]\n\t"    /* alias to k[j] location               */ \
     "addi    26,27,-64\n\t"                                                   \
-    "lvx     0,0,26\n\t"       /* load k[j-16] to k[j-13] to vector        */ \
+    "lvx     0,0,26\n\t"           /* load k[j-16] to k[j-13] to vector    */ \
     "addi    26,27,-48\n\t"                                                   \
-    "lvx     1,0,26\n\t"       /* load k[j-12] to k[j-9] to vector         */ \
+    "lvx     1,0,26\n\t"           /* load k[j-12] to k[j-9] to vector     */ \
     "addi    26,27,-32\n\t"                                                   \
-    "lvx     2,0,26\n\t"       /* load k[j-8] to k[j-5] to vector          */ \
+    "lvx     2,0,26\n\t"           /* load k[j-8] to k[j-5] to vector      */ \
     "addi    26,27,-16\n\t"                                                   \
-    "lvx     3,0,26\n\t"       /* load k[j-4] to k[j-1] to vector          */ \
+    "lvx     3,0,26\n\t"           /* load k[j-4] to k[j-1] to vector      */ \
                                                                               \
     "lvsl    %[vrb],0,%[rb]\n\t"   /* parameter for vperm                  */ \
     "lvsr    %[vrc],0,%[rc]\n\t"   /* parameter for vperm                  */ \
