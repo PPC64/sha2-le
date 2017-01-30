@@ -26,21 +26,21 @@
   base_type t4;                                                                    \
   base_type t5;                                                                    \
   __asm__ volatile (                                                               \
-    "rotlwi  %[t4],%[e],26\n\t"      /* t4  = ROTR(e, 6)                        */ \
-    "rotlwi  %[t2],%[e],21\n\t"      /* t2  = ROTR(e, 11)                       */ \
+    "rotlwi  %[t4],%[e],%[c1]\n\t"   /* t4  = ROTR(e, 6)                        */ \
+    "rotlwi  %[t2],%[e],%[c2]\n\t"   /* t2  = ROTR(e, 11)                       */ \
     "and     %[t1],%[f],%[e]\n\t"    /* t1  = e & f                             */ \
     "xor     %[t2],%[t4],%[t2]\n\t"  /* t2  = ROTR(e, 6) ^ ROTR(e, 11)          */ \
     "andc    %[t3],%[g],%[e]\n\t"    /* t3  = !e & g                            */ \
-    "rotlwi  %[t4],%[e],7\n\t"       /* t4  = ROTR(e, 25)                       */ \
-    "rotlwi  %[t0],%[a],30\n\t"      /* t0  = ROTR(a, 2)                        */ \
+    "rotlwi  %[t4],%[e],%[c3]\n\t"   /* t4  = ROTR(e, 25)                       */ \
+    "rotlwi  %[t0],%[a],%[c4]\n\t"   /* t0  = ROTR(a, 2)                        */ \
     "xor     %[t4],%[t2],%[t4]\n\t"  /* t4  = S1(e)                             */ \
     "xor     %[t3],%[t3],%[t1]\n\t"  /* t3  = Ch(e, f, g)                       */ \
     "xor     %[t5],%[c],%[b]\n\t"    /* t5  = c ^ b                             */ \
-    "rotlwi  %[t2],%[a],19\n\t"      /* t2  = ROTR(a, 13)                       */ \
+    "rotlwi  %[t2],%[a],%[c5]\n\t"   /* t2  = ROTR(a, 13)                       */ \
     "add     %[t3],%[t4],%[t3]\n\t"  /* t3  = S1(e) + Ch(e, f, g)               */ \
     "xor     %[t1],%[t0],%[t2]\n\t"  /* t1  = ROTR(a, 2) ^ ROTR(a, 13)          */ \
     "and     %[t0],%[t5],%[a]\n\t"   /* t0  = (c ^ b) & a                       */ \
-    "rotlwi  %[t2],%[a],10\n\t"      /* t2  = ROTR(a, 22)                       */ \
+    "rotlwi  %[t2],%[a],%[c6]\n\t"   /* t2  = ROTR(a, 22)                       */ \
     "and     %[t4],%[b],%[c]\n\t"    /* t4  = b & c                             */ \
     "xor     %[t2],%[t1],%[t2]\n\t"  /* t2  = S0(a)                             */ \
     "xor     %[t4],%[t0],%[t4]\n\t"  /* t4  = Maj(a,b,c)                        */ \
@@ -48,9 +48,9 @@
     "add     %[t4],%[t2],%[t4]\n\t"  /* t4  = T2 = S0(a) + Maj(a,b,c)           */ \
     "add     %[t3],%[t3],%[h]\n\t"   /* t3  = T1                                */ \
     "add     %[t2],%[d],%[t3]\n\t"   /* t2 = d + T1                             */ \
-    "clrldi  %[d],%[t2],32\n\t"      /* d'  = (base_type)(d + T1)               */ \
+    "clrldi  %[d],%[t2],%[c7]\n\t"   /* d'  = (base_type)(d + T1)               */ \
     "add     %[t3],%[t4],%[t3]\n\t"  /* t3  = T2 + T1                           */ \
-    "clrldi  %[h],%[t3],32\n\t"      /* h'  = (base_type)(T2 + T1)              */ \
+    "clrldi  %[h],%[t3],%[c7]\n\t"   /* h'  = (base_type)(T2 + T1)              */ \
     : /* output list */                                                            \
       [d] "+r" ((_d)),                                                             \
       [h] "+r" ((_h)),                                                             \
@@ -67,7 +67,14 @@
       [e] "r" ((_e)),                                                              \
       [f] "r" ((_f)),                                                              \
       [g] "r" ((_g)),                                                              \
-      [kpw] "r" ((_kplusw))                                                        \
+      [kpw] "r" ((_kplusw)),                                                       \
+      [c1] "i" (32 - 6),                                                           \
+      [c2] "i" (32 - 11),                                                          \
+      [c3] "i" (32 - 25),                                                          \
+      [c4] "i" (32 - 2),                                                           \
+      [c5] "i" (32 - 13),                                                          \
+      [c6] "i" (32 - 22),                                                          \
+      [c7] "i" (32)                                                                \
     : /* clobber list */                                                           \
                                                                                    \
   ); } while (0)
@@ -78,17 +85,17 @@
     /* Move first doubleword in v0 to kpw1                                 */ \
     "mfvrd      %[kpw2], %[k]\n\t"                                            \
     /* Move low word to kpw3                                               */ \
-    "srdi       %[kpw3], %[kpw2], 32\n\t"                                     \
+    "srdi       %[kpw3], %[kpw2], %[c1]\n\t"                                  \
     /* Clear low word. Keep high word.                                     */ \
-    "clrldi     %[kpw2], %[kpw2], 32\n\t"                                     \
+    "clrldi     %[kpw2], %[kpw2], %[c1]\n\t"                                  \
     /* Move higher double word to low.                                     */ \
     "vperm      %[vt0], %[k], %[k], %[vrb]\n\t"                               \
     /* Move first doubleword in v0 to kpw0                                 */ \
     "mfvrd      %[kpw0], %[vt0]\n\t"                                          \
     /* Move low word to kpw1                                               */ \
-    "srdi       %[kpw1], %[kpw0], 32\n\t"                                     \
+    "srdi       %[kpw1], %[kpw0], %[c1]\n\t"                                  \
     /* Clear low word. Keep high word.                                     */ \
-    "clrldi     %[kpw0], %[kpw0], 32\n\t"                                     \
+    "clrldi     %[kpw0], %[kpw0], %[c1]\n\t"                                  \
     : /* output list */                                                       \
       [kpw0] "=r" ((_kpw0)),                                                  \
       [kpw1] "=r" ((_kpw1)),                                                  \
@@ -97,7 +104,8 @@
       [vt0]  "=&v" (vt0)                                                      \
     : /* input list */                                                        \
       [k] "v" ((_k)),                                                         \
-      [vrb] "v" ((_vrb))                                                      \
+      [vrb] "v" ((_vrb)),                                                     \
+      [c1] "i" (32)                                                           \
     : /* clobber list */                                                      \
       "memory"                                                                \
   ); } while (0)
@@ -111,26 +119,26 @@
   vector_base_type vt2;                                                         \
   vector_base_type vt3;                                                         \
   __asm__ volatile (                                                            \
-    "sldi    %[t1],%[index],2\n\t"      /* j * 4 (word size)                 */ \
+    "sldi    %[t1],%[index],%[c1]\n\t"  /* j * 4 (word size)                 */ \
     "add     %[t1],%[t1],%[wptr]\n\t"   /* alias to W[j] location            */ \
-    "addi    %[t0],%[t1],-64\n\t"                                               \
+    "addi    %[t0],%[t1],%[c2]\n\t"                                             \
     "lvx     %[w0],0,%[t0]\n\t"         /* load w[j-16] to w[j-13] to vector */ \
-    "addi    %[t0],%[t1],-48\n\t"                                               \
+    "addi    %[t0],%[t1],%[c3]\n\t"                                             \
     "lvx     %[w1],0,%[t0]\n\t"         /* load w[j-12] to w[j-9] to vector  */ \
-    "addi    %[t0],%[t1],-32\n\t"                                               \
+    "addi    %[t0],%[t1],%[c4]\n\t"                                             \
     "lvx     %[w2],0,%[t0]\n\t"         /* load w[j-8] to w[j-5] to vector   */ \
-    "addi    %[t0],%[t1],-16\n\t"                                               \
+    "addi    %[t0],%[t1],%[c5]\n\t"                                             \
     "lvx     %[w3],0,%[t0]\n\t"         /* load w[j-4] to w[j-1] to vector   */ \
     /* Load 4*4 k values                                                     */ \
-    "sldi    %[t1],%[index],2\n\t"      /* j * 4 (word size)                 */ \
+    "sldi    %[t1],%[index],%[c1]\n\t"  /* j * 4 (word size)                 */ \
     "add     %[t1],%[t1],%[kptr]\n\t"   /* alias to k[j] location            */ \
-    "addi    %[t0],%[t1],-64\n\t"                                               \
+    "addi    %[t0],%[t1],%[c2]\n\t"                                             \
     "lvx     %[vt0],0,%[t0]\n\t"        /* load k[j-16] to k[j-13] to vector */ \
-    "addi    %[t0],%[t1],-48\n\t"                                               \
+    "addi    %[t0],%[t1],%[c3]\n\t"                                             \
     "lvx     %[vt1],0,%[t0]\n\t"        /* load k[j-12] to k[j-9] to vector  */ \
-    "addi    %[t0],%[t1],-32\n\t"                                               \
+    "addi    %[t0],%[t1],%[c4]\n\t"                                             \
     "lvx     %[vt2],0,%[t0]\n\t"        /* load k[j-8] to k[j-5] to vector   */ \
-    "addi    %[t0],%[t1],-16\n\t"                                               \
+    "addi    %[t0],%[t1],%[c5]\n\t"                                             \
     "lvx     %[vt3],0,%[t0]\n\t"        /* load k[j-4] to k[j-1] to vector   */ \
                                                                                 \
     "lvsl    %[vrb],0,%[rb]\n\t"        /* parameter for vperm               */ \
@@ -162,7 +170,12 @@
       [rb] "r" ((_Rb)),                                                         \
       [rc] "r" ((_Rc)),                                                         \
       [wptr] "r" ((_w)),                                                        \
-      [kptr] "r" ((_k))                                                         \
+      [kptr] "r" ((_k)),                                                        \
+      [c1] "i" (2),                                                             \
+      [c2] "i" (-64),                                                           \
+      [c3] "i" (-48),                                                           \
+      [c4] "i" (-32),                                                           \
+      [c5] "i" (-16)                                                            \
     : /* clobber list */                                                        \
       "memory"                                                                  \
   ); } while (0)
@@ -193,7 +206,7 @@
     /* vt1 = s0(w[j-15]) , s0(w[j-14]) , s0(w[j-13]) , s0(w[j-12])         */ \
     "vshasigmaw %[vt1],%[vt1],0,0\n\t"                                        \
     /* vt2 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j-4]) , s1(w[j-3])             */ \
-    "vshasigmaw %[vt2],%[vt8],0,0xf\n\t"                                      \
+    "vshasigmaw %[vt2],%[vt8],0,%[six1]\n\t"                                  \
     /* vt3 = s0(w[j-15]) + w[j-7],                                         */ \
     /*       s0(w[j-14]) + w[j-6],                                         */ \
     /*       s0(w[j-13]) + w[j-5],                                         */ \
@@ -213,10 +226,10 @@
     /* stored at w[j] and w[j+1].                                          */ \
     /* vt5[2] and vt5[3] are not considered                                */ \
     /* vt0 = s1(w[j]) , s1(s(w[j+1]) , UNDEFINED , UNDEFINED               */ \
-    "vshasigmaw %[vt0],%[vt5],0,0xf\n\t"                                      \
+    "vshasigmaw %[vt0],%[vt5],0,%[six1]\n\t"                                  \
     /* vt2 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j]) , s1(w[j+1])               */ \
     /*  NOTE: %x[vtN] corresponds to the equivalent VSX register           */ \
-    "xxpermdi   %x[vt2],%x[vt0],%x[vt2],3\n\t"                                \
+    "xxpermdi   %x[vt2],%x[vt0],%x[vt2],%[c1]\n\t"                            \
     /* vt5 = s0(w[j-15]) + w[j-7] + w[j-16] + s1(w[j-2]), // w[j]          */ \
     /*       s0(w[j-14]) + w[j-6] + w[j-15] + s1(w[j-1]), // w[j+1]        */ \
     /*       s0(w[j-13]) + w[j-5] + w[j-14] + s1(w[j]),   // w[j+2]        */ \
@@ -232,17 +245,17 @@
     /* Move low doubleword in vt5 to kpw2                                  */ \
     "mfvsrd     %[kpw2], %x[vt5]\n\t"                                         \
     /* Move low word to kpw3                                               */ \
-    "srdi       %[kpw3], %[kpw2], 32\n\t"                                     \
+    "srdi       %[kpw3], %[kpw2], %[c2]\n\t"                                  \
     /* Clear low word. Keep high word.                                     */ \
-    "clrldi     %[kpw2], %[kpw2], 32\n\t"                                     \
+    "clrldi     %[kpw2], %[kpw2], %[c2]\n\t"                                  \
     /* Move high doubleword to low.                                        */ \
     "vperm      %[vt5],%[vt5],%[vt5],%[vrb]\n\t"                              \
     /* Move high doubleword in vt5 to kpw0                                 */ \
     "mfvsrd     %[kpw0], %x[vt5]\n\t"                                         \
     /* Move higher word to kpw2                                            */ \
-    "srdi       %[kpw1], %[kpw0], 32\n\t"                                     \
+    "srdi       %[kpw1], %[kpw0], %[c2]\n\t"                                  \
     /* Clear higher word. Keep highest word.                               */ \
-    "clrldi     %[kpw0], %[kpw0], 32\n\t"                                     \
+    "clrldi     %[kpw0], %[kpw0], %[c2]\n\t"                                  \
     : /* output list */                                                       \
       [w0] "+v" ((_w0)),                                                      \
       [w1] "+v" ((_w1)),                                                      \
@@ -267,7 +280,10 @@
       [index] "r" ((_j)),                                                     \
       [vrb] "v" ((_vRb)),                                                     \
       [vrc] "v" ((_vRc)),                                                     \
-      [kptr] "r" ((_k))                                                       \
+      [kptr] "r" ((_k)),                                                      \
+      [c1] "i" (3),                                                           \
+      [c2] "i" (32),                                                          \
+      [six1] "i" (0xf)                                                        \
     : /* clobber list */                                                      \
       "memory"                                                                \
   ); } while (0)
@@ -282,21 +298,21 @@
   base_type t4;                                                                    \
   base_type t5;                                                                    \
   __asm__ volatile (                                                               \
-    "rotldi  %[t4],%[e],50\n\t"      /* t4 = ROTR(e, 14)                        */ \
-    "rotldi  %[t2],%[e],46\n\t"      /* t2 = ROTR(e, 18)                        */ \
+    "rotldi  %[t4],%[e],%[c1]\n\t"   /* t4 = ROTR(e, 14)                        */ \
+    "rotldi  %[t2],%[e],%[c2]\n\t"   /* t2 = ROTR(e, 18)                        */ \
     "and     %[t1],%[f],%[e]\n\t"    /* t1 = e & f                              */ \
     "xor     %[t2],%[t4],%[t2]\n\t"  /* t2 = ROTR(e, 14) ^ ROTR(e, 18)          */ \
     "andc    %[t3],%[g],%[e]\n\t"    /* t3 = !e & g                             */ \
-    "rotldi  %[t4],%[e],23\n\t"      /* t4 = ROTR(e, 41)                        */ \
-    "rotldi  %[t0],%[a],36\n\t"      /* t0 = ROTR(a, 28)                        */ \
+    "rotldi  %[t4],%[e],%[c3]\n\t"   /* t4 = ROTR(e, 41)                        */ \
+    "rotldi  %[t0],%[a],%[c4]\n\t"   /* t0 = ROTR(a, 28)                        */ \
     "xor     %[t4],%[t2],%[t4]\n\t"  /* t4 = S1(e)                              */ \
     "xor     %[t3],%[t3],%[t1]\n\t"  /* t3 = Ch(e, f, g)                        */ \
     "xor     %[t5],%[c],%[b]\n\t"    /* t5 = c ^ b                              */ \
-    "rotldi  %[t2],%[a],30\n\t"      /* t2 = ROTR(a, 34)                        */ \
+    "rotldi  %[t2],%[a],%[c5]\n\t"   /* t2 = ROTR(a, 34)                        */ \
     "add     %[t3],%[t4],%[t3]\n\t"  /* t3 = S1(e) + Ch(e, f, g)                */ \
     "xor     %[t1],%[t0],%[t2]\n\t"  /* t2 = ROTR(a, 2) ^ ROTR(a, 13)           */ \
     "and     %[t0],%[t5],%[a]\n\t"   /* t0 = (c ^ b) & a                        */ \
-    "rotldi  %[t2],%[a],25\n\t"      /* t2 = ROTR(a, 39)                        */ \
+    "rotldi  %[t2],%[a],%[c6]\n\t"   /* t2 = ROTR(a, 39)                        */ \
     "and     %[t4],%[b],%[c]\n\t"    /* t4 = b & c                              */ \
     "xor     %[t2],%[t1],%[t2]\n\t"  /* t2 = S0(a)                              */ \
     "xor     %[t4],%[t0],%[t4]\n\t"  /* t4 = Maj(a,b,c)                         */ \
@@ -321,52 +337,67 @@
       [e] "r" ((_e)),                                                              \
       [f] "r" ((_f)),                                                              \
       [g] "r" ((_g)),                                                              \
-      [kpw] "r" ((_kplusw))                                                        \
+      [kpw] "r" ((_kplusw)),                                                       \
+      [c1] "i" (64 -14),                                                           \
+      [c2] "i" (64 -18),                                                           \
+      [c3] "i" (64 -41),                                                           \
+      [c4] "i" (64 -28),                                                           \
+      [c5] "i" (64 -34),                                                           \
+      [c6] "i" (64 -39)                                                            \
     : /* clobber list */                                                           \
                                                                                    \
   ); } while (0)
 
-#define LOAD_W(_w0, _w1, _w2, _w3, _w4, _w5, _w6, _w7, _vRb, _j, _Rb, _w) do  {\
-  base_type t0;                                                                \
-  base_type t1;                                                                \
-  __asm__ volatile (                                                           \
-    "lvsl    %[vrb],0,%[rb]\n\t"      /* parameter for vperm                */ \
-    "sldi    %[t1],%[index],3\n\t"    /* j * 8 (double word size)           */ \
-    "add     %[t1],%[t1],%[wptr]\n\t" /* alias to W[j] location             */ \
-    "addi    %[t0],%[t1],-128\n\t"                                             \
-    "lvx     %[w0],0,%[t0]\n\t"       /* load w[j-16] and w[j-15] to vector */ \
-    "addi    %[t0],%[t1],-112\n\t"                                             \
-    "lvx     %[w1],0,%[t0]\n\t"       /* load w[j-14] and w[j-13] to vector */ \
-    "addi    %[t0],%[t1],-96\n\t"                                              \
-    "lvx     %[w2],0,%[t0]\n\t"       /* load w[j-12] and w[j-11] to vector */ \
-    "addi    %[t0],%[t1],-80\n\t"                                              \
-    "lvx     %[w3],0,%[t0]\n\t"       /* load w[j-10] and w[j-9] to vector  */ \
-    "addi    %[t0],%[t1],-64\n\t"                                              \
-    "lvx     %[w4],0,%[t0]\n\t"       /* load w[j-8] and w[j-7] to vector   */ \
-    "addi    %[t0],%[t1],-48\n\t"                                              \
-    "lvx     %[w5],0,%[t0]\n\t"       /* load w[j-6] and w[j-5] to vector   */ \
-    "addi    %[t0],%[t1],-32\n\t"                                              \
-    "lvx     %[w6],0,%[t0]\n\t"       /* load w[j-4] and w[j-3] to vector   */ \
-    "addi    %[t0],%[t1],-16\n\t"                                              \
-    "lvx     %[w7],0,%[t0]\n\t"       /* load w[j-2] and w[j-1] to vector   */ \
-    : /* output list */                                                        \
-      [vrb] "=v" ((_vRb)),                                                     \
-      [w0] "=v" ((_w0)),                                                       \
-      [w1] "=v" ((_w1)),                                                       \
-      [w2] "=v" ((_w2)),                                                       \
-      [w3] "=v" ((_w3)),                                                       \
-      [w4] "=v" ((_w4)),                                                       \
-      [w5] "=v" ((_w5)),                                                       \
-      [w6] "=v" ((_w6)),                                                       \
-      [w7] "=v" ((_w7)),                                                       \
-      [t0] "=&r" (t0),                                                         \
-      [t1] "=&r" (t1)                                                          \
-    : /* input list */                                                         \
-      [index] "r" ((_j)),                                                      \
-      [rb] "r" ((_Rb)),                                                        \
-      [wptr] "r" ((_w))                                                        \
-    : /* clobber list */                                                       \
-      "memory"                                                                 \
+#define LOAD_W(_w0, _w1, _w2, _w3, _w4, _w5, _w6, _w7, _vRb, _j, _Rb, _w) do  { \
+  base_type t0;                                                                 \
+  base_type t1;                                                                 \
+  __asm__ volatile (                                                            \
+    "lvsl    %[vrb],0,%[rb]\n\t"       /* parameter for vperm                */ \
+    "sldi    %[t1],%[index],%[c1]\n\t" /* j * 8 (double word size)           */ \
+    "add     %[t1],%[t1],%[wptr]\n\t"  /* alias to W[j] location             */ \
+    "addi    %[t0],%[t1],%[c2]\n\t"                                             \
+    "lvx     %[w0],0,%[t0]\n\t"        /* load w[j-16] and w[j-15] to vector */ \
+    "addi    %[t0],%[t1],%[c3]\n\t"                                             \
+    "lvx     %[w1],0,%[t0]\n\t"        /* load w[j-14] and w[j-13] to vector */ \
+    "addi    %[t0],%[t1],%[c4]\n\t"                                             \
+    "lvx     %[w2],0,%[t0]\n\t"        /* load w[j-12] and w[j-11] to vector */ \
+    "addi    %[t0],%[t1],%[c5]\n\t"                                             \
+    "lvx     %[w3],0,%[t0]\n\t"        /* load w[j-10] and w[j-9] to vector  */ \
+    "addi    %[t0],%[t1],%[c6]\n\t"                                             \
+    "lvx     %[w4],0,%[t0]\n\t"        /* load w[j-8] and w[j-7] to vector   */ \
+    "addi    %[t0],%[t1],%[c7]\n\t"                                             \
+    "lvx     %[w5],0,%[t0]\n\t"        /* load w[j-6] and w[j-5] to vector   */ \
+    "addi    %[t0],%[t1],%[c8]\n\t"                                             \
+    "lvx     %[w6],0,%[t0]\n\t"        /* load w[j-4] and w[j-3] to vector   */ \
+    "addi    %[t0],%[t1],%[c9]\n\t"                                             \
+    "lvx     %[w7],0,%[t0]\n\t"        /* load w[j-2] and w[j-1] to vector   */ \
+    : /* output list */                                                         \
+      [vrb] "=v" ((_vRb)),                                                      \
+      [w0] "=v" ((_w0)),                                                        \
+      [w1] "=v" ((_w1)),                                                        \
+      [w2] "=v" ((_w2)),                                                        \
+      [w3] "=v" ((_w3)),                                                        \
+      [w4] "=v" ((_w4)),                                                        \
+      [w5] "=v" ((_w5)),                                                        \
+      [w6] "=v" ((_w6)),                                                        \
+      [w7] "=v" ((_w7)),                                                        \
+      [t0] "=&r" (t0),                                                          \
+      [t1] "=&r" (t1)                                                           \
+    : /* input list */                                                          \
+      [index] "r" ((_j)),                                                       \
+      [rb] "r" ((_Rb)),                                                         \
+      [wptr] "r" ((_w)),                                                        \
+      [c1] "i" (3),                                                             \
+      [c2] "i" (-128),                                                          \
+      [c3] "i" (-112),                                                          \
+      [c4] "i" (-96),                                                           \
+      [c5] "i" (-80),                                                           \
+      [c6] "i" (-64),                                                           \
+      [c7] "i" (-48),                                                           \
+      [c8] "i" (-32),                                                           \
+      [c9] "i" (-16)                                                            \
+    : /* clobber list */                                                        \
+      "memory"                                                                  \
   ); } while (0)
 
 #define CALC_2W(_w0, _w1, _w2, _w3, _w4, _w5, _w6, _w7, _kpw0, _kpw1,         \
@@ -379,7 +410,7 @@
   vector_base_type vt3;                                                       \
   vector_base_type vt4;                                                       \
   __asm__ volatile (                                                          \
-    "sldi       %[t1],%[index],3\n\t"          /* j * 8 (doubleword size)  */ \
+    "sldi       %[t1],%[index],%[c1]\n\t"      /* j * 8 (doubleword size)  */ \
     "add        %[t0],%[t1],%[kptr]\n\t"       /* alias to k[j] location   */ \
     "lvx        %[vt3],0,%[t0]\n\t"                                           \
     "vperm      %[vt1],%[w1],%[w0],%[vrb]\n\t" /* vt1 = w[j-15] , w[j-14]  */ \
@@ -387,7 +418,7 @@
     /* vt1 = s0(w[j-15]) , s0(w[j-14])                                     */ \
     "vshasigmad %[vt1],%[vt1],0,0\n\t"                                        \
     /* vt4 = s1(w[j-2]) , s1(w[j-1])                                       */ \
-    "vshasigmad %[vt4],%[w7],0,0xf\n\t"                                       \
+    "vshasigmad %[vt4],%[w7],0,%[six1]\n\t"                                   \
     /* vt1 = s0(w[j-15]) + w[j-7] , s0(w[j-14]) + w[j-6]                   */ \
     "vaddudm    %[vt1],%[vt1],%[vt2]\n\t"                                     \
     /* vt0 = s1(w[j-2]) + w[j-16] , s1(w[j-1]) + w[j-15]                   */ \
@@ -433,7 +464,9 @@
   : /* input list */                                                          \
     [index] "r" ((_j)),                                                       \
     [kptr] "r" ((_k)),                                                        \
-    [vrb] "v" ((_vRb))                                                        \
+    [vrb] "v" ((_vRb)),                                                       \
+    [c1] "i" (3),                                                             \
+    [six1] "i" (0xf)                                                          \
   : /* clobber list */                                                        \
     "memory"                                                                  \
   ); } while (0)
