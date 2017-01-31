@@ -166,10 +166,10 @@ void sha2_transform(base_type* _h, base_type* w) {
       "vadduwm    9,8,5\n\t"
 
       // Updating w0 to w3 to hold the "new previous" 16 values from w.
-      "vor        %[w0_out],%[w1],%[w1]\n\t"
-      "vor        %[w1_out],%[w2],%[w2]\n\t"
-      "vor        %[w2_out],%[w3],%[w3]\n\t"
-      "vor        %[w3_out],9,9\n\t"
+      "vor        %[w0],%[w1],%[w1]\n\t"
+      "vor        %[w1],%[w2],%[w2]\n\t"
+      "vor        %[w2],%[w3],%[w3]\n\t"
+      "vor        %[w3],9,9\n\t"
 
       // store k + w to v9 (4 values at once)
       "vadduwm    9,9,11\n\t"
@@ -192,12 +192,11 @@ void sha2_transform(base_type* _h, base_type* w) {
       // Clear low word. Keep high word.
       "clrldi     %[kpw2], %[kpw2], 32\n\t"
 
-
       : // output list
-        [w0_out] "=v" (w0),
-        [w1_out] "=v" (w1),
-        [w2_out] "=v" (w2),
-        [w3_out] "=v" (w3),
+        [w0] "+v" (w0),
+        [w1] "+v" (w1),
+        [w2] "+v" (w2),
+        [w3] "+v" (w3),
         [kpw0] "=r" (kpw0),
         [kpw1] "=r" (kpw1),
         [kpw2] "=r" (kpw2),
@@ -207,11 +206,7 @@ void sha2_transform(base_type* _h, base_type* w) {
         [vrb] "v" (vRb),
         [vrc] "v" (vRc),
         [kptr] "r" (k),
-        [wptr] "r" (w),
-        [w0] "[w0_out]" (w0),
-        [w1] "[w1_out]" (w1),
-        [w2] "[w2_out]" (w2),
-        [w3] "[w3_out]" (w3)
+        [wptr] "r" (w)
       : // clobber list
         "v3", "v4", "v5", "v6", "v8", "v9", "v11", "v12", "v13", "r26", "r27",
         "memory"
@@ -304,15 +299,14 @@ void sha2_transform(base_type* _h, base_type* w) {
       "vaddudm    9,9,8\n\t"
 
       // Updating w0 to w7 to hold the "new previous" 16 values from w.
-      "vor        %[w0_out],%[w1],%[w1]\n\t"
-      "vor        %[w1_out],%[w2],%[w2]\n\t"
-      "vor        %[w2_out],%[w3],%[w3]\n\t"
-      "vor        %[w3_out],%[w4],%[w4]\n\t"
-      "vor        %[w4_out],%[w5],%[w5]\n\t"
-      "vor        %[w5_out],%[w6],%[w6]\n\t"
-      "vor        %[w6_out],%[w7],%[w7]\n\t"
-      "vor        %[w7_out],9,9\n\t"
-
+      "vor        %[w0],%[w1],%[w1]\n\t"
+      "vor        %[w1],%[w2],%[w2]\n\t"
+      "vor        %[w2],%[w3],%[w3]\n\t"
+      "vor        %[w3],%[w4],%[w4]\n\t"
+      "vor        %[w4],%[w5],%[w5]\n\t"
+      "vor        %[w5],%[w6],%[w6]\n\t"
+      "vor        %[w6],%[w7],%[w7]\n\t"
+      "vor        %[w7],9,9\n\t"
 
       // store k + w to v9 (2 values at once)
       "vaddudm    9,9,11\n\t"
@@ -326,28 +320,20 @@ void sha2_transform(base_type* _h, base_type* w) {
       "mfvsrd     %[kpw0], 41\n\t"
 
       : // output list
-        [w0_out] "=v" (w0),
-        [w1_out] "=v" (w1),
-        [w2_out] "=v" (w2),
-        [w3_out] "=v" (w3),
-        [w4_out] "=v" (w4),
-        [w5_out] "=v" (w5),
-        [w6_out] "=v" (w6),
-        [w7_out] "=v" (w7),
+        [w0] "+v" (w0),
+        [w1] "+v" (w1),
+        [w2] "+v" (w2),
+        [w3] "+v" (w3),
+        [w4] "+v" (w4),
+        [w5] "+v" (w5),
+        [w6] "+v" (w6),
+        [w7] "+v" (w7),
         [kpw0] "=r" (kpw0),
         [kpw1] "=r" (kpw1)
       : // input list
         [index] "r" (j),
         [kptr] "r" (k),
-        [vrb] "v" (vRb),
-        [w0] "[w0_out]" (w0),
-        [w1] "[w1_out]" (w1),
-        [w2] "[w2_out]" (w2),
-        [w3] "[w3_out]" (w3),
-        [w4] "[w4_out]" (w4),
-        [w5] "[w5_out]" (w5),
-        [w6] "[w6_out]" (w6),
-        [w7] "[w7_out]" (w7)
+        [vrb] "v" (vRb)
       : // clobber list
         "r26", "r27", "v8", "v9", "v10", "v11", "v12", "memory"
     );
