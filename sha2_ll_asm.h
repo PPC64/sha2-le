@@ -222,7 +222,7 @@
     /*       s0(w[j-13]) + w[j-5] + w[j-14] + s1(w[j-4]), // UNDEFINED     */ \
     /*       s0(w[j-12]) + w[j-4] + w[j-13] + s1(w[j-3])  // UNDEFINED     */ \
     "vadduwm    %[vt5],%[vt4],%[vt2]\n\t"                                     \
-    /* At this point, v9[0] and v9[1] are the correct values to be         */ \
+    /* At this point, vt5[0] and vt5[1] are the correct values to be         */ \
     /* stored at w[j] and w[j+1].                                          */ \
     /* vt5[2] and vt5[3] are not considered                                */ \
     /* vt0 = s1(w[j]) , s1(s(w[j+1]) , UNDEFINED , UNDEFINED               */ \
