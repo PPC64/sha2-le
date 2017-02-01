@@ -2,9 +2,9 @@
 
 BIN_DIR=./bin
 CC=gcc
-COMPILERS=gcc clang-3.8 clang-3.9
+COMPILERS=gcc-4.8 gcc-4.9 gcc-5 gcc-6 clang-3.8 clang-3.9
 OPT=-O3
-CFLAGS=$(OPT) -g -Wall -Werror -maltivec -std=c99
+CFLAGS=$(OPT) -g -Wall -Werror -maltivec -mcpu=power8 -std=c99
 PERF_TXT=$(BIN_DIR)/perfexample.txt
 # Number of perf stat iterations
 PERF_ITERS=10
