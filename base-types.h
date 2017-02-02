@@ -2,6 +2,7 @@
 #define _PPC64_LE_BASE_TYPES_H_
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <altivec.h>
 
 #if SHA_BITS == 256

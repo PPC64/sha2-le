@@ -3,11 +3,6 @@
 // SHA_BITS      256 or 512
 // USE_HW_VECTOR 0 or 1
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-
 #include "sha2.h"
 
 int main (int argc, char *argv[]) {

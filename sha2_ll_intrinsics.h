@@ -5,8 +5,6 @@
 #error "The sha2_ll_intrinsics.h header should only be included on LOW_LEVEL == 1"
 #endif
 
-#include <altivec.h>
-
 #include "base-types.h"
 
 #define a 0
