@@ -9,22 +9,6 @@
 
 #include "base-types.h"
 
-#define ROTR(n, b) (((n) >> (b)) | ((n) << ((base_type_size * 8) - (b))))
-
-#define SHR(x, n) ((x) >> (n))
-
-#define BIGSIGMA0(x) (ROTR((x), S0_args[0]) ^ ROTR((x), S0_args[1]) ^ \
-      ROTR((x), S0_args[2]))
-
-#define BIGSIGMA1(x) (ROTR((x), S1_args[0]) ^ ROTR((x), S1_args[1]) ^ \
-      ROTR((x), S1_args[2]))
-
-#define SIGMA0(x) (ROTR((x), s0_args[0]) ^ ROTR((x), s0_args[1]) ^ \
-      SHR((x), s0_args[2]))
-
-#define SIGMA1(x) (ROTR((x), s1_args[0]) ^ ROTR((x), s1_args[1]) ^ \
-    SHR((x), s1_args[2]))
-
 #define a 0
 #define b 1
 #define c 2
@@ -36,13 +20,8 @@
 
 void static inline sha2_round(base_type* _ha, base_type kplusw) {
 
-  vector_base_type bsigma;
+  vector_base_type chv, va, vb, vc, ve, vf, vg, majv, bsigmaA, bsigmaE;
   base_type tmp1, tmp2;
-
-  bsigma[0] = _ha[a];
-  bsigma[1] = _ha[e];
-#if SHA_BITS == 256
-  vector_base_type chv, va, vb, vc, ve, vf, vg, majv;
   va[0] = _ha[a];
   vb[0] = _ha[b];
   vc[0] = _ha[c];
@@ -50,27 +29,18 @@ void static inline sha2_round(base_type* _ha, base_type kplusw) {
   vf[0] = _ha[f];
   vg[0] = _ha[g];
   chv = vec_sel(vg, vf, ve);
-  bsigma = __builtin_crypto_vshasigmaw(bsigma, 1, 0xE);
-  tmp1 =  _ha[h] + bsigma[1] + chv[0] + kplusw;
   majv = vec_vxor(va, vb);
   majv = vec_sel(vb, vc, majv);
-  tmp2 = bsigma[0] + majv[0];
+#if SHA_BITS == 256
+  bsigmaA = __builtin_crypto_vshasigmaw(va, 1, 0x0);
+  bsigmaE = __builtin_crypto_vshasigmaw(ve, 1, 0xf);
 #elif SHA_BITS == 512
-  vector_base_type v0 = vec_and( (vector_base_type){bsigma[1], bsigma[0]},
-      (vector_base_type){_ha[f], _ha[b]} );
-
-  vector_base_type v1 = vec_and( (vector_base_type){~bsigma[1],bsigma[0]},
-      (vector_base_type){_ha[g],_ha[c]} );
-
-
-  bsigma = __builtin_crypto_vshasigmad(bsigma, 1, 0xD);
-
-
-  vector_base_type v2 = (vector_base_type){0,(_ha[b] & _ha[c])} ^ v0 ^ v1;
-  tmp1 = _ha[h] + bsigma[1] + v2[0] +kplusw;
-  tmp2 = bsigma[0] + v2[1];
+  bsigmaA = __builtin_crypto_vshasigmad(va, 1, 0x0);
+  bsigmaE = __builtin_crypto_vshasigmad(ve, 1, 0xf);
 #endif
 
+  tmp1 =  _ha[h] + bsigmaE[0] + chv[0] + kplusw;
+  tmp2 = bsigmaA[0] + majv[0];
   _ha[h] = _ha[g];
   _ha[g] = _ha[f];
   _ha[f] = _ha[e];
