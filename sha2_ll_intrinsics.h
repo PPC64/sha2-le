@@ -42,8 +42,14 @@ void static inline sha2_round(base_type* _ha, base_type kplusw) {
   bsigma[0] = _ha[a];
   bsigma[1] = _ha[e];
 #if SHA_BITS == 256
+  vector_base_type chv;
+  chv = vec_sel(
+      (vector_base_type){_ha[g],0,0,0},
+      (vector_base_type){_ha[f],0,0,0},
+      (vector_base_type){_ha[e],0,0,0}
+      );
   bsigma = __builtin_crypto_vshasigmaw(bsigma, 1, 0xE);
-  tmp1 =  _ha[h] + bsigma[1] + Ch(_ha[e], _ha[f], _ha[g]) + kplusw;
+  tmp1 =  _ha[h] + bsigma[1] + chv[0] + kplusw;
   tmp2 = bsigma[0] + Maj(_ha[a], _ha[b], _ha[c]);
 #elif SHA_BITS == 512
   vector_base_type v0 = vec_and( (vector_base_type){bsigma[1], bsigma[0]},
