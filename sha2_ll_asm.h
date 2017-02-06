@@ -284,10 +284,10 @@
   vector_base_type vt5;                                                                      \
   __asm__ volatile(                                                                          \
       "lvx     %[vt0],0,%[hptr]\n\t"        /* vt0 = _h[0].._h[3]                         */ \
-      "xxmrglw %x[vt1],%x[b],%x[a]\n\t"     /* vt1 = {a, b, ?, ?}                         */ \
-      "xxmrglw %x[vt2],%x[d],%x[c]\n\t"     /* vt2 = {c, d, ?, ?}                         */ \
-      "xxmrglw %x[vt3],%x[f],%x[e]\n\t"     /* vt3 = {e, f, ?, ?}                         */ \
-      "xxmrglw %x[vt4],%x[h],%x[g]\n\t"     /* vt4 = {g, h, ?, ?}                         */ \
+      "vmrglw  %[vt1],%[b],%[a]\n\t"        /* vt1 = {a, b, ?, ?}                         */ \
+      "vmrglw  %[vt2],%[d],%[c]\n\t"        /* vt2 = {c, d, ?, ?}                         */ \
+      "vmrglw  %[vt3],%[f],%[e]\n\t"        /* vt3 = {e, f, ?, ?}                         */ \
+      "vmrglw  %[vt4],%[h],%[g]\n\t"        /* vt4 = {g, h, ?, ?}                         */ \
       "lvx     %[vt5],%[offs],%[hptr]\n\t"  /* vt5 = _h[4].._h[8]                         */ \
       "xxmrgld %x[vt1],%x[vt2],%x[vt1]\n\t" /* vt1 = {a, b, c, d}                         */ \
       "xxmrgld %x[vt3],%x[vt4],%x[vt3]\n\t" /* vt3 = {e, f, g, h}                         */ \
