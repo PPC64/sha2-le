@@ -237,12 +237,11 @@
     "vor        %[w2],%[w3],%[w3]\n\t"                                        \
     "vor        %[w3],%[vt5],%[vt5]\n\t"                                      \
     /* store k + w to vt5 (4 values at once)                               */ \
-    "vadduwm    %[vt5],%[vt5],%[vt6]\n\t"                                     \
-    /* Deque results in vt5 to kpw0, kpw1, kpw2 and kpw3                   */ \
-    "vmr        %[kpw0],%[vt5]\n\t"                                           \
-    "vsldoi     %[kpw1],%[vt5],%[vt5],12\n\t"                                 \
-    "vsldoi     %[kpw2],%[vt5],%[vt5],8\n\t"                                  \
-    "vsldoi     %[kpw3],%[vt5],%[vt5],4\n\t"                                  \
+    "vadduwm    %[kpw0],%[vt5],%[vt6]\n\t"                                    \
+    /* Deque results in kpw0 to kpw1, kpw2 and kpw3                        */ \
+    "vsldoi     %[kpw1],%[kpw0],%[kpw0],12\n\t"                               \
+    "vsldoi     %[kpw2],%[kpw0],%[kpw0],8\n\t"                                \
+    "vsldoi     %[kpw3],%[kpw0],%[kpw0],4\n\t"                                \
     : /* output list */                                                       \
       [w0] "+v" ((_w0)),                                                      \
       [w1] "+v" ((_w1)),                                                      \
