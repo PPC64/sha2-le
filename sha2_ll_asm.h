@@ -225,7 +225,7 @@
     "vshasigmaw %[vt0],%[vt5],0,%[six1]\n\t"                                  \
     /* vt2 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j]) , s1(w[j+1])               */ \
     /*  NOTE: %x[vtN] corresponds to the equivalent VSX register           */ \
-    "xxpermdi   %x[vt2],%x[vt0],%x[vt2],%[c1]\n\t"                            \
+    "xxmrgld    %x[vt2],%x[vt0],%x[vt2]\n\t"                                  \
     /* vt5 = s0(w[j-15]) + w[j-7] + w[j-16] + s1(w[j-2]), // w[j]          */ \
     /*       s0(w[j-14]) + w[j-6] + w[j-15] + s1(w[j-1]), // w[j+1]        */ \
     /*       s0(w[j-13]) + w[j-5] + w[j-14] + s1(w[j]),   // w[j+2]        */ \
@@ -267,8 +267,6 @@
       [vrb] "v" ((_vRb)),                                                     \
       [vrc] "v" ((_vRc)),                                                     \
       [kptr] "r" ((_k)),                                                      \
-      [c1] "i" (3),                                                           \
-      [c2] "i" (32),                                                          \
       [six1] "i" (0xf)                                                        \
     : /* clobber list */                                                      \
       "memory"                                                                \
