@@ -29,13 +29,13 @@ int main (int argc, char *argv[]) {
   size_t padded_size = calculate_padded_msg_size(st.st_size);
 
   // Save file in a input buffer.
-  char* input = (char *) calloc(padded_size, sizeof(char));
+  unsigned char* input = (unsigned char *) calloc(padded_size, sizeof(unsigned char));
   if (input == NULL) {
     fprintf(stderr, "%s\n.", strerror(errno));
     return errno;
   }
 
-  if (fread(input, sizeof(char), st.st_size, file) != st.st_size) {
+  if (fread(input, sizeof(unsigned char), st.st_size, file) != st.st_size) {
     fprintf(stderr, "Read error on file %s. %s\n", argv[1],
     strerror(errno));
     fclose(file);

@@ -65,7 +65,7 @@ size_t calculate_padded_msg_size_FIPS_180_4(size_t size) {
   return size + (((k + 1) + (block_size/8)) / CHAR_BIT);
 }
 
-void swap_bytes(char *input, char *output, size_t size) {
+void swap_bytes(unsigned char *input, unsigned char *output, size_t size) {
   size_t size_in_words = size / base_type_size;
 
   for (size_t i = 0; i < size_in_words; i++) {
@@ -100,7 +100,7 @@ void swap_bytes(char *input, char *output, size_t size) {
 
 // TODO(rcardoso): I am not sure how this algorithm will work for SHA512. How
 // this write the high 64 bits of length?
-void write_size(char *input, size_t size, size_t position) {
+void write_size(unsigned char *input, size_t size, size_t position) {
   base_type* total_size = (base_type*)&input[position];
   // Undefined for SHA512. Right shift count >= width of type (uint64_t)
   #if SHA_BITS == 256
@@ -109,13 +109,13 @@ void write_size(char *input, size_t size, size_t position) {
   *(++total_size) = (base_type)size * 8; // lower bits
 }
 
-int sha2(char *input, size_t size, size_t padded_size) {
+int sha2(unsigned char *input, size_t size, size_t padded_size) {
 
   // Concatenate '1' to input.
-  input[size] = (char)(1 << 7);
+  input[size] = (unsigned char)(1 << 7);
 
   // Swap bytes due to endianess .
-  char* input_swapped = (char *) calloc(padded_size, sizeof(char));
+  unsigned char* input_swapped = (unsigned char *) calloc(padded_size, sizeof(unsigned char));
   if (input_swapped == NULL) {
     fprintf(stderr, "%s\n.", strerror(errno));
     return errno;
