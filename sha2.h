@@ -76,26 +76,24 @@ void swap_bytes(unsigned char *input, unsigned char *output, size_t size) {
 
     *output_cast =
 #if SHA_BITS == 256
-    (*input_cast & 0xFF000000) >> 24 |
-    (*input_cast & 0x00FF0000) >>  8 |
-    (*input_cast & 0x0000FF00) <<  8 |
-    (*input_cast & 0x000000FF) << 24;
+      (*input_cast & 0xFF000000) >> 24 |
+      (*input_cast & 0x00FF0000) >>  8 |
+      (*input_cast & 0x0000FF00) <<  8 |
+      (*input_cast & 0x000000FF) << 24;
 #elif SHA_BITS == 512
-    (*input_cast & 0xFF00000000000000ULL) >> 56 |
-    (*input_cast & 0x00FF000000000000ULL) >> 40 |
-    (*input_cast & 0x0000FF0000000000ULL) >> 24 |
-    (*input_cast & 0x000000FF00000000ULL) >>  8 |
-    (*input_cast & 0x00000000FF000000ULL) <<  8 |
-    (*input_cast & 0x0000000000FF0000ULL) << 24 |
-    (*input_cast & 0x000000000000FF00ULL) << 40 |
-    (*input_cast & 0x00000000000000FFULL) << 56;
+      (*input_cast & 0xFF00000000000000ULL) >> 56 |
+      (*input_cast & 0x00FF000000000000ULL) >> 40 |
+      (*input_cast & 0x0000FF0000000000ULL) >> 24 |
+      (*input_cast & 0x000000FF00000000ULL) >>  8 |
+      (*input_cast & 0x00000000FF000000ULL) <<  8 |
+      (*input_cast & 0x0000000000FF0000ULL) << 24 |
+      (*input_cast & 0x000000000000FF00ULL) << 40 |
+      (*input_cast & 0x00000000000000FFULL) << 56;
 #endif // SHA_BITS
-
+  }
 #else
 #error "Only for little endian"
 #endif
-
-  }
 }
 
 // TODO(rcardoso): I am not sure how this algorithm will work for SHA512. How
