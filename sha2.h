@@ -2,7 +2,6 @@
 #define _PPC64_LE_SHA2_H_
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <limits.h>
