@@ -26,21 +26,24 @@ for sha_bits in 256 512; do
   c_bin=sha${sha_bits}_${CC}
   ll_intrinsics_bin=sha${sha_bits}_ll_intrinsics_${CC}
   ll_asm_bin=sha${sha_bits}_ll_asm_${CC}
+  libcrypto_bin=sha${sha_bits}_libcrypto_${CC}
   ctr=1
   for file in $a $b $c $d; do
     echo -n $file > _tmp
     ${bin_dir}/${c_bin} _tmp > _c
     ${bin_dir}/${ll_intrinsics_bin} _tmp > _intrinsics
     ${bin_dir}/${ll_asm_bin} _tmp > _asm
+    ${bin_dir}/${libcrypto_bin} _tmp > _libcrypto
     sha${sha_bits}sum _tmp | cut -d\  -f1 > _ref
     echo -en "Test #"${ctr}":\t"
     cmp _c c
     cmp _intrinsics intrinsics
     cmp _asm asm
+    cmp _libcrypto libcrypto
     #TODO: fix this ugly hack
     ctr=$(echo $ctr + 1 | bc)
     echo ""
-    rm -f _ref _c _intrinsics _asm _tmp
+    rm -f _ref _c _intrinsics _asm _tmp _libcrypto
   done
   echo ""
 done
