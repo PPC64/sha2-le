@@ -5,11 +5,19 @@
 
 // To compile with libcrypto, define LIBCRYPTO
 
-#ifndef LIBCRYPTO
- #include "sha2.h"
-#else // LIBCRYPTO defined
+#if (SHA_BITS != 256 && SHA_BITS != 512)
+ #error "SHA_BITS should be 256 or 512"
+#endif // SHA_BITS
+
+#if (LOW_LEVEL == 2 || LOW_LEVEL == 1) && !defined(__powerpc64__)
+	#error "HW vector only implemented for powerpc64"
+#endif
+
+#ifdef LIBCRYPTO
  #include <openssl/sha.h>
-#endif //ifndef LIBCRYPTO
+#else
+ #include "sha2.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,17 +46,17 @@ int main (int argc, char *argv[]) {
     return errno;
   }
 
-#ifndef LIBCRYPTO
-  // Padding. padded_size is total message bytes including pad bytes.
-  size_t padded_size = calculate_padded_msg_size(st.st_size);
+  size_t input_size;
+#ifdef LIBCRYPTO
+  input_size = st.st_size;
+#else
+  // Padding. input_size is total message bytes including pad bytes.
+  input_size = calculate_padded_msg_size(st.st_size);
+#endif
 
   // Save file in a input buffer.
-  unsigned char* input = (unsigned char *) calloc(padded_size,
+  unsigned char* input = (unsigned char *) calloc(input_size,
                                                   sizeof(unsigned char));
-#else // LIBCRYPTO defined
-  unsigned char* input = (unsigned char *) calloc(st.st_size,
-                                                  sizeof(unsigned char));
-#endif
   if (input == NULL) {
     fprintf(stderr, "%s\n.", strerror(errno));
     return errno;
@@ -60,28 +68,30 @@ int main (int argc, char *argv[]) {
     fclose(file);
     return errno;
   }
+  fclose(file);
 
 #ifdef LIBCRYPTO
+
   unsigned char md[SHA_BITS/8];
- #if SHA_BITS == 256
-  SHA256(input, st.st_size, md);
+
+#if SHA_BITS == 256
+ #define SHA SHA256
+#elif SHA_BITS == 512
+ #define SHA SHA512
+#endif
+
+  SHA(input, st.st_size, md);
+
+#undef SHA
+
   for (int i = 0; i < SHA_BITS/8; i++) {
     printf("%02x", md[i]);
   }
   printf("\n");
- #elif SHA_BITS == 512
-  SHA512(input, st.st_size, md);
-  for (int i = 0; i < SHA_BITS/8; i++) {
-    printf("%02x", md[i]);
-  }
-  printf("\n");
- #else // SHA_BITS != 256 && SHA_BITS != 512
-  #error "SHA_BITS should be 256 or 512"
- #endif //if SHA_BITS == 256
-  fclose(file);
+
   return 0;
-#else //LIBCRYPTO not defined
-  fclose(file);
-  return sha2(input, st.st_size, padded_size);
+
+#else // LIBCRYPTO not defined
+  return sha2(input, st.st_size, input_size);
 #endif
 }

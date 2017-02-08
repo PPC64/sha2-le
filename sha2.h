@@ -23,10 +23,6 @@ base_type _h[8] __attribute__ ((aligned (16)))= {
 };
 #endif
 
-#if (LOW_LEVEL == 2 || LOW_LEVEL == 1) && !defined(__powerpc64__)
-	#error "HW vector only implemented for powerpc64"
-#endif
-
 #if LOW_LEVEL == 2
 #include "sha2_ll_asm.h"
 #elif LOW_LEVEL == 1
