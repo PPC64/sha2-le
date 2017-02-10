@@ -3,12 +3,28 @@
 // SHA_BITS      256 or 512
 // USE_HW_VECTOR 0 or 1
 
-#include <stdlib.h>
+// To compile with libcrypto, define LIBCRYPTO
+
+#if (SHA_BITS != 256 && SHA_BITS != 512)
+ #error "SHA_BITS should be 256 or 512"
+#endif // SHA_BITS
+
+#if (LOW_LEVEL == 2 || LOW_LEVEL == 1) && !defined(__powerpc64__)
+	#error "HW vector only implemented for powerpc64"
+#endif
+
+#ifdef LIBCRYPTO
+ #include <openssl/sha.h>
+#else
+ #include "sha2.h"
+#endif
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-
-#include "sha2.h"
+#include <limits.h>
+#include <sys/stat.h>
 
 int main (int argc, char *argv[]) {
   char *filename = argv[1];
@@ -30,24 +46,52 @@ int main (int argc, char *argv[]) {
     return errno;
   }
 
-  // Padding. padded_size is total message bytes including pad bytes.
-  size_t padded_size = calculate_padded_msg_size(st.st_size);
+  size_t input_size;
+#ifdef LIBCRYPTO
+  input_size = st.st_size;
+#else
+  // Padding. input_size is total message bytes including pad bytes.
+  input_size = calculate_padded_msg_size(st.st_size);
+#endif
 
   // Save file in a input buffer.
-  char* input = (char *) calloc(padded_size, sizeof(char));
+  unsigned char* input = (unsigned char *) calloc(input_size,
+                                                  sizeof(unsigned char));
   if (input == NULL) {
     fprintf(stderr, "%s\n.", strerror(errno));
     return errno;
   }
 
-  if (fread(input, sizeof(char), st.st_size, file) != st.st_size) {
+  if (fread(input, sizeof(unsigned char), st.st_size, file) != st.st_size) {
     fprintf(stderr, "Read error on file %s. %s\n", argv[1],
     strerror(errno));
     fclose(file);
     return errno;
   }
-
   fclose(file);
 
-  return sha2(input, st.st_size, padded_size);
+#ifdef LIBCRYPTO
+
+  unsigned char md[SHA_BITS/8];
+
+#if SHA_BITS == 256
+ #define SHA SHA256
+#elif SHA_BITS == 512
+ #define SHA SHA512
+#endif
+
+  SHA(input, st.st_size, md);
+
+#undef SHA
+
+  for (int i = 0; i < SHA_BITS/8; i++) {
+    printf("%02x", md[i]);
+  }
+  printf("\n");
+
+  return 0;
+
+#else // LIBCRYPTO not defined
+  return sha2(input, st.st_size, input_size);
+#endif
 }

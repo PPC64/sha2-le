@@ -5,62 +5,54 @@
 #error "The sha2_ll_intrinsics.h header should only be included on LOW_LEVEL == 1"
 #endif
 
-#include <altivec.h>
-
 #include "base-types.h"
 
-#define ROTR(n, b) (((n) >> (b)) | ((n) << ((base_type_size * 8) - (b))))
+#define a 0
+#define b 1
+#define c 2
+#define d 3
+#define e 4
+#define f 5
+#define g 6
+#define h 7
 
-#define SHR(x, n) ((x) >> (n))
+void static inline sha2_round(vector_base_type* _ha, vector_base_type kplusw) {
 
-#define BIGSIGMA0(x) (ROTR((x), S0_args[0]) ^ ROTR((x), S0_args[1]) ^ \
-      ROTR((x), S0_args[2]))
-
-#define BIGSIGMA1(x) (ROTR((x), S1_args[0]) ^ ROTR((x), S1_args[1]) ^ \
-      ROTR((x), S1_args[2]))
-
-#define SIGMA0(x) (ROTR((x), s0_args[0]) ^ ROTR((x), s0_args[1]) ^ \
-      SHR((x), s0_args[2]))
-
-#define SIGMA1(x) (ROTR((x), s1_args[0]) ^ ROTR((x), s1_args[1]) ^ \
-    SHR((x), s1_args[2]))
-
-void static inline sha2_round(base_type* a, base_type* b, base_type* c,
-                              base_type* d, base_type* e, base_type* f,
-                              base_type* g, base_type* h, base_type kplusw) {
-
-  base_type tmp1, tmp2;
-
-  tmp1 = *h + BIGSIGMA1(*e) + Ch(*e, *f, *g) + kplusw;
-  tmp2 = BIGSIGMA0(*a) + Maj(*a, *b, *c);
-
-  *h = *g;
-  *g = *f;
-  *f = *e;
-  *e = *d + tmp1;
-  *d = *c;
-  *c = *b;
-  *b = *a;
-  *a = tmp1 + tmp2;
+  vector_base_type chv, majv, bsigmaA, bsigmaE,tmp1, tmp2;
+  chv  = vec_sel(_ha[g], _ha[f], _ha[e]);
+  majv = vec_vxor(_ha[a], _ha[b]);
+  majv = vec_sel(_ha[b], _ha[c], majv);
+#if SHA_BITS == 256
+  bsigmaA = __builtin_crypto_vshasigmaw(_ha[a], 1, 0x0);
+  bsigmaE = __builtin_crypto_vshasigmaw(_ha[e], 1, 0xf);
+#elif SHA_BITS == 512
+  bsigmaA = __builtin_crypto_vshasigmad(_ha[a], 1, 0x0);
+  bsigmaE = __builtin_crypto_vshasigmad(_ha[e], 1, 0xf);
+#endif
+  tmp1 =  _ha[h] + bsigmaE + chv + kplusw;
+  tmp2 = bsigmaA + majv;
+  _ha[h] = _ha[g];
+  _ha[g] = _ha[f];
+  _ha[f] = _ha[e];
+  _ha[e] = _ha[d] + tmp1;
+  _ha[d] = _ha[c];
+  _ha[c] = _ha[b];
+  _ha[b] = _ha[a];
+  _ha[a] = tmp1 + tmp2;
 }
 
 void sha2_transform(base_type* _h, base_type* w) {
-  base_type a, b, c, d, e, f, g, h;
-  int i;
+  int i = 16;
+  vector_base_type _ha[8];
+  _ha[a][0] = _h[a];
+  _ha[b][0] = _h[b];
+  _ha[c][0] = _h[c];
+  _ha[d][0] = _h[d];
+  _ha[e][0] = _h[e];
+  _ha[f][0] = _h[f];
+  _ha[g][0] = _h[g];
+  _ha[h][0] = _h[h];
 
-  a = _h[0];
-  b = _h[1];
-  c = _h[2];
-  d = _h[3];
-  e = _h[4];
-  f = _h[5];
-  g = _h[6];
-  h = _h[7];
-
-  // Loop unrolling, from 0 to 15
-  for (i = 0; i < 16; i++) {
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, k[i]+w[i]);
-  }
 
 #if SHA_BITS == 256
   // Load 16 elements from w out of the loop
@@ -85,9 +77,19 @@ void sha2_transform(base_type* _h, base_type* w) {
   v3[1] = w[i-3];
   v3[2] = w[i-2];
   v3[3] = w[i-1];
-  // BEWARE!!! we do *not* have a strong guarantee that the v register won't
-  // get dirty in between this two __asm__ calls.
-  // As of now, this is just a quick experiment and SHOULD be fixed.
+
+  vector_base_type kpw;
+  for (int i = 0; i < 16; i++) {
+    if (i < 4)
+      kpw[0] = k[i] + v0[i % 4];
+    else if (i < 8)
+      kpw[0] = k[i] + v1[i % 4];
+    else if (i < 12)
+      kpw[0] = k[i] + v2[i % 4];
+    else if (i < 16)
+      kpw[0] = k[i] + v3[i % 4];
+    sha2_round(_ha, kpw);
+  }
 
   // From 16 to W_SIZE (64)
   for (; i < W_SIZE; i=i+4) {
@@ -110,10 +112,15 @@ void sha2_transform(base_type* _h, base_type* w) {
     v2 = v3;
     v3 = result;
 
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[0]+k[i+0] );
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[1]+k[i+1] );
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[2]+k[i+2] );
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[3]+k[i+3] );
+    vector_base_type kpw;
+    kpw[0] = result[0]+k[i+0];
+    sha2_round(_ha, kpw);
+    kpw[0] = result[1]+k[i+1];
+    sha2_round(_ha, kpw);
+    kpw[0] = result[2]+k[i+2];
+    sha2_round(_ha, kpw);
+    kpw[0] = result[3]+k[i+3];
+    sha2_round(_ha, kpw);
   }
 
 #else
@@ -144,6 +151,27 @@ void sha2_transform(base_type* _h, base_type* w) {
   v7[0] = w[i-2];
   v7[1] = w[i-1];
 
+  vector_base_type kpw;
+  for (int i = 0; i < 16; i++) {
+    if (i < 2)
+      kpw[0] = k[i] + v0[i % 2];
+    else if (i < 4)
+      kpw[0] = k[i] + v1[i % 2];
+    else if (i < 6)
+      kpw[0] = k[i] + v2[i % 2];
+    else if (i < 8)
+      kpw[0] = k[i] + v3[i % 2];
+    else if (i < 10)
+      kpw[0] = k[i] + v4[i % 2];
+    else if (i < 12)
+      kpw[0] = k[i] + v5[i % 2];
+    else if (i < 14)
+      kpw[0] = k[i] + v6[i % 2];
+    else if (i < 16)
+      kpw[0] = k[i] + v7[i % 2];
+    sha2_round(_ha, kpw);
+  }
+
   // From 16 to W_SIZE (64)
   for (; i < W_SIZE; i=i+2) {
     sigma0 = __builtin_crypto_vshasigmad((vector_base_type){v0[1],v1[0]},
@@ -161,18 +189,21 @@ void sha2_transform(base_type* _h, base_type* w) {
     v6 = v7;
     v7 = result;
 
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[0]+k[i+0]);
-    sha2_round(&a, &b, &c, &d, &e, &f, &g, &h, result[1]+k[i+1]);
+    vector_base_type kpw;
+    kpw[0] = result[0]+k[i+0];
+    sha2_round(_ha, kpw);
+    kpw[0] = result[1]+k[i+1];
+    sha2_round(_ha, kpw);
   }
 #endif
-  _h[0] += a;
-  _h[1] += b;
-  _h[2] += c;
-  _h[3] += d;
-  _h[4] += e;
-  _h[5] += f;
-  _h[6] += g;
-  _h[7] += h;
+  _h[0] += _ha[a][0];
+  _h[1] += _ha[b][0];
+  _h[2] += _ha[c][0];
+  _h[3] += _ha[d][0];
+  _h[4] += _ha[e][0];
+  _h[5] += _ha[f][0];
+  _h[6] += _ha[g][0];
+  _h[7] += _ha[h][0];
 }
 
 #endif // _PPC64_LE_SHA2_LL_INTRINSICS_H_

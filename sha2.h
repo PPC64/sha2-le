@@ -1,32 +1,26 @@
 #ifndef _PPC64_LE_SHA2_H_
 #define _PPC64_LE_SHA2_H_
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <limits.h>
 
-#include <sys/stat.h>
 
 #include "base-types.h"
 
 #if SHA_BITS == 256
-base_type _h[8] = {
+base_type _h[8] __attribute__ ((aligned (16))) = {
   0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
   0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
 };
 #elif SHA_BITS == 512
-base_type _h[8] = {
+base_type _h[8] __attribute__ ((aligned (16)))= {
   0x6a09e667f3bcc908, 0xbb67ae8584caa73b,
   0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
   0x510e527fade682d1, 0x9b05688c2b3e6c1f,
   0x1f83d9abfb41bd6b, 0x5be0cd19137e2179
 };
-#endif
-
-#if (LOW_LEVEL == 2 || LOW_LEVEL == 1) && !defined(__powerpc64__)
-	#error "HW vector only implemented for powerpc64"
 #endif
 
 #if LOW_LEVEL == 2
@@ -66,7 +60,7 @@ size_t calculate_padded_msg_size_FIPS_180_4(size_t size) {
   return size + (((k + 1) + (block_size/8)) / CHAR_BIT);
 }
 
-void swap_bytes(char *input, char *output, size_t size) {
+void swap_bytes(unsigned char *input, unsigned char *output, size_t size) {
   size_t size_in_words = size / base_type_size;
 
   for (size_t i = 0; i < size_in_words; i++) {
@@ -77,31 +71,29 @@ void swap_bytes(char *input, char *output, size_t size) {
 
     *output_cast =
 #if SHA_BITS == 256
-    (*input_cast & 0xFF000000) >> 24 |
-    (*input_cast & 0x00FF0000) >>  8 |
-    (*input_cast & 0x0000FF00) <<  8 |
-    (*input_cast & 0x000000FF) << 24;
+      (*input_cast & 0xFF000000) >> 24 |
+      (*input_cast & 0x00FF0000) >>  8 |
+      (*input_cast & 0x0000FF00) <<  8 |
+      (*input_cast & 0x000000FF) << 24;
 #elif SHA_BITS == 512
-    (*input_cast & 0xFF00000000000000ULL) >> 56 |
-    (*input_cast & 0x00FF000000000000ULL) >> 40 |
-    (*input_cast & 0x0000FF0000000000ULL) >> 24 |
-    (*input_cast & 0x000000FF00000000ULL) >>  8 |
-    (*input_cast & 0x00000000FF000000ULL) <<  8 |
-    (*input_cast & 0x0000000000FF0000ULL) << 24 |
-    (*input_cast & 0x000000000000FF00ULL) << 40 |
-    (*input_cast & 0x00000000000000FFULL) << 56;
+      (*input_cast & 0xFF00000000000000ULL) >> 56 |
+      (*input_cast & 0x00FF000000000000ULL) >> 40 |
+      (*input_cast & 0x0000FF0000000000ULL) >> 24 |
+      (*input_cast & 0x000000FF00000000ULL) >>  8 |
+      (*input_cast & 0x00000000FF000000ULL) <<  8 |
+      (*input_cast & 0x0000000000FF0000ULL) << 24 |
+      (*input_cast & 0x000000000000FF00ULL) << 40 |
+      (*input_cast & 0x00000000000000FFULL) << 56;
 #endif // SHA_BITS
-
+  }
 #else
 #error "Only for little endian"
 #endif
-
-  }
 }
 
 // TODO(rcardoso): I am not sure how this algorithm will work for SHA512. How
 // this write the high 64 bits of length?
-void write_size(char *input, size_t size, size_t position) {
+void write_size(unsigned char *input, size_t size, size_t position) {
   base_type* total_size = (base_type*)&input[position];
   // Undefined for SHA512. Right shift count >= width of type (uint64_t)
   #if SHA_BITS == 256
@@ -110,13 +102,13 @@ void write_size(char *input, size_t size, size_t position) {
   *(++total_size) = (base_type)size * 8; // lower bits
 }
 
-int sha2(char *input, size_t size, size_t padded_size) {
+int sha2(unsigned char *input, size_t size, size_t padded_size) {
 
   // Concatenate '1' to input.
-  input[size] = (char)(1 << 7);
+  input[size] = (unsigned char)(1 << 7);
 
   // Swap bytes due to endianess .
-  char* input_swapped = (char *) calloc(padded_size, sizeof(char));
+  unsigned char* input_swapped = (unsigned char *) calloc(padded_size, sizeof(unsigned char));
   if (input_swapped == NULL) {
     fprintf(stderr, "%s\n.", strerror(errno));
     return errno;
@@ -135,9 +127,9 @@ int sha2(char *input, size_t size, size_t padded_size) {
 
   printf(
 #if SHA_BITS == 256
-  "%08x%08x%08x%08x%08x%08x%08x%08x\n",
+    "%08x%08x%08x%08x%08x%08x%08x%08x\n",
 #elif SHA_BITS == 512
-  "%016llx%016llx%016llx%016llx%016llx%016llx%016llx%016llx\n",
+    "%016llx%016llx%016llx%016llx%016llx%016llx%016llx%016llx\n",
 #endif
    _h[0],_h[1],_h[2],_h[3],_h[4],_h[5],_h[6],_h[7]);
   return 0;
