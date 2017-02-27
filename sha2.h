@@ -25,8 +25,6 @@ base_type _h[8] __attribute__ ((aligned (16)))= {
 
 #if LOW_LEVEL == 2
 #include "sha2_ll_asm.h"
-#elif LOW_LEVEL == 1
-#include "sha2_ll_intrinsics.h"
 #else
 #include "sha2_no_ll.h"
 #endif
