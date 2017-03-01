@@ -23,18 +23,15 @@ function cmp() {
 for sha_bits in 256 512; do
   echo "Running tests for SHA-${sha_bits}:";
 
-  c_bin=sha${sha_bits}_${CC}
-  ll_asm_bin=sha${sha_bits}_ll_asm_${CC}
+  asm_bin=sha${sha_bits}_${CC}
   libcrypto_bin=sha${sha_bits}_libcrypto_${CC}
   ctr=1
   for file in $a $b $c $d; do
     echo -n $file > _tmp
-    ${bin_dir}/${c_bin} _tmp > _c
-    ${bin_dir}/${ll_asm_bin} _tmp > _asm
+    ${bin_dir}/${asm_bin} _tmp > _asm
     ${bin_dir}/${libcrypto_bin} _tmp > _libcrypto
     sha${sha_bits}sum _tmp | cut -d\  -f1 > _ref
     echo -en "Test #"${ctr}":\t"
-    cmp _c c
     cmp _asm asm
     cmp _libcrypto libcrypto
     #TODO: fix this ugly hack

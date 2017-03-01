@@ -10,13 +10,12 @@ PERF_TXT=$(BIN_DIR)/perfexample.txt
 PERF_ITERS=10
 
 BINS  = $(BIN_DIR)/sha256_$(CC)                                               \
-				$(BIN_DIR)/sha256_ll_asm_$(CC) $(BIN_DIR)/sha256_libcrypto_$(CC)      \
+				                               $(BIN_DIR)/sha256_libcrypto_$(CC)      \
 				$(BIN_DIR)/sha512_$(CC)	                                              \
-				$(BIN_DIR)/sha512_ll_asm_$(CC) $(BIN_DIR)/sha512_libcrypto_$(CC)
+				                               $(BIN_DIR)/sha512_libcrypto_$(CC)
 
 TESTS = $(BIN_DIR)/test256_$(CC)                                              \
-				$(BIN_DIR)/test256_ll_asm_$(CC) $(BIN_DIR)/test512_$(CC)              \
-				                                       $(BIN_DIR)/test512_ll_asm_$(CC)
+				                                $(BIN_DIR)/test512_$(CC)
 
 all:
 	@for i in $(COMPILERS); do	\
@@ -25,34 +24,22 @@ all:
 
 all-compiler: $(BINS)
 
-$(BIN_DIR)/sha256_$(CC): sha2.c sha2.h sha2_no_ll.h
-	$(CC) $(CFLAGS) $< -DSHA_BITS=256 -DLOW_LEVEL=0 -o $@
-
-$(BIN_DIR)/sha256_ll_asm_$(CC): sha2.c sha2.h sha2_ll_asm.h
+$(BIN_DIR)/sha256_$(CC): sha2.c sha2.h sha2_ll_asm.h
 	$(CC) $(CFLAGS) $< -DSHA_BITS=256 -DLOW_LEVEL=2 -o $@
 
 $(BIN_DIR)/sha256_libcrypto_$(CC): sha2.c
 	$(CC) $(CFLAGS) $< -DSHA_BITS=256 -DLIBCRYPTO -o $@ -lcrypto
 
-$(BIN_DIR)/sha512_$(CC): sha2.c sha2.h sha2_no_ll.h
-	$(CC) $(CFLAGS) $< -DSHA_BITS=512 -DLOW_LEVEL=0 -o $@
-
-$(BIN_DIR)/sha512_ll_asm_$(CC): sha2.c sha2.h sha2_ll_asm.h
+$(BIN_DIR)/sha512_$(CC): sha2.c sha2.h sha2_ll_asm.h
 	$(CC) $(CFLAGS) $< -DSHA_BITS=512 -DLOW_LEVEL=2 -o $@
 
 $(BIN_DIR)/sha512_libcrypto_$(CC): sha2.c
 	$(CC) $(CFLAGS) $< -DSHA_BITS=512 -DLIBCRYPTO -o $@ -lcrypto
 
-$(BIN_DIR)/test256_$(CC): tests.c sha2.h sha2_no_ll.h
-	$(CC) $(CFLAGS) $< -DSHA_BITS=256 -DLOW_LEVEL=0 -o $@
-
-$(BIN_DIR)/test256_ll_asm_$(CC): tests.c sha2.h sha2_ll_asm.h
+$(BIN_DIR)/test256_$(CC): tests.c sha2.h sha2_ll_asm.h
 	$(CC) $(CFLAGS) $< -DSHA_BITS=256 -DLOW_LEVEL=2 -o $@
 
-$(BIN_DIR)/test512_$(CC): tests.c sha2.h sha2_no_ll.h
-	$(CC) $(CFLAGS) $< -DSHA_BITS=512 -DLOW_LEVEL=0 -o $@
-
-$(BIN_DIR)/test512_ll_asm_$(CC): tests.c sha2.h sha2_ll_asm.h
+$(BIN_DIR)/test512_$(CC): tests.c sha2.h sha2_ll_asm.h
 	$(CC) $(CFLAGS) $< -DSHA_BITS=512 -DLOW_LEVEL=2 -o $@
 
 test-compiler: $(BINS) $(TESTS)
@@ -60,9 +47,7 @@ test-compiler: $(BINS) $(TESTS)
 	@echo "Testing $(CC)"
 	@echo "======================================================================="
 	$(BIN_DIR)/test256_$(CC)
-	$(BIN_DIR)/test256_ll_asm_$(CC)
 	$(BIN_DIR)/test512_$(CC)
-	$(BIN_DIR)/test512_ll_asm_$(CC)
 	CC=$(CC) ./blackbox-test.sh
 
 test:
@@ -80,18 +65,14 @@ perf-run: all
 	@echo "$(CC) perf run:"
 	@echo "======================================================================="
 	@echo "SHA 256"
-	@echo -n "C implementation:          "
-	@sudo perf stat -r $(PERF_ITERS) bin/sha256_$(CC)               $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
 	@echo -n "ASM implementation:        "
-	@sudo perf stat -r $(PERF_ITERS) bin/sha256_ll_asm_$(CC)        $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
+	@sudo perf stat -r $(PERF_ITERS) bin/sha256_$(CC)               $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
 	@echo -n "Libcrypto implementation:  "
 	@sudo perf stat -r $(PERF_ITERS) bin/sha256_libcrypto_$(CC) $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
 
 	@echo "\nSHA 512"
-	@echo -n "C implementation:          "
-	@sudo perf stat -r $(PERF_ITERS) bin/sha512_$(CC)               $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
 	@echo -n "ASM implementation:        "
-	@sudo perf stat -r $(PERF_ITERS) bin/sha512_ll_asm_$(CC)        $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
+	@sudo perf stat -r $(PERF_ITERS) bin/sha512_$(CC)               $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
 	@echo -n "Libcrypto implementation:  "
 	@sudo perf stat -r $(PERF_ITERS) bin/sha512_libcrypto_$(CC) $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
 
