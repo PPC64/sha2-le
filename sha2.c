@@ -9,10 +9,6 @@
  #error "SHA_BITS should be 256 or 512"
 #endif // SHA_BITS
 
-#if (LOW_LEVEL == 2 || LOW_LEVEL == 1) && !defined(__powerpc64__)
-	#error "HW vector only implemented for powerpc64"
-#endif
-
 #ifdef LIBCRYPTO
  #include <openssl/sha.h>
 #else

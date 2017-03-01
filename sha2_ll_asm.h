@@ -1,10 +1,6 @@
 #ifndef _PPC64_LE_SHA2_LL_ASM_H_
 #define _PPC64_LE_SHA2_LL_ASM_H_
 
-#if LOW_LEVEL != 2
-#error "The sha2_ll_asm.h header should only be included on LOW_LEVEL == 2"
-#endif
-
 #include "base-types.h"
 
 /*
