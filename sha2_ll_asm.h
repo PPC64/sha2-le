@@ -109,81 +109,90 @@
   ); } while (0)
 
 #define LOAD_W_PLUS_K(_k0, _k1, _k2, _k3, _w0, _w1, _w2, _w3, _vRb, _vRc, _j,      \
-    _Rb, _Rc, _w, _k) do {                                                         \
-  base_type t0;                                                                    \
-  base_type t1;                                                                    \
-  vector_base_type vt0;                                                            \
-  vector_base_type vt1;                                                            \
-  vector_base_type vt2;                                                            \
-  vector_base_type vt3;                                                            \
-  __asm__ volatile (                                                               \
-    "sldi    %[t1],%[index],%[c1]\n\t"     /* j * 4 (word size)                 */ \
-    "add     %[t1],%[t1],%[wptr]\n\t"      /* alias to W[j] location            */ \
-    "addi    %[t0],%[t1],%[c2]\n\t"                                                \
-    "lvx     %[w0],0,%[t0]\n\t"            /* unaligned load                    */ \
-    "lvsr    %[vrb],0,%[t1]\n\t"           /* set vrb according to alignment    */ \
-    "addi    %[t0],%[t1],%[c3]\n\t"                                                \
-    "lvx     %[w1],0,%[t0]\n\t"            /* unaligned load                    */ \
-    "vperm   %[w0],%[w1],%[w0],%[vrb]\n\t" /* w0 = w[j-16] to w[j-13]           */ \
-    "addi    %[t0],%[t1],%[c4]\n\t"                                                \
-    "lvx     %[w2],0,%[t0]\n\t"            /* unaligned load                    */ \
-    "vperm   %[w1],%[w2],%[w1],%[vrb]\n\t" /* w1 = w[j-12] to w[j-9]            */ \
-    "addi    %[t0],%[t1],%[c5]\n\t"                                                \
-    "lvx     %[w3],0,%[t0]\n\t"            /* unaligned load                    */ \
-    "vperm   %[w2],%[w3],%[w2],%[vrb]\n\t" /* w2 = w[j-8] to w[j-5]             */ \
-    "addi    %[t0],%[t1],%[c0]\n\t"                                                \
-    "lvx     %[vt0],0,%[t0]\n\t"           /* unaligned load                    */ \
-    "vperm   %[w3],%[vt0],%[w3],%[vrb]\n\t" /* w3 = w[j-4] to w[j-1]             */ \
-    /* Load 4*4 k values                                                        */ \
-    "sldi    %[t1],%[index],%[c1]\n\t"  /* j * 4 (word size)                    */ \
-    "add     %[t1],%[t1],%[kptr]\n\t"   /* alias to k[j] location               */ \
-    "addi    %[t0],%[t1],%[c2]\n\t"                                                \
-    "lvx     %[vt0],0,%[t0]\n\t"        /* load k[j-16] to k[j-13] to vector    */ \
-    "addi    %[t0],%[t1],%[c3]\n\t"                                                \
-    "lvx     %[vt1],0,%[t0]\n\t"        /* load k[j-12] to k[j-9] to vector     */ \
-    "addi    %[t0],%[t1],%[c4]\n\t"                                                \
-    "lvx     %[vt2],0,%[t0]\n\t"        /* load k[j-8] to k[j-5] to vector      */ \
-    "addi    %[t0],%[t1],%[c5]\n\t"                                                \
-    "lvx     %[vt3],0,%[t0]\n\t"        /* load k[j-4] to k[j-1] to vector      */ \
-                                                                                   \
-    "lvsl    %[vrb],0,%[rb]\n\t"        /* parameter for vperm                  */ \
-    "lvsr    %[vrc],0,%[rc]\n\t"        /* parameter for vperm                  */ \
-    /* Add _w to k                                                              */ \
-    "vadduwm %[k0],%[vt0],%[w0]\n\t"                                               \
-    "vadduwm %[k1],%[vt1],%[w1]\n\t"                                               \
-    "vadduwm %[k2],%[vt2],%[w2]\n\t"                                               \
-    "vadduwm %[k3],%[vt3],%[w3]\n\t"                                               \
-    : /* output list */                                                            \
-      [k0] "=v" ((_k0)),                                                           \
-      [k1] "=v" ((_k1)),                                                           \
-      [k2] "=v" ((_k2)),                                                           \
-      [k3] "=v" ((_k3)),                                                           \
-      [w0] "=v" ((_w0)),                                                           \
-      [w1] "=v" ((_w1)),                                                           \
-      [w2] "=v" ((_w2)),                                                           \
-      [w3] "=v" ((_w3)),                                                           \
-      [vrb] "=v" ((_vRb)),                                                         \
-      [vrc] "=v" ((_vRc)),                                                         \
-      [t0] "=&r" (t0),                                                             \
-      [t1] "=&r" (t1),                                                             \
-      [vt0] "=&v" (vt0),                                                           \
-      [vt1] "=&v" (vt1),                                                           \
-      [vt2] "=&v" (vt2),                                                           \
-      [vt3] "=&v" (vt3)                                                            \
-    : /* input list */                                                             \
-      [index] "r" ((_j)),                                                          \
-      [rb] "r" ((_Rb)),                                                            \
-      [rc] "r" ((_Rc)),                                                            \
-      [wptr] "r" ((_w)),                                                           \
-      [kptr] "r" ((_k)),                                                           \
-      [c1] "i" (2),                                                                \
-      [c0] "i" (0),                                                                \
-      [c2] "i" (-64),                                                              \
-      [c3] "i" (-48),                                                              \
-      [c4] "i" (-32),                                                              \
-      [c5] "i" (-16)                                                               \
-    : /* clobber list */                                                           \
-      "memory"                                                                     \
+    _Rb, _Rc, _w, _k) do {                                                               \
+  base_type t0;                                                                          \
+  base_type t1;                                                                          \
+  vector_base_type vt0;                                                                  \
+  vector_base_type vt1;                                                                  \
+  vector_base_type vt2;                                                                  \
+  vector_base_type vt3;                                                                  \
+  vector_base_type vt4;                                                                  \
+  __asm__ volatile (                                                                     \
+    "sldi    %[t1],%[index],%[c1]\n\t"           /* j * 4 (word size)                 */ \
+    "add     %[t1],%[t1],%[wptr]\n\t"            /* alias to W[j] location            */ \
+    "addi    %[t0],%[t1],%[c2]\n\t"                                                      \
+    "lvx     %[w0],0,%[t0]\n\t"                  /* unaligned load                    */ \
+    "lvsr    %[vrb],0,%[t1]\n\t"                 /* set vrb according to alignment    */ \
+    "addi    %[t0],%[t1],%[c3]\n\t"                                                      \
+    "lvx     %[w1],0,%[t0]\n\t"                  /* unaligned load                    */ \
+    "vperm   %[w0],%[w1],%[w0],%[vrb]\n\t"       /* w0 = w[j-16] to w[j-13]           */ \
+    "addi    %[t0],%[t1],%[c4]\n\t"                                                      \
+    "lvx     %[w2],0,%[t0]\n\t"                  /* unaligned load                    */ \
+    "vperm   %[w1],%[w2],%[w1],%[vrb]\n\t"       /* w1 = w[j-12] to w[j-9]            */ \
+    "addi    %[t0],%[t1],%[c5]\n\t"                                                      \
+    "lvx     %[w3],0,%[t0]\n\t"                  /* unaligned load                    */ \
+    "vperm   %[w2],%[w3],%[w2],%[vrb]\n\t"       /* w2 = w[j-8] to w[j-5]             */ \
+    "addi    %[t0],%[t1],%[c0]\n\t"                                                      \
+    "lvx     %[vt0],0,%[t0]\n\t"                 /* unaligned load                    */ \
+    "vperm   %[w3],%[vt0],%[w3],%[vrb]\n\t"      /* w3 = w[j-4] to w[j-1]             */ \
+    /* Load 4*4 k values                                                              */ \
+    "sldi    %[t1],%[index],%[c1]\n\t"           /* j * 4 (word size)                 */ \
+    "add     %[t1],%[t1],%[kptr]\n\t"            /* alias to k[j] location            */ \
+    "addi    %[t0],%[t1],%[c2]\n\t"                                                      \
+    "lvx     %[vt0],0,%[t0]\n\t"                 /* unaligned load                    */ \
+    "lvsr    %[vrb],0,%[t1]\n\t"                 /* set vrb according to alignment    */ \
+    "addi    %[t0],%[t1],%[c3]\n\t"                                                      \
+    "lvx     %[vt1],0,%[t0]\n\t"                 /* unaligned load                    */ \
+    "vperm   %[vt0],%[vt1],%[vt0],%[vrb]\n\t"    /* vt0 = k[j-16] to k[j-13]          */ \
+    "addi    %[t0],%[t1],%[c4]\n\t"                                                      \
+    "lvx     %[vt2],0,%[t0]\n\t"                 /* unaligned load                    */ \
+    "vperm   %[vt1],%[vt2],%[vt1],%[vrb]\n\t"    /* vt1 = k[j-12] to k[j-9]           */ \
+    "addi    %[t0],%[t1],%[c5]\n\t"                                                      \
+    "lvx     %[vt3],0,%[t0]\n\t"                 /* unaligned load                    */ \
+    "vperm   %[vt2],%[vt3],%[vt2],%[vrb]\n\t"    /* vt2 = k[j-8] to k[j-5]            */ \
+    "addi    %[t0],%[t1],%[c0]\n\t"                                                      \
+    "lvx     %[vt4],0,%[t0]\n\t"                 /* unaligned load                    */ \
+    "vperm   %[vt3],%[vt4],%[vt3],%[vrb]\n\t"    /* vt3 = k[j-4] to k[j-1]            */ \
+                                                                                         \
+    "lvsl    %[vrb],0,%[rb]\n\t"                 /* parameter for vperm*/                \
+    "lvsr    %[vrc],0,%[rc]\n\t"                 /* parameter for vperm*/                \
+    /* Add _w to k                                                                    */ \
+    "vadduwm %[k0],%[vt0],%[w0]\n\t"                                                     \
+    "vadduwm %[k1],%[vt1],%[w1]\n\t"                                                     \
+    "vadduwm %[k2],%[vt2],%[w2]\n\t"                                                     \
+    "vadduwm %[k3],%[vt3],%[w3]\n\t"                                                     \
+    : /* output list */                                                                  \
+      [k0] "=v" ((_k0)),                                                                 \
+      [k1] "=v" ((_k1)),                                                                 \
+      [k2] "=v" ((_k2)),                                                                 \
+      [k3] "=v" ((_k3)),                                                                 \
+      [w0] "=v" ((_w0)),                                                                 \
+      [w1] "=v" ((_w1)),                                                                 \
+      [w2] "=v" ((_w2)),                                                                 \
+      [w3] "=v" ((_w3)),                                                                 \
+      [vrb] "=v" ((_vRb)),                                                               \
+      [vrc] "=v" ((_vRc)),                                                               \
+      [t0] "=&r" (t0),                                                                   \
+      [t1] "=&r" (t1),                                                                   \
+      [vt0] "=&v" (vt0),                                                                 \
+      [vt1] "=&v" (vt1),                                                                 \
+      [vt2] "=&v" (vt2),                                                                 \
+      [vt3] "=&v" (vt3),                                                                 \
+      [vt4] "=&v" (vt4)                                                                  \
+    : /* input list */                                                                   \
+      [index] "r" ((_j)),                                                                \
+      [rb] "r" ((_Rb)),                                                                  \
+      [rc] "r" ((_Rc)),                                                                  \
+      [wptr] "r" ((_w)),                                                                 \
+      [kptr] "r" ((_k)),                                                                 \
+      [c1] "i" (2),                                                                      \
+      [c0] "i" (0),                                                                      \
+      [c2] "i" (-64),                                                                    \
+      [c3] "i" (-48),                                                                    \
+      [c4] "i" (-32),                                                                    \
+      [c5] "i" (-16)                                                                     \
+    : /* clobber list */                                                                 \
+      "memory"                                                                           \
   ); } while (0)
 
 #define CALC_4W(_w0, _w1, _w2, _w3, _kpw0, _kpw1, _kpw2, _kpw3,               \
