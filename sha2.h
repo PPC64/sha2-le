@@ -10,12 +10,12 @@
 #include "base-types.h"
 
 #if SHA_BITS == 256
-base_type _h[8] __attribute__ ((aligned (16))) = {
+base_type _h[8] = {
   0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
   0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
 };
 #elif SHA_BITS == 512
-base_type _h[8] __attribute__ ((aligned (16)))= {
+base_type _h[8] = {
   0x6a09e667f3bcc908, 0xbb67ae8584caa73b,
   0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
   0x510e527fade682d1, 0x9b05688c2b3e6c1f,
