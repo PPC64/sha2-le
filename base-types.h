@@ -92,7 +92,4 @@ static const size_t base_type_size = sizeof(base_type);
 extern base_type _h[8];
 typedef vector base_type vector_base_type;
 
-#define Ch(e, f, g) (((e) & (f)) ^ ((~e) & (g)))
-#define Maj(a, b, c) (((a) & (b)) ^ ((a) & (c)) ^ ((b) & (c)))
-
 #endif // _PPC64_LE_BASE_TYPES_H_
