@@ -6,7 +6,7 @@
 /*
  * As SHA2_ROUND is only defining the new elements and the rest is being
  * handled outside the macro, the new elements that should be 'a' and 'e' are
- * actually the previous.
+ * actually the previous ones.
  *
  * This approach avoids moving registers around. The drawback is that it'll
  * generate a big code due to different registers being used.
@@ -127,7 +127,7 @@
   vector_base_type vt3;                                                     \
   vector_base_type vt4;                                                     \
   __asm__ volatile (                                                        \
-    /* j * 4 (word size)                                                 */ \
+    /* t1 = j * 4 (word size)                                            */ \
     "sldi    %[t1],%[index],%[c1]\n\t"                                      \
     /* alias to W[j] location                                            */ \
     "add     %[t1],%[t1],%[wptr]\n\t"                                       \
@@ -187,6 +187,7 @@
     "vadduwm %[k2],%[vt2],%[w2]\n\t"                                        \
     "vadduwm %[k3],%[vt3],%[w3]\n\t"                                        \
     : /* output list                                                     */ \
+      /* actual outputs                                                  */ \
       [k0] "=v" ((_k0)),                                                    \
       [k1] "=v" ((_k1)),                                                    \
       [k2] "=v" ((_k2)),                                                    \
@@ -197,6 +198,7 @@
       [w3] "=v" ((_w3)),                                                    \
       [vrb] "=v" ((_vRb)),                                                  \
       [vrc] "=v" ((_vRc)),                                                  \
+      /* temporaries                                                     */ \
       [t0] "=&r" (t0),                                                      \
       [t1] "=&r" (t1),                                                      \
       [vt0] "=&v" (vt0),                                                    \
@@ -474,13 +476,13 @@
    : /* output list                                                      */ \
      /* temporaries                                                      */ \
      [idx] "=&r" (index),                                                   \
+     [tmp1] "=&v" ((tmp1)),                                                 \
      /* actual outputs                                                   */ \
      /* a,c,e,g are read in the asm, hence should be reserved            */ \
      [a] "=&v" ((_a)),                                                      \
      [c] "=&v" ((_c)),                                                      \
      [e] "=&v" ((_e)),                                                      \
      [g] "=&v" ((_g)),                                                      \
-     [tmp1] "=&v" ((tmp1)),                                                 \
      [vrb] "=&v" ((_vrb)),                                                  \
      [b] "=v" ((_b)),                                                       \
      [d] "=v" ((_d)),                                                       \

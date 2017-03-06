@@ -26,18 +26,18 @@ base_type _h[8] = {
 #include "sha2_ll_asm.h"
 
 
-// Directly way to calculate padding plus 8 bytes appended at the end
+// Direct way to calculate padding plus 8 bytes appended at the end
 static inline size_t calculate_padded_msg_size(size_t size) {
   // if 0x80 (1 byte) prepended to BLOCK_SIZE bytes of message doesn't fit
-  // the next multiple of BLOCK_SIZE, append another block to align it to the
-  // next multiple of BLOCK_SIZE.
+  // the next multiple of BLOCK_SIZE, append another block to align it to
+  // the next multiple of BLOCK_SIZE.
   return (BLOCK_SIZE - (size % BLOCK_SIZE)) + ((size % BLOCK_SIZE >
     BLOCK_SIZE - 9) ? BLOCK_SIZE : 0) + size;
 }
 
-// Message M with lenght l
+// Message M with length l
 // 64-bits (sha256) or 128-bits (sha 512) block
-// lets S = SHA_BITS (256, 512...)
+// let S = SHA_BITS (256, 512...)
 // Append 1 to M and then k zero bits where k = (S*2-(l+1)) mod S*2
 // then append (S/4) bits block to M with l value represented in binary
 // Return result in bytes dividing all by CHAR_BIT
@@ -46,8 +46,8 @@ size_t calculate_padded_msg_size_FIPS_180_4(size_t size) {
   int64_t k = (block_size - (block_size/8)) - ((size * CHAR_BIT) + 1);
 
   // in fact % operator is more like a remainder operator not really module
-  // and not work with negative numbers. To do that correctly we must add
-  // the result r = a % b with abs(b) if r < 0.
+  // and does not work with negative numbers. To do that correctly we must
+  // add the result r = a % b with abs(b) if r < 0.
   k %= block_size;
   k = (k < 0) ? k + block_size : k;
 
@@ -81,12 +81,10 @@ void swap_bytes(unsigned char *input, unsigned char *output, size_t size) {
 #endif // SHA_BITS
   }
 #else
-#error "Only for little endian"
+#error "Little endian only"
 #endif
 }
 
-// TODO(rcardoso): I am not sure how this algorithm will work for SHA512. How
-// this write the high 64 bits of length?
 void write_size(unsigned char *input, size_t size, size_t position) {
   base_type* total_size = (base_type*)&input[position];
   // Undefined for SHA512. Right shift count >= width of type (uint64_t)

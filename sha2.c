@@ -1,5 +1,4 @@
-// Define these macros when compiling (See Makefile):
-//
+// Define this macro when compiling (See Makefile):
 // SHA_BITS      256 or 512
 
 // To compile with libcrypto, define LIBCRYPTO
@@ -26,7 +25,7 @@ int main (int argc, char *argv[]) {
   FILE *file = fopen(filename, "r");
 
   if (file == NULL) {
-    fprintf(stderr, "Error while open %s. %s\n", argv[1],
+    fprintf(stderr, "Error opening %s. %s\n", argv[1],
     strerror(errno));
     return errno;
   }
@@ -49,7 +48,7 @@ int main (int argc, char *argv[]) {
   input_size = calculate_padded_msg_size(st.st_size);
 #endif
 
-  // Save file in a input buffer.
+  // Load file into an input buffer.
   unsigned char* input = (unsigned char *) calloc(input_size,
                                                   sizeof(unsigned char));
   if (input == NULL) {
