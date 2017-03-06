@@ -1,7 +1,6 @@
 // Define these macros when compiling (See Makefile):
 //
 // SHA_BITS      256 or 512
-// USE_HW_VECTOR 0 or 1
 
 // To compile with libcrypto, define LIBCRYPTO
 
