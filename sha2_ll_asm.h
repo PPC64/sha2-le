@@ -375,7 +375,7 @@
       /* vtmp0 = {h+hptr[7], e+hptr[4], f+hptr[5], g+hptr[6]}            */ \
       "vsldoi %[vtmp0],%[vtmp0],%[vtmp0],12\n\t"                            \
       "mfvrwz %[rtmp],%[vtmp0]\n\t"        /* rtmp = h+hptr[7]           */ \
-      "stw    %[rtmp],20(%[hptr])\n\t"     /*                            */ \
+      "stw    %[rtmp],20(%[hptr])\n\t"                                      \
     : /* output list                                                     */ \
       [vt0] "=&v" (vt0),                                                    \
       [vt1] "=&v" (vt1),                                                    \
@@ -525,94 +525,94 @@
     "lvsr    %[vrb],0,%[t1]\n\t"                                            \
     "addi    %[t0],%[t1],-112\n\t"                                          \
     /* unaligned load                                                    */ \
-    "lvx     %[w1],0,%[t0]        \n\t"                                     \
+    "lvx     %[w1],0,%[t0]\n\t"                                             \
     /* w0 = w[j-16] to w[j-15]                                           */ \
-    "vperm   %[w0],%[w1],%[w0],%[vrb]        \n\t"                          \
-    "addi    %[t0],%[t1],-96        \n\t"                                   \
+    "vperm   %[w0],%[w1],%[w0],%[vrb]\n\t"                                  \
+    "addi    %[t0],%[t1],-96\n\t"                                           \
     /* unaligned load                                                    */ \
-    "lvx     %[w2],0,%[t0]        \n\t"                                     \
+    "lvx     %[w2],0,%[t0]\n\t"                                             \
     /* w1 = w[j-14] to w[j-13]                                           */ \
-    "vperm   %[w1],%[w2],%[w1],%[vrb]        \n\t"                          \
-    "addi    %[t0],%[t1],-80        \n\t"                                   \
+    "vperm   %[w1],%[w2],%[w1],%[vrb]\n\t"                                  \
+    "addi    %[t0],%[t1],-80\n\t"                                           \
     /* unaligned load                                                    */ \
-    "lvx     %[w3],0,%[t0]        \n\t"                                     \
+    "lvx     %[w3],0,%[t0]\n\t"                                             \
     /* w2 = w[j-12] to w[j-11]                                           */ \
-    "vperm   %[w2],%[w3],%[w2],%[vrb]        \n\t"                          \
-    "addi    %[t0],%[t1],-64        \n\t"                                   \
+    "vperm   %[w2],%[w3],%[w2],%[vrb]\n\t"                                  \
+    "addi    %[t0],%[t1],-64\n\t"                                           \
     /* unaligned load                                                    */ \
-    "lvx     %[w4],0,%[t0]        \n\t"                                     \
+    "lvx     %[w4],0,%[t0]\n\t"                                             \
     /* w3 = w[j-10] to w[j-9]                                            */ \
-    "vperm   %[w3],%[w4],%[w3],%[vrb]        \n\t"                          \
-    "addi    %[t0],%[t1],-48        \n\t"                                   \
+    "vperm   %[w3],%[w4],%[w3],%[vrb]\n\t"                                  \
+    "addi    %[t0],%[t1],-48\n\t"                                           \
     /* unaligned load                                                    */ \
-    "lvx     %[w5],0,%[t0]        \n\t"                                     \
+    "lvx     %[w5],0,%[t0]\n\t"                                             \
     /* w4 = w[j-8] to w[j-7]                                             */ \
-    "vperm   %[w4],%[w5],%[w4],%[vrb]        \n\t"                          \
-    "addi    %[t0],%[t1],-32        \n\t"                                   \
+    "vperm   %[w4],%[w5],%[w4],%[vrb]\n\t"                                  \
+    "addi    %[t0],%[t1],-32\n\t"                                           \
     /* unaligned load                                                    */ \
-    "lvx     %[w6],0,%[t0]        \n\t"                                     \
+    "lvx     %[w6],0,%[t0]\n\t"                                             \
     /* w5 = w[j-6] to w[j-5]                                             */ \
-    "vperm   %[w5],%[w6],%[w5],%[vrb]        \n\t"                          \
-    "addi    %[t0],%[t1],-16        \n\t"                                   \
+    "vperm   %[w5],%[w6],%[w5],%[vrb]\n\t"                                  \
+    "addi    %[t0],%[t1],-16\n\t"                                           \
     /* unaligned load                                                    */ \
-    "lvx     %[w7],0,%[t0]        \n\t"                                     \
+    "lvx     %[w7],0,%[t0]\n\t"                                             \
     /* w6 = w[j-4] to w[j-3]                                             */ \
-    "vperm   %[w6],%[w7],%[w6],%[vrb]        \n\t"                          \
-    "addi    %[t0],%[t1],0        \n\t"                                     \
+    "vperm   %[w6],%[w7],%[w6],%[vrb]\n\t"                                  \
+    "addi    %[t0],%[t1],0\n\t"                                             \
     /* unaligned load                                                    */ \
-    "lvx     %[vt0],0,%[t0]        \n\t"                                    \
+    "lvx     %[vt0],0,%[t0]\n\t"                                            \
     /* w7 = w[j-2] to w[j-1]                                             */ \
-    "vperm   %[w7],%[vt0],%[w7],%[vrb]        \n\t"                         \
+    "vperm   %[w7],%[vt0],%[w7],%[vrb]\n\t"                                 \
     /* Load k values                                                     */ \
     /* j * 8 (word size)                                                 */ \
-    "sldi    %[t1],%[index],3        \n\t"                                  \
+    "sldi    %[t1],%[index],3\n\t"                                          \
     /* alias to k[j] location                                            */ \
-    "add     %[t1],%[t1],%[kptr]        \n\t"                               \
-    "addi    %[t0],%[t1],-128        \n\t"                                  \
+    "add     %[t1],%[t1],%[kptr]\n\t"                                       \
+    "addi    %[t0],%[t1],-128\n\t"                                          \
     /* load k[j-16] to k[j-15] to vector                                 */ \
-    "lvx     %[k0],0,%[t0]        \n\t"                                     \
+    "lvx     %[k0],0,%[t0]\n\t"                                             \
     /* set vrb according to alignment                                    */ \
-    "lvsr    %[vrb],0,%[t1]        \n\t"                                    \
-    "addi    %[t0],%[t1],-112        \n\t"                                  \
+    "lvsr    %[vrb],0,%[t1]\n\t"                                            \
+    "addi    %[t0],%[t1],-112\n\t"                                          \
     /* load k[j-14] to k[j-13] to vector                                 */ \
-    "lvx     %[k1],0,%[t0]        \n\t"                                     \
+    "lvx     %[k1],0,%[t0]\n\t"                                             \
     /* k0 = w[j-16] to w[j-15]                                           */ \
-    "vperm   %[k0],%[k1],%[k0],%[vrb]        \n\t"                          \
-    "addi    %[t0],%[t1],-96        \n\t"                                   \
+    "vperm   %[k0],%[k1],%[k0],%[vrb]\n\t"                                  \
+    "addi    %[t0],%[t1],-96\n\t"                                           \
     /* load k[j-12] to k[j-11] to vector                                 */ \
-    "lvx     %[k2],0,%[t0]        \n\t"                                     \
+    "lvx     %[k2],0,%[t0]\n\t"                                             \
     /* k1 = w[j-16] to w[j-15]                                           */ \
-    "vperm   %[k1],%[k2],%[k1],%[vrb]        \n\t"                          \
-    "addi    %[t0],%[t1],-80        \n\t"                                   \
+    "vperm   %[k1],%[k2],%[k1],%[vrb]\n\t"                                  \
+    "addi    %[t0],%[t1],-80\n\t"                                           \
     /* load k[j-10] to k[j-9] to vector                                  */ \
-    "lvx     %[k3],0,%[t0]        \n\t"                                     \
+    "lvx     %[k3],0,%[t0]\n\t"                                             \
     /* k1 = w[j-16] to w[j-15]                                           */ \
-    "vperm   %[k2],%[k3],%[k2],%[vrb]        \n\t"                          \
-    "addi    %[t0],%[t1],-64        \n\t"                                   \
+    "vperm   %[k2],%[k3],%[k2],%[vrb]\n\t"                                  \
+    "addi    %[t0],%[t1],-64\n\t"                                           \
     /* load k[j-8] to k[j-7] to vector                                   */ \
-    "lvx     %[k4],0,%[t0]        \n\t"                                     \
+    "lvx     %[k4],0,%[t0]\n\t"                                             \
     /* k1 = w[j-16] to w[j-15]                                           */ \
-    "vperm   %[k3],%[k4],%[k3],%[vrb]        \n\t"                          \
-    "addi    %[t0],%[t1],-48        \n\t"                                   \
+    "vperm   %[k3],%[k4],%[k3],%[vrb]\n\t"                                  \
+    "addi    %[t0],%[t1],-48\n\t"                                           \
     /* load k[j-6] to k[j-5] to vector                                   */ \
-    "lvx     %[k5],0,%[t0]        \n\t"                                     \
+    "lvx     %[k5],0,%[t0]\n\t"                                             \
     /* k1 = w[j-16] to w[j-15]                                           */ \
-    "vperm   %[k4],%[k5],%[k4],%[vrb]        \n\t"                          \
-    "addi    %[t0],%[t1],-32        \n\t"                                   \
+    "vperm   %[k4],%[k5],%[k4],%[vrb]\n\t"                                  \
+    "addi    %[t0],%[t1],-32\n\t"                                           \
     /* load k[j-4] to k[j-3] to vector                                   */ \
-    "lvx     %[k6],0,%[t0]        \n\t"                                     \
+    "lvx     %[k6],0,%[t0]\n\t"                                             \
     /* k1 = w[j-16] to w[j-15]                                           */ \
-    "vperm   %[k5],%[k6],%[k5],%[vrb]        \n\t"                          \
-    "addi    %[t0],%[t1],-16        \n\t"                                   \
+    "vperm   %[k5],%[k6],%[k5],%[vrb]\n\t"                                  \
+    "addi    %[t0],%[t1],-16\n\t"                                           \
     /* load k[j-2] to k[j-1] to vector                                   */ \
-    "lvx     %[k7],0,%[t0]        \n\t"                                     \
+    "lvx     %[k7],0,%[t0]\n\t"                                             \
     /* k1 = w[j-16] to w[j-15]                                           */ \
-    "vperm   %[k6],%[k7],%[k6],%[vrb]        \n\t"                          \
-    "addi    %[t0],%[t1],0        \n\t"                                     \
+    "vperm   %[k6],%[k7],%[k6],%[vrb]\n\t"                                  \
+    "addi    %[t0],%[t1],0\n\t"                                             \
     /* load k[j-2] to k[j-1] to vector                                   */ \
-    "lvx     %[vt0],0,%[t0]        \n\t"                                    \
+    "lvx     %[vt0],0,%[t0]\n\t"                                            \
     /* k1 = w[j-16] to w[j-15]                                           */ \
-    "vperm   %[k7],%[vt0],%[k7],%[vrb]        \n\t"                         \
+    "vperm   %[k7],%[vt0],%[k7],%[vrb]\n\t"                                 \
     /* calculate k+w                                                     */ \
     "vaddudm %[k0],%[k0],%[w0]\n\t"                                         \
     "vaddudm %[k1],%[k1],%[w1]\n\t"                                         \
