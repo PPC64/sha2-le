@@ -5,11 +5,9 @@
 
 
 #include "base-types.h"
+#include "sha2_compress.h"
 
 #if SHA_BITS == 256
-
-// Using define instead of typedef due to 'vector base_type' on clang
-#define base_type unsigned int
 
 base_type _h[8] = {
   0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
@@ -38,9 +36,6 @@ const size_t W_SIZE     = 64;
 const size_t BLOCK_SIZE = 64;
 
 #elif SHA_BITS == 512
-
-// Using define instead of typedef due to 'vector base_type' on clang
-#define base_type unsigned long long
 
 base_type _h[8] = {
   0x6a09e667f3bcc908, 0xbb67ae8584caa73b,
@@ -84,9 +79,6 @@ const size_t BLOCK_SIZE = 128;
 #else
 #error "Invalid SHA_BITS"
 #endif
-
-// Implemented by sha256_compress.c or sha512_compress.c
-extern void sha2_transform(base_type* _h, base_type* w);
 
 // Direct way to calculate padding plus 8 bytes appended at the end
 size_t calculate_padded_msg_size(size_t size) {
