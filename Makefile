@@ -68,6 +68,7 @@ endif
 	CC=$(CC) ./blackbox-test.sh
 
 test:
+	mkdir -p $(BIN_DIR)
 	@for i in $(COMPILERS); do	\
 		$(MAKE) test-compiler CC=$${i};	\
 	done
@@ -110,3 +111,4 @@ clean:
 	@for i in $(COMPILERS); do	\
 		$(MAKE) -s clean-compiler CC=$${i};	\
 	done
+	rm -rf $(BIN_DIR)
