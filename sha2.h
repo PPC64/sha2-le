@@ -8,8 +8,6 @@
 
 #include "base-types.h"
 
-extern base_type _h[8];
-
 // Direct way to calculate padding plus 8 bytes appended at the end
 size_t calculate_padded_msg_size(size_t size);
 size_t calculate_padded_msg_size_FIPS_180_4(size_t size);
