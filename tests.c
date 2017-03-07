@@ -57,9 +57,9 @@ int main () {
   if (padded_size != 5368709184) print_error_arg(__LINE__, padded_size);
   padded_size = calculate_padded_msg_size_FIPS_180_4(size);
   if (padded_size != 5368709184) print_error_arg(__LINE__, padded_size);
-#endif
 
-#if SHA_BITS==512
+#elif SHA_BITS==512
+
   size_t size, padded_size;
   size =  3;
   padded_size = calculate_padded_msg_size(size);

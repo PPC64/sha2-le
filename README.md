@@ -8,5 +8,6 @@ backporting it to different Languages and JIT projects. Our initial
 target at this moment is the following list:
 
  - OpenJDK
- - TBD
+ - nettle
+ - ...
 
