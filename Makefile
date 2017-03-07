@@ -28,6 +28,7 @@ TESTS =
 endif
 
 all:
+	mkdir -p $(BIN_DIR)
 	@for i in $(COMPILERS); do	\
 		$(MAKE) all-compiler CC=$${i};	\
 	done
