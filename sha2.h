@@ -23,8 +23,8 @@ base_type _h[8] = {
 };
 #endif
 
-#include "sha2_ll_asm.h"
-
+// Implemented by sha256_compress.c or sha512_compress.c
+extern void sha2_transform(base_type* _h, base_type* w);
 
 // Direct way to calculate padding plus 8 bytes appended at the end
 static inline size_t calculate_padded_msg_size(size_t size) {
