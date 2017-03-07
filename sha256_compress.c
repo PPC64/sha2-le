@@ -1,4 +1,4 @@
-#include "base-types.h"
+#include "sha2_compress.h"
 
 /*
  * As SHA2_ROUND is only defining the new elements and the rest is being
