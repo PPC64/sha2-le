@@ -67,8 +67,7 @@ ifeq (x$(ARCH),xppc64le)
 endif
 	CC=$(CC) ./blackbox-test.sh
 
-test:
-	mkdir -p $(BIN_DIR)
+test: all
 	@for i in $(COMPILERS); do	\
 		$(MAKE) test-compiler CC=$${i};	\
 	done
