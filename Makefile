@@ -21,22 +21,22 @@ all:
 
 all-compiler: $(BINS)
 
-$(BIN_DIR)/sha256_$(CC): sha2.c sha2.h sha256_compress.c
+$(BIN_DIR)/sha256_$(CC): sha2.c sha2.h sha2_common.c sha256_compress.c
 	$(CC) $(CFLAGS) $? -DSHA_BITS=256 -o $@
 
 $(BIN_DIR)/sha256_libcrypto_$(CC): sha2.c
 	$(CC) $(CFLAGS) $? -DSHA_BITS=256 -DLIBCRYPTO -o $@ -lcrypto
 
-$(BIN_DIR)/sha512_$(CC): sha2.c sha2.h sha512_compress.c
+$(BIN_DIR)/sha512_$(CC): sha2.c sha2.h sha2_common.c sha512_compress.c
 	$(CC) $(CFLAGS) $? -DSHA_BITS=512 -o $@
 
 $(BIN_DIR)/sha512_libcrypto_$(CC): sha2.c
 	$(CC) $(CFLAGS) $? -DSHA_BITS=512 -DLIBCRYPTO -o $@ -lcrypto
 
-$(BIN_DIR)/test256_$(CC): tests.c sha2.h
+$(BIN_DIR)/test256_$(CC): tests.c sha2.h sha2_common.c sha256_compress.c
 	$(CC) $(CFLAGS) $? -DSHA_BITS=256 -o $@
 
-$(BIN_DIR)/test512_$(CC): tests.c sha2.h
+$(BIN_DIR)/test512_$(CC): tests.c sha2.h sha2_common.c sha512_compress.c
 	$(CC) $(CFLAGS) $? -DSHA_BITS=512 -o $@
 
 test-compiler: $(BINS) $(TESTS)
