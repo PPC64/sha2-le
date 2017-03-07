@@ -19,7 +19,7 @@
     vector_base_type vt3;                                                   \
     vector_base_type vt4;                                                   \
   __asm__ volatile (                                                        \
-      "vsel %[ch],%[g],%[f],%[e]\n\t"       /* ch = Ch(e,f,g)            */ \
+      "vsel %[ch],%[g],%[f],%[e]\n\t"       /* ch  = Ch(e,f,g)           */ \
       "vxor %[maj],%[a],%[b]\n\t"           /* intermediate Maj          */ \
       "vsel %[maj],%[b],%[c],%[maj]\n\t"    /* maj = Maj(a,b,c)          */ \
       "vshasigmaw %[bsa],%[a],1,0\n\t"      /* bsa = BigSigma0(a)        */ \
@@ -28,8 +28,8 @@
       "vadduwm %[vt2],%[ch],%[kpw]\n\t"     /* vt2 = ch + kpw            */ \
       "vadduwm %[vt3],%[vt1],%[vt2]\n\t"    /* vt3 = h + bse + ch + kpw  */ \
       "vadduwm %[vt4],%[bsa],%[maj]\n\t"    /* vt4 = bsa + maj           */ \
-      "vadduwm %[d],%[d],%[vt3]\n\t"        /* d = d + vt3               */ \
-      "vadduwm %[h],%[vt3],%[vt4]\n\t"      /* h = vt3 + vt4             */ \
+      "vadduwm %[d],%[d],%[vt3]\n\t"        /* d   = d + vt3             */ \
+      "vadduwm %[h],%[vt3],%[vt4]\n\t"      /* h   = vt3 + vt4           */ \
     : /* output list                                                     */ \
       /* temporaries                                                     */ \
       [ch] "=&v" (ch),                                                      \
@@ -331,7 +331,7 @@
       "lvx     %[vt0],0,%[hptr]\n\t"        /* vt0 = _h[0].._h[3]        */ \
       "lvx     %[vt5],%[offs],%[hptr]\n\t"  /* vt5 = _h[4].._h[8]        */ \
       "vperm   %[vt0],%[vt5],%[vt0],%[vrb]\n\t"                             \
-      "lvx     %[vt6],%[offs2],%[hptr]\n\t"/* vt5 = _h[4].._h[8]         */ \
+      "lvx     %[vt6],%[offs2],%[hptr]\n\t" /* vt5 = _h[4].._h[8]        */ \
       "vperm   %[vt5],%[vt6],%[vt5],%[vrb]\n\t"                             \
       "vmrglw  %[vt1],%[b],%[a]\n\t"        /* vt1 = {a, b, ?, ?}        */ \
       "vmrglw  %[vt2],%[d],%[c]\n\t"        /* vt2 = {c, d, ?, ?}        */ \
@@ -347,29 +347,29 @@
       "stw    %[rtmp], 8(%[hptr])\n\t"      /* update h[3]               */ \
       /* vt6 = {b+hptr[1], c+hptr[2], d+hptr[3], a+hptr[0]}              */ \
       "vsldoi %[vt6],%[vt0],%[vt0],12\n\t"                                  \
-      "mfvrwz %[rtmp], %[vt6]\n\t"        /* tmp = b+hptr[1]             */ \
+      "mfvrwz %[rtmp], %[vt6]\n\t"          /* tmp = b+hptr[1]           */ \
       "stw    %[rtmp], 12(%[hptr])\n\t"     /* update h[2]               */ \
       /* vt6 = {c+hptr[2], d+hptr[3], a+hptr[0], b+hptr[1]}              */ \
       "vsldoi %[vt6],%[vt6],%[vt6],12\n\t"                                  \
-      "mfvrwz %[rtmp],%[vt6]\n\t"         /* rtmp = c+hptr[2]            */ \
+      "mfvrwz %[rtmp],%[vt6]\n\t"           /* rtmp = c+hptr[2]          */ \
       "stw    %[rtmp],0(%[hptr])\n\t"       /* update h[1]               */ \
       /* vt6 = {d+hptr[3], a+hptr[0], b+hptr[1], c+hptr[2]}              */ \
       "vsldoi %[vt6],%[vt6],%[vt6],12\n\t"                                  \
-      "mfvrwz %[rtmp],%[vt6]\n\t"         /* rtmp = d+hptr[3]            */ \
+      "mfvrwz %[rtmp],%[vt6]\n\t"           /* rtmp = d+hptr[3]          */ \
       "stw    %[rtmp],4(%[hptr])\n\t"       /* update h[0]               */ \
       "mfvrwz %[rtmp],%[vt5]\n\t"           /* tmp = e+hptr[4]           */ \
       "stw    %[rtmp],24(%[hptr])\n\t"      /* update h[7]               */ \
       /* vt6 = {f+hptr[5], g+hptr[6], d+hptr[3], h+hptr[7]}              */ \
       "vsldoi %[vt6],%[vt5],%[vt5],12\n\t"                                  \
-      "mfvrwz %[rtmp],%[vt6]\n\t"        /* rtmp = f+hptr[5]             */ \
-      "stw    %[rtmp],28(%[hptr])\n\t"     /* update h[6]                */ \
+      "mfvrwz %[rtmp],%[vt6]\n\t"           /* rtmp = f+hptr[5]          */ \
+      "stw    %[rtmp],28(%[hptr])\n\t"      /* update h[6]               */ \
       /* vt6 = {g+hptr[6], h+hptr[7], e+hptr[4], f+hptr[5]}              */ \
       "vsldoi %[vt6],%[vt6],%[vt6],12\n\t"                                  \
-      "mfvrwz %[rtmp],%[vt6]\n\t"        /* rtmp = g+hptr[6]             */ \
-      "stw    %[rtmp],16(%[hptr])\n\t"     /* update h[5]                */ \
+      "mfvrwz %[rtmp],%[vt6]\n\t"           /* rtmp = g+hptr[6]          */ \
+      "stw    %[rtmp],16(%[hptr])\n\t"      /* update h[5]               */ \
       /* vt6 = {h+hptr[7], e+hptr[4], f+hptr[5], g+hptr[6]}              */ \
       "vsldoi %[vt6],%[vt6],%[vt6],12\n\t"                                  \
-      "mfvrwz %[rtmp],%[vt6]\n\t"        /* rtmp = h+hptr[7]             */ \
+      "mfvrwz %[rtmp],%[vt6]\n\t"           /* rtmp = h+hptr[7]          */ \
       "stw    %[rtmp],20(%[hptr])\n\t"                                      \
     : /* output list                                                     */ \
       [vt0] "=&v" (vt0),                                                    \

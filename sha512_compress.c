@@ -25,8 +25,8 @@
       "vshasigmad %[bse],%[e],1,0xf\n\t"    /* bse  = BigSigma1(e)       */ \
       "vaddudm %[vt1],%[h],%[bse]\n\t"      /* vt1  = h + bse            */ \
       "vaddudm %[vt2],%[ch],%[kpw]\n\t"     /* vt2  = ch + kpw           */ \
-      "vaddudm %[vt3],%[vt1],%[vt2]\n\t"    /* vt3 = h + bse + ch + kpw  */ \
-      "vaddudm %[vt4],%[bsa],%[maj]\n\t"    /* vt4 = bsa + maj           */ \
+      "vaddudm %[vt3],%[vt1],%[vt2]\n\t"    /* vt3  = h + bse + ch + kpw */ \
+      "vaddudm %[vt4],%[bsa],%[maj]\n\t"    /* vt4  = bsa + maj          */ \
       "vaddudm %[d],%[d],%[vt3]\n\t"        /* d    = d + vt3            */ \
       "vaddudm %[h],%[vt3],%[vt4]\n\t"      /* h    = vt3 + vt4          */ \
     : /* output list                                                     */ \
@@ -347,7 +347,7 @@
       "lvx     %[vt0],0,%[hptr]\n\t"        /* vt0 = {_h[0], _h[1]}      */ \
       "lvx     %[vt1],%[offs1],%[hptr]\n\t" /* vt1 = {_h[2], _h[3]}      */ \
       "vperm   %[vt0],%[vt1],%[vt0],%[vrb]\n\t"                             \
-      "lvx     %[vt2],%[offs2],%[hptr]\n\t"/*                            */ \
+      "lvx     %[vt2],%[offs2],%[hptr]\n\t"                                 \
       "vperm   %[vt1],%[vt2],%[vt1],%[vrb]\n\t"                             \
       "xxmrgld %x[vt4],%x[b],%x[a]\n\t"     /* vt4 = {a, b}              */ \
       "xxmrgld %x[vt5],%x[d],%x[c]\n\t"     /* vt5 = {c, d}              */ \
@@ -355,7 +355,7 @@
       "xxmrgld %x[vt7],%x[h],%x[g]\n\t"     /* vt7 = {g, h}              */ \
       "lvx     %[vt3],%[offs3],%[hptr]\n\t" /* vt3 = {_h[6], _h[7]}      */ \
       "vperm   %[vt2],%[vt3],%[vt2],%[vrb]\n\t"                             \
-      "lvx     %[vt8],%[offs4],%[hptr]\n\t"/*                            */ \
+      "lvx     %[vt8],%[offs4],%[hptr]\n\t"                                 \
       "vperm   %[vt3],%[vt8],%[vt3],%[vrb]\n\t"                             \
       "vaddudm %[vt0],%[vt0],%[vt4]\n\t"    /* vt0 = {_h[0]+a, _h[1]+b}  */ \
       "vaddudm %[vt1],%[vt1],%[vt5]\n\t"    /* vt1 = {_h[2]+c, _h[3]+d}  */ \
