@@ -1,4 +1,5 @@
 #!/bin/bash
+platform=$(uname -m)
 bin_dir="./bin"
 a="abc"
 b="EN?<AL@FSPDG?UBMENDNEWESOSHWMAL<CXAL>BQSO=DLV@=B>EJNDX=ED?IL@RLRNMOBUEMOUY?OWQMBAOAY<TMIYUALCTEPUVELQ>RHPHRQWHEBG>JQ?LHTPRLKDUUR?KVJXPIKT?>W@?@CIBDJ>Q?RX>JTPJFGNEAPYPCV@<MIU@QH<FQADFRPS<U@>MQAOM?HNFRTBLGQBWX<LYWXQIMHLFLKIKALSUXCMSM?VTDDHUFKSTJNJIUJ@COVUFBYTLOJD=HXNVNUEDS??RDYUVEQAW@?PDL?QL<HJQ<?L?W=WIDCKMLVU<RWR<U<RN<OG>EV=YHHMERNJ=PWFFR>M<DGYARUGFY=PDBWO=YQFYMOENCQR=VP==JAHYL>VOILXMOUYPNTHORPSBT>QNDVOLH>CEY?SN<QDLUXJYJ==YFOMFOWKTJ=VPY=HLB<WJJEXVFTEV?UXBY?JTUT<LTXHNNHJNHOGXHDCIYKIH<XPQU?GTU@BDSXRVGAQL=JXEL"
@@ -28,11 +29,11 @@ for sha_bits in 256 512; do
   ctr=1
   for file in $a $b $c $d; do
     echo -n $file > _tmp
-    ${bin_dir}/${asm_bin} _tmp > _asm
+    [ "$platform" == "ppc64le" ] && ${bin_dir}/${asm_bin} _tmp > _asm
     ${bin_dir}/${libcrypto_bin} _tmp > _libcrypto
     sha${sha_bits}sum _tmp | cut -d\  -f1 > _ref
     echo -en "Test #"${ctr}":\t"
-    cmp _asm asm
+    [ "$platform" == "ppc64le" ] && cmp _asm asm
     cmp _libcrypto libcrypto
     #TODO: fix this ugly hack
     ctr=$(echo $ctr + 1 | bc)

@@ -56,20 +56,20 @@ $(BIN_DIR)/test256_$(CC): tests.c sha2.h sha2_common.c sha2_compress.h sha256_co
 $(BIN_DIR)/test512_$(CC): tests.c sha2.h sha2_common.c sha2_compress.h sha512_compress.c
 	$(CC) $(CFLAGS) $? -DSHA_BITS=512 -o $@
 
-ifeq ($(TARGET_ARCH), ppc64el)
 test-compiler: $(BINS) $(TESTS)
 	@echo "======================================================================="
 	@echo "Testing $(CC)"
 	@echo "======================================================================="
+ifeq ($(TARGET_ARCH), ppc64el)
 	$(BIN_DIR)/test256_$(CC)
 	$(BIN_DIR)/test512_$(CC)
+endif
 	CC=$(CC) ./blackbox-test.sh
 
 test:
 	@for i in $(COMPILERS); do	\
 		$(MAKE) test-compiler CC=$${i};	\
 	done
-endif
 
 perf-run: all
 	@# Generating a 56M file
