@@ -382,6 +382,7 @@
       "mfvrd   %[rtmp0],%[vt8]\n\t"                                         \
       "std     %[rtmp0],48(%[hptr])\n\t"                                    \
     : /* output list                                                     */ \
+      /* temporaries                                                     */ \
       [vt0] "=&v" (vt0),                                                    \
       [vt1] "=&v" (vt1),                                                    \
       [vt2] "=&v" (vt2),                                                    \

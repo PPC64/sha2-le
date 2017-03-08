@@ -372,6 +372,7 @@
       "mfvrwz %[rtmp],%[vt6]\n\t"           /* rtmp = h+hptr[7]          */ \
       "stw    %[rtmp],20(%[hptr])\n\t"                                      \
     : /* output list                                                     */ \
+      /* temporaries                                                     */ \
       [vt0] "=&v" (vt0),                                                    \
       [vt1] "=&v" (vt1),                                                    \
       [vt2] "=&v" (vt2),                                                    \
