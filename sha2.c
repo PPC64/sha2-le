@@ -8,6 +8,8 @@
 #endif // SHA_BITS
 
 #ifdef LIBCRYPTO
+ #include <openssl/evp.h>
+ #include <openssl/conf.h>
  #include <openssl/sha.h>
 #else
  #include "sha2.h"
@@ -65,6 +67,11 @@ int main (int argc, char *argv[]) {
   fclose(file);
 
 #ifdef LIBCRYPTO
+  /* Load all digest and cipher algorithms */
+  OpenSSL_add_all_algorithms();
+
+  /* Load config file, and other important initialisation */
+  OPENSSL_config(NULL);
 
   unsigned char md[SHA_BITS/8];
 
