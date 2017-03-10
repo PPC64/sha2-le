@@ -1,4 +1,4 @@
-#include "sha2.h"
+#include "sha2_common.h"
 
 static int error_occured = 0;
 

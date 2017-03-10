@@ -18,14 +18,35 @@ PERF_TXT=$(BIN_DIR)/perfexample.txt
 # Number of perf stat iterations
 PERF_ITERS=10
 
-BINS  = $(BIN_DIR)/sha256_libcrypto_$(CC) $(BIN_DIR)/sha512_libcrypto_$(CC) \
-        $(BIN_DIR)/sha256_c_$(CC) $(BIN_DIR)/sha512_c_$(CC)
-TESTS =
+OBJS_256  = $(BIN_DIR)/sha256_compress_c_$(CC).o  \
+            $(BIN_DIR)/sha256_c_$(CC).o           \
+            $(BIN_DIR)/sha256_$(CC).o             \
+            $(BIN_DIR)/sha256_common_$(CC).o
+OBJS_512  = $(BIN_DIR)/sha512_compress_c_$(CC).o  \
+            $(BIN_DIR)/sha512_c_$(CC).o           \
+            $(BIN_DIR)/sha512_$(CC).o             \
+            $(BIN_DIR)/sha512_common_$(CC).o
+BINS_256  = $(BIN_DIR)/sha256_libcrypto_$(CC)     \
+            $(BIN_DIR)/sha256_c_$(CC)
+BINS_512  = $(BIN_DIR)/sha512_libcrypto_$(CC)     \
+            $(BIN_DIR)/sha512_c_$(CC)
+TESTS_256 =
+TESTS_512 =
 
 ifeq (x$(ARCH),xppc64le)
-BINS += $(BIN_DIR)/sha256_$(CC) $(BIN_DIR)/sha512_$(CC)
-TESTS = $(BIN_DIR)/test256_$(CC) $(BIN_DIR)/test512_$(CC)
+OBJS_256  += $(BIN_DIR)/sha256_compress_$(CC).o   \
+						 $(BIN_DIR)/test256_$(CC).o
+OBJS_512  += $(BIN_DIR)/sha512_compress_$(CC).o   \
+						 $(BIN_DIR)/test512_$(CC).o
+BINS_256  += $(BIN_DIR)/sha256_$(CC)
+BINS_512  += $(BIN_DIR)/sha512_$(CC)
+TESTS_256 += $(BIN_DIR)/test256_$(CC)
+TESTS_512 += $(BIN_DIR)/test512_$(CC)
 endif
+
+OBJS = $(OBJS_256) $(OBJS_512)
+BINS = $(BINS_256) $(BINS_512)
+TESTS = $(TESTS_256) $(TESTS_512)
 
 all:
 	mkdir -p $(BIN_DIR)
@@ -35,31 +56,62 @@ all:
 
 all-compiler: $(BINS)
 
-ifeq (x$(ARCH),xppc64le)
-$(BIN_DIR)/sha256_$(CC): sha2.c sha2.h sha2_common.c sha2_compress.h sha256_compress.c
-	$(CC) $(CFLAGS) $? -DSHA_BITS=256 -o $@
+# Objects - Not using %.o as X64 wouldn't compile
+$(BIN_DIR)/sha256_compress_c_$(CC).o: sha2_compress_c.c base-types.h sha2_compress.h
+	$(CC) $(CFLAGS) -c $< -DSHA_BITS=256 -o $@
+$(BIN_DIR)/sha512_compress_c_$(CC).o: sha2_compress_c.c base-types.h sha2_compress.h
+	$(CC) $(CFLAGS) -c $< -DSHA_BITS=512 -o $@
 
-$(BIN_DIR)/sha512_$(CC): sha2.c sha2.h sha2_common.c sha2_compress.h sha512_compress.c
-	$(CC) $(CFLAGS) $? -DSHA_BITS=512 -o $@
+$(BIN_DIR)/sha256_c_$(CC).o: sha2_compress_c.c sha2_common.h base-types.h
+	$(CC) $(CFLAGS) -c $< -DSHA_BITS=256 -o $@
+$(BIN_DIR)/sha512_c_$(CC).o: sha2_compress_c.c sha2_common.h base-types.h
+	$(CC) $(CFLAGS) -c $< -DSHA_BITS=512 -o $@
+
+$(BIN_DIR)/sha256_$(CC).o: sha2.c sha2_common.h base-types.h
+	$(CC) $(CFLAGS) -c $< -DSHA_BITS=256 -o $@
+$(BIN_DIR)/sha512_$(CC).o: sha2.c sha2_common.h base-types.h
+	$(CC) $(CFLAGS) -c $< -DSHA_BITS=512 -o $@
+
+$(BIN_DIR)/sha256_common_$(CC).o: sha2_common.c sha2_compress.h base-types.h
+	$(CC) $(CFLAGS) -c $< -DSHA_BITS=256 -o $@
+$(BIN_DIR)/sha512_common_$(CC).o: sha2_common.c sha2_compress.h base-types.h
+	$(CC) $(CFLAGS) -c $< -DSHA_BITS=512 -o $@
+
+ifeq (x$(ARCH),xppc64le)
+$(BIN_DIR)/sha256_compress_$(CC).o: sha256_compress.c base-types.h sha2_compress.h
+	$(CC) $(CFLAGS) -c $< -DSHA_BITS=256 -o $@
+$(BIN_DIR)/sha512_compress_$(CC).o: sha512_compress.c base-types.h sha2_compress.h
+	$(CC) $(CFLAGS) -c $< -DSHA_BITS=512 -o $@
+
+$(BIN_DIR)/test256_$(CC).o: tests.c base-types.h sha2_common.h
+	$(CC) $(CFLAGS) -c $< -DSHA_BITS=256 -o $@
+$(BIN_DIR)/test512_$(CC).o: tests.c base-types.h sha2_common.h
+	$(CC) $(CFLAGS) -c $< -DSHA_BITS=512 -o $@
 endif
 
-$(BIN_DIR)/sha256_c_$(CC): sha2.c sha2.h sha2_common.c sha2_compress.h sha2_compress_c.c
-	$(CC) $(CFLAGS) $? -DSHA_BITS=256 -o $@
 
-$(BIN_DIR)/sha512_c_$(CC): sha2.c sha2.h sha2_common.c sha2_compress.h sha2_compress_c.c
-	$(CC) $(CFLAGS) $? -DSHA_BITS=512 -o $@
-
+# Binaries
 $(BIN_DIR)/sha256_libcrypto_$(CC): sha2.c
-	$(CC) $(CFLAGS) $? -DSHA_BITS=256 -DLIBCRYPTO -o $@ -lcrypto
-
+	$(CC) $(CFLAGS) $^ -DSHA_BITS=256 -DLIBCRYPTO -o $@ -lcrypto
 $(BIN_DIR)/sha512_libcrypto_$(CC): sha2.c
-	$(CC) $(CFLAGS) $? -DSHA_BITS=512 -DLIBCRYPTO -o $@ -lcrypto
+	$(CC) $(CFLAGS) $^ -DSHA_BITS=512 -DLIBCRYPTO -o $@ -lcrypto
 
-$(BIN_DIR)/test256_$(CC): tests.c sha2.h sha2_common.c sha2_compress.h sha256_compress.c
-	$(CC) $(CFLAGS) $? -DSHA_BITS=256 -o $@
+$(BIN_DIR)/sha256_c_$(CC): $(BIN_DIR)/sha256_c_$(CC).o $(BIN_DIR)/sha256_$(CC).o $(BIN_DIR)/sha256_common_$(CC).o
+	$(CC) $(CFLAGS) $^ -o $@
+$(BIN_DIR)/sha512_c_$(CC): $(BIN_DIR)/sha512_c_$(CC).o $(BIN_DIR)/sha512_$(CC).o $(BIN_DIR)/sha512_common_$(CC).o
+	$(CC) $(CFLAGS) $^ -o $@
 
-$(BIN_DIR)/test512_$(CC): tests.c sha2.h sha2_common.c sha2_compress.h sha512_compress.c
-	$(CC) $(CFLAGS) $? -DSHA_BITS=512 -o $@
+ifeq (x$(ARCH),xppc64le)
+$(BIN_DIR)/sha256_$(CC): $(BIN_DIR)/sha256_$(CC).o $(BIN_DIR)/sha256_compress_$(CC).o $(BIN_DIR)/sha256_common_$(CC).o
+	$(CC) $(CFLAGS) $^ -o $@
+$(BIN_DIR)/sha512_$(CC): $(BIN_DIR)/sha512_$(CC).o $(BIN_DIR)/sha512_compress_$(CC).o $(BIN_DIR)/sha512_common_$(CC).o
+	$(CC) $(CFLAGS) $^ -o $@
+
+$(BIN_DIR)/test256_$(CC): $(BIN_DIR)/test256_$(CC).o $(BIN_DIR)/sha256_common_$(CC).o $(BIN_DIR)/sha256_compress_$(CC).o
+	$(CC) $(CFLAGS) $^ -o $@
+$(BIN_DIR)/test512_$(CC): $(BIN_DIR)/test512_$(CC).o $(BIN_DIR)/sha512_common_$(CC).o $(BIN_DIR)/sha512_compress_$(CC).o
+	$(CC) $(CFLAGS) $^ -o $@
+endif
 
 test-compiler: $(BINS) $(TESTS)
 	@echo "======================================================================="

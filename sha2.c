@@ -12,7 +12,7 @@
  #include <openssl/conf.h>
  #include <openssl/sha.h>
 #else
- #include "sha2.h"
+ #include "sha2_common.h"
 #endif
 
 #include <stdio.h>
