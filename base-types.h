@@ -3,7 +3,13 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+
+#if defined(__powerpc64__)
 #include <altivec.h>
+#else
+// dummy define to avoid errors on x64 compilation
+#define vector
+#endif
 
 #if SHA_BITS == 256
 typedef unsigned int base_type;
