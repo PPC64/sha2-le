@@ -26,15 +26,18 @@ for sha_bits in 256 512; do
 
   asm_bin=sha${sha_bits}_${CC}
   libcrypto_bin=sha${sha_bits}_libcrypto_${CC}
+  c_bin=sha${sha_bits}_${CC}
   ctr=1
   for file in $a $b $c $d; do
     echo -n $file > _tmp
     [ "$platform" == "ppc64le" ] && ${bin_dir}/${asm_bin} _tmp > _asm
     ${bin_dir}/${libcrypto_bin} _tmp > _libcrypto
+    ${bin_dir}/${c_bin} _tmp > _c
     sha${sha_bits}sum _tmp | cut -d\  -f1 > _ref
     echo -en "Test #"${ctr}":\t"
-    [ "$platform" == "ppc64le" ] && cmp _asm asm
+    [ "$platform" == "ppc64le" ] && cmp _asm sha2-le
     cmp _libcrypto libcrypto
+    cmp _c c
     #TODO: fix this ugly hack
     ctr=$(echo $ctr + 1 | bc)
     echo ""

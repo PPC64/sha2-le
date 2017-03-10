@@ -18,19 +18,19 @@ PERF_TXT=$(BIN_DIR)/perfexample.txt
 # Number of perf stat iterations
 PERF_ITERS=10
 
-ifeq (x$(ARCH),xppc64le)
-BINS  = $(BIN_DIR)/sha256_$(CC) $(BIN_DIR)/sha256_libcrypto_$(CC)      \
-				$(BIN_DIR)/sha512_$(CC) $(BIN_DIR)/sha512_libcrypto_$(CC)
-TESTS = $(BIN_DIR)/test256_$(CC) $(BIN_DIR)/test512_$(CC)
-else
-BINS  = $(BIN_DIR)/sha256_libcrypto_$(CC) $(BIN_DIR)/sha512_libcrypto_$(CC)
+BINS  = $(BIN_DIR)/sha256_libcrypto_$(CC) $(BIN_DIR)/sha512_libcrypto_$(CC) \
+        $(BIN_DIR)/sha256_c_$(CC) $(BIN_DIR)/sha512_c_$(CC)
 TESTS =
+
+ifeq (x$(ARCH),xppc64le)
+BINS += $(BIN_DIR)/sha256_$(CC) $(BIN_DIR)/sha512_$(CC)
+TESTS = $(BIN_DIR)/test256_$(CC) $(BIN_DIR)/test512_$(CC)
 endif
 
 all:
 	mkdir -p $(BIN_DIR)
-	@for i in $(COMPILERS); do	\
-		$(MAKE) all-compiler CC=$${i};	\
+	@for i in $(COMPILERS); do        \
+		$(MAKE) all-compiler CC=$${i};  \
 	done
 
 all-compiler: $(BINS)
@@ -38,15 +38,19 @@ all-compiler: $(BINS)
 ifeq (x$(ARCH),xppc64le)
 $(BIN_DIR)/sha256_$(CC): sha2.c sha2.h sha2_common.c sha2_compress.h sha256_compress.c
 	$(CC) $(CFLAGS) $? -DSHA_BITS=256 -o $@
-endif
 
-$(BIN_DIR)/sha256_libcrypto_$(CC): sha2.c
-	$(CC) $(CFLAGS) $? -DSHA_BITS=256 -DLIBCRYPTO -o $@ -lcrypto
-
-ifeq (x$(ARCH),xppc64le)
 $(BIN_DIR)/sha512_$(CC): sha2.c sha2.h sha2_common.c sha2_compress.h sha512_compress.c
 	$(CC) $(CFLAGS) $? -DSHA_BITS=512 -o $@
 endif
+
+$(BIN_DIR)/sha256_c_$(CC): sha2.c sha2.h sha2_common.c sha2_compress.h sha2_compress_c.c
+	$(CC) $(CFLAGS) $? -DSHA_BITS=256 -o $@
+
+$(BIN_DIR)/sha512_c_$(CC): sha2.c sha2.h sha2_common.c sha2_compress.h sha2_compress_c.c
+	$(CC) $(CFLAGS) $? -DSHA_BITS=512 -o $@
+
+$(BIN_DIR)/sha256_libcrypto_$(CC): sha2.c
+	$(CC) $(CFLAGS) $? -DSHA_BITS=256 -DLIBCRYPTO -o $@ -lcrypto
 
 $(BIN_DIR)/sha512_libcrypto_$(CC): sha2.c
 	$(CC) $(CFLAGS) $? -DSHA_BITS=512 -DLIBCRYPTO -o $@ -lcrypto
@@ -68,8 +72,8 @@ endif
 	CC=$(CC) ./blackbox-test.sh
 
 test: all
-	@for i in $(COMPILERS); do	\
-		$(MAKE) test-compiler CC=$${i};	\
+	@for i in $(COMPILERS); do         \
+		$(MAKE) test-compiler CC=$${i};  \
 	done
 
 perf-run: all
@@ -87,7 +91,9 @@ ifeq (x$(ARCH),xppc64le)
 	@sudo perf stat -r $(PERF_ITERS) bin/sha256_$(CC)               $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
 endif
 	@echo -n "Libcrypto implementation:  "
-	@sudo perf stat -r $(PERF_ITERS) bin/sha256_libcrypto_$(CC) $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
+	@sudo perf stat -r $(PERF_ITERS) bin/sha256_libcrypto_$(CC)     $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
+	@echo -n "C implementation:          "
+	@sudo perf stat -r $(PERF_ITERS) bin/sha256_c_$(CC)             $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
 
 	@echo "\nSHA 512"
 ifeq (x$(ARCH),xppc64le)
@@ -95,11 +101,13 @@ ifeq (x$(ARCH),xppc64le)
 	@sudo perf stat -r $(PERF_ITERS) bin/sha512_$(CC)               $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
 endif
 	@echo -n "Libcrypto implementation:  "
-	@sudo perf stat -r $(PERF_ITERS) bin/sha512_libcrypto_$(CC) $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
+	@sudo perf stat -r $(PERF_ITERS) bin/sha512_libcrypto_$(CC)     $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
+	@echo -n "C implementation:          "
+	@sudo perf stat -r $(PERF_ITERS) bin/sha512_c_$(CC)             $(PERF_TXT) 2>&1 | grep "time elapsed" | sed -e "s/ time elapsed//"
 
 perf:
-	@for i in $(COMPILERS); do	\
-		$(MAKE) -s perf-run CC=$${i};	\
+	@for i in $(COMPILERS); do       \
+		$(MAKE) -s perf-run CC=$${i};  \
 	done
 
 clean-compiler:
@@ -107,7 +115,7 @@ clean-compiler:
 	rm -f $(PERF_TXT)
 
 clean:
-	@for i in $(COMPILERS); do	\
-		$(MAKE) -s clean-compiler CC=$${i};	\
+	@for i in $(COMPILERS); do             \
+		$(MAKE) -s clean-compiler CC=$${i};  \
 	done
 	rm -rf $(BIN_DIR)
