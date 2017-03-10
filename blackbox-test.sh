@@ -26,7 +26,7 @@ for sha_bits in 256 512; do
 
   asm_bin=sha${sha_bits}_${CC}
   libcrypto_bin=sha${sha_bits}_libcrypto_${CC}
-  c_bin=sha${sha_bits}_${CC}
+  c_bin=sha${sha_bits}_c_${CC}
   ctr=1
   for file in $a $b $c $d; do
     echo -n $file > _tmp
