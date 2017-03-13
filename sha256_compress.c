@@ -64,10 +64,9 @@
      "lvsr %[vrb],0,%[idx]\n\t"                                             \
      "lvx %[e],0,%[idx]\n\t"            /* load unaligned                */ \
      "vperm %[a],%[e],%[a],%[vrb]\n\t"  /* a = {a,b,c,d}                 */ \
-     "addi %[idx],%[hptr],16\n\t"                                           \
-     "lvx %[tmp1],0,%[hptr]\n\t"        /* load unaligned                */ \
-     /* e = {e,f,g,h}                                                    */ \
-     "vperm %[e],%[tmp1],%[e],%[vrb]\n\t"                                   \
+     "addi %[idx],%[idx],16\n\t"                                            \
+     "lvx %[tmp1],0,%[idx]\n\t"         /* load unaligned                */ \
+     "vperm %[e],%[tmp1],%[e],%[vrb]\n\t" /* e = {e,f,g,h}               */ \
      "vsldoi %[b],%[a],%[a],12\n\t"     /* b = {b,c,d,a}                 */ \
      "vsldoi %[c],%[a],%[a],8\n\t"      /* c = {c,d,a,b}                 */ \
      "vsldoi %[d],%[a],%[a],4\n\t"      /* d = {d,a,b,c}                 */ \
