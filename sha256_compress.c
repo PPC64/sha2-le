@@ -112,8 +112,8 @@
     : /* clobber list                                                    */ \
   ); } while (0)
 
-#define LOAD_W_PLUS_K(_k0, _k1, _k2, _k3, _w0, _w1, _w2, _w3, _vRb, _vRc,   \
-    _j, _Rb, _Rc, _w, _k) do {                                              \
+#define LOAD_W_PLUS_K(_k0, _k1, _k2, _k3, _w0, _w1, _w2, _w3, _vRb,         \
+    _j, _w, _k) do {                                                        \
   base_type t0;                                                             \
   base_type t1;                                                             \
   vector_base_type vt0;                                                     \
@@ -173,9 +173,6 @@
     /* vt3 = k[j-4] to k[j-1]                                            */ \
     "vperm   %[vt3],%[vt4],%[vt3],%[vrb]\n\t"                               \
                                                                             \
-    /* parameter for vperm                                               */ \
-    "lvsl    %[vrb],0,%[rb]\n\t"                                            \
-    "lvsr    %[vrc],0,%[rc]\n\t"                                            \
     /* Add _w to k                                                       */ \
     "vadduwm %[k0],%[vt0],%[w0]\n\t"                                        \
     "vadduwm %[k1],%[vt1],%[w1]\n\t"                                        \
@@ -192,7 +189,6 @@
       [w2] "=v" ((_w2)),                                                    \
       [w3] "=v" ((_w3)),                                                    \
       [vrb] "=v" ((_vRb)),                                                  \
-      [vrc] "=v" ((_vRc)),                                                  \
       /* temporaries                                                     */ \
       [t0] "=&r" (t0),                                                      \
       [t1] "=&r" (t1),                                                      \
@@ -203,8 +199,6 @@
       [vt4] "=&v" (vt4)                                                     \
     : /* input list                                                      */ \
       [index] "r" ((_j)),                                                   \
-      [rb] "r" ((_Rb)),                                                     \
-      [rc] "r" ((_Rc)),                                                     \
       [wptr] "r" ((_w)),                                                    \
       [kptr] "r" ((_k)),                                                    \
       [c1] "i" (2),                                                         \
@@ -218,7 +212,7 @@
   ); } while (0)
 
 #define CALC_4W(_w0, _w1, _w2, _w3, _kpw0, _kpw1, _kpw2, _kpw3,             \
-                _j, _vRb, _vRc, _k) do {                                    \
+                _j, _k) do {                                                \
   base_type t0;                                                             \
   base_type t1;                                                             \
   vector_base_type vt0;                                                     \
@@ -235,11 +229,11 @@
     "add        %[t0],%[t1],%[kptr]\n\t"      /* alias to k[j] location  */ \
     "lvx        %[vt6],0,%[t0]\n\t"                                         \
     /* vt1 = w[j-15], w[j-14], w[j-13], w[j-12]                          */ \
-    "vperm      %[vt1],%[w1],%[w0],%[vrc]\n\t"                              \
+    "vsldoi     %[vt1],%[w1],%[w0],12\n\t"                                  \
     /* vt7 = w[j-7], w[j-6], w[j-5], w[j-4]                              */ \
-    "vperm      %[vt7],%[w3],%[w2],%[vrc]\n\t"                              \
+    "vsldoi     %[vt7],%[w3],%[w2],12\n\t"                                  \
     /* vt8 = w[j-2], w[j-1], w[j-4], w[j-3]                              */ \
-    "vperm      %[vt8],%[w3],%[w3],%[vrb]\n\t"                              \
+    "vsldoi     %[vt8],%[w3],%[w3],8\n\t"                                   \
     /* vt1 = s0(w[j-15]) , s0(w[j-14]) , s0(w[j-13]) , s0(w[j-12])       */ \
     "vshasigmaw %[vt1],%[vt1],0,0\n\t"                                      \
     /* vt2 = s1(w[j-2]) , s1(w[j-1]) , s1(w[j-4]) , s1(w[j-3])           */ \
@@ -308,8 +302,6 @@
       [kpw3] "=v" ((_kpw3))                                                 \
     : /* input list                                                      */ \
       [index] "r" ((_j)),                                                   \
-      [vrb] "v" ((_vRb)),                                                   \
-      [vrc] "v" ((_vRc)),                                                   \
       [kptr] "r" ((_k)),                                                    \
       [six1] "i" (0xf)                                                      \
     : /* clobber list                                                    */ \
@@ -400,22 +392,19 @@
 
 void sha2_transform(base_type* _h, base_type* w) {
   vector_base_type a, b, c, d, e, f, g, h;
-  int Rb = 8; /* Parameter for lvsl */
   vector int vRb;
 
   vector_base_type w0, w1, w2, w3;
   vector_base_type kplusw0, kplusw1, kplusw2, kplusw3;
   vector_base_type kpw0, kpw1, kpw2, kpw3;
 
-  int Rc = 4; /* Parameter for lvsl */
-  vector int vRc;
   int j = 16;
 
   LOAD_H_VEC(a, b, c, d, e, f, g, h, _h, vRb);
 
   // Load 16 elements from w out of the loop
-  LOAD_W_PLUS_K(kplusw0, kplusw1, kplusw2, kplusw3, w0, w1, w2, w3, vRb, vRc,
-                j, Rb, Rc, w, k);
+  LOAD_W_PLUS_K(kplusw0, kplusw1, kplusw2, kplusw3, w0, w1, w2, w3, vRb, j,
+      w, k);
 
   // Loop unrolling, from 0 to 15
   DEQUE  (kplusw0, kpw0, kpw1, kpw2, kpw3);
@@ -444,14 +433,14 @@ void sha2_transform(base_type* _h, base_type* w) {
 
   // From 16 to W_SIZE (64) in 8 steps
   while (j < W_SIZE) {
-    CALC_4W(w0, w1, w2, w3, kpw0, kpw1, kpw2, kpw3, j, vRb, vRc, k);
+    CALC_4W(w0, w1, w2, w3, kpw0, kpw1, kpw2, kpw3, j, k);
     SHA2_ROUND(a, b, c, d, e, f, g, h, kpw0);
     SHA2_ROUND(h, a, b, c, d, e, f, g, kpw1);
     SHA2_ROUND(g, h, a, b, c, d, e, f, kpw2);
     SHA2_ROUND(f, g, h, a, b, c, d, e, kpw3);
     j += 4;
 
-    CALC_4W(w0, w1, w2, w3, kpw0, kpw1, kpw2, kpw3, j, vRb, vRc, k);
+    CALC_4W(w0, w1, w2, w3, kpw0, kpw1, kpw2, kpw3, j, k);
     SHA2_ROUND(e, f, g, h, a, b, c, d, kpw0);
     SHA2_ROUND(d, e, f, g, h, a, b, c, kpw1);
     SHA2_ROUND(c, d, e, f, g, h, a, b, kpw2);
