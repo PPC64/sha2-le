@@ -59,20 +59,20 @@
   base_type index;                                                          \
   vector_base_type tmp1;                                                    \
   __asm__ volatile (                                                        \
-     "lvx %[a],0,%[hptr]\n\t"           /* load unaligned                */ \
+     "lvx %[a],0,%[hptr]\n\t"             /* load unaligned              */ \
      "addi %[idx],%[hptr],16\n\t"                                           \
      "lvsr %[vrb],0,%[idx]\n\t"                                             \
-     "lvx %[e],0,%[idx]\n\t"            /* load unaligned                */ \
-     "vperm %[a],%[e],%[a],%[vrb]\n\t"  /* a = {a,b,c,d}                 */ \
+     "lvx %[e],0,%[idx]\n\t"              /* load unaligned              */ \
+     "vperm %[a],%[e],%[a],%[vrb]\n\t"    /* a = {a,b,c,d}               */ \
      "addi %[idx],%[idx],16\n\t"                                            \
-     "lvx %[tmp1],0,%[idx]\n\t"         /* load unaligned                */ \
+     "lvx %[tmp1],0,%[idx]\n\t"           /* load unaligned              */ \
      "vperm %[e],%[tmp1],%[e],%[vrb]\n\t" /* e = {e,f,g,h}               */ \
-     "vsldoi %[b],%[a],%[a],12\n\t"     /* b = {b,c,d,a}                 */ \
-     "vsldoi %[c],%[a],%[a],8\n\t"      /* c = {c,d,a,b}                 */ \
-     "vsldoi %[d],%[a],%[a],4\n\t"      /* d = {d,a,b,c}                 */ \
-     "vsldoi %[f],%[e],%[e],12\n\t"     /* f = {f,g,h,e}                 */ \
-     "vsldoi %[g],%[e],%[e],8\n\t"      /* g = {g,h,e,f}                 */ \
-     "vsldoi %[h],%[e],%[e],4\n\t"      /* h = {h,e,f,g}                 */ \
+     "vsldoi %[b],%[a],%[a],12\n\t"       /* b = {b,c,d,a}               */ \
+     "vsldoi %[c],%[a],%[a],8\n\t"        /* c = {c,d,a,b}               */ \
+     "vsldoi %[d],%[a],%[a],4\n\t"        /* d = {d,a,b,c}               */ \
+     "vsldoi %[f],%[e],%[e],12\n\t"       /* f = {f,g,h,e}               */ \
+     "vsldoi %[g],%[e],%[e],8\n\t"        /* g = {g,h,e,f}               */ \
+     "vsldoi %[h],%[e],%[e],4\n\t"        /* h = {h,e,f,g}               */ \
    : /* output list                                                      */ \
      /* temporaries                                                      */ \
      [idx] "=&r" (index),                                                   \
