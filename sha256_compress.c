@@ -115,6 +115,9 @@
     _j, _w, _k) do {                                                        \
   base_type t0;                                                             \
   base_type t1;                                                             \
+  vector_base_type vsp8;                                                    \
+  vector_base_type vsp16;                                                   \
+  vector_base_type shiftarg;                                                \
   vector_base_type vt0;                                                     \
   vector_base_type vt1;                                                     \
   vector_base_type vt2;                                                     \
@@ -172,6 +175,19 @@
     /* vt3 = k[j-4] to k[j-1]                                            */ \
     "vperm   %[vt3],%[vt4],%[vt3],%[vrb]\n\t"                               \
                                                                             \
+    /* Swap bytes */                                                        \
+    "vspltisw %[vsp16],8\n\t"                                               \
+    "vspltish %[vsp8],8\n\t"                                                \
+    "vspltisw %[shiftarg],1\n\t"                                            \
+    "vsl      %[vsp16],%[vsp16],%[shiftarg]\n\t"                            \
+    "vrlh     %[w0],%[w0],%[vsp8]\n\t"                                      \
+    "vrlh     %[w1],%[w1],%[vsp8]\n\t"                                      \
+    "vrlh     %[w2],%[w2],%[vsp8]\n\t"                                      \
+    "vrlh     %[w3],%[w3],%[vsp8]\n\t"                                      \
+    "vrlw     %[w0],%[w0],%[vsp16]\n\t"                                     \
+    "vrlw     %[w1],%[w1],%[vsp16]\n\t"                                     \
+    "vrlw     %[w2],%[w2],%[vsp16]\n\t"                                     \
+    "vrlw     %[w3],%[w3],%[vsp16]\n\t"                                     \
     /* Add _w to k                                                       */ \
     "vadduwm %[k0],%[vt0],%[w0]\n\t"                                        \
     "vadduwm %[k1],%[vt1],%[w1]\n\t"                                        \
@@ -195,7 +211,10 @@
       [vt1] "=&v" (vt1),                                                    \
       [vt2] "=&v" (vt2),                                                    \
       [vt3] "=&v" (vt3),                                                    \
-      [vt4] "=&v" (vt4)                                                     \
+      [vt4] "=&v" (vt4),                                                    \
+      [shiftarg] "=&v" (shiftarg),                                          \
+      [vsp8] "=&v" (vsp8),                                                  \
+      [vsp16] "=&v" (vsp16)                                                 \
     : /* input list                                                      */ \
       [index] "r" ((_j)),                                                   \
       [wptr] "r" ((_w)),                                                    \

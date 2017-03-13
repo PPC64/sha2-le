@@ -6,6 +6,7 @@
 
 #include "base-types.h"
 #include "sha2_compress.h"
+#include "sha2_common.h"
 
 #if SHA_BITS == 256
 
@@ -33,7 +34,6 @@ const base_type k[64] = {
   0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 const size_t W_SIZE     = 64;
-const size_t BLOCK_SIZE = 64;
 
 #elif SHA_BITS == 512
 
@@ -74,7 +74,6 @@ const base_type k[80] = {
   0x5fcb6fab3ad6faec, 0x6c44198c4a475817
 };
 const size_t W_SIZE     = 80;
-const size_t BLOCK_SIZE = 128;
 
 #else
 #error "Invalid SHA_BITS"
@@ -159,15 +158,17 @@ int sha2(unsigned char *input, size_t size, size_t padded_size) {
     fprintf(stderr, "%s\n.", strerror(errno));
     return errno;
   }
-  swap_bytes(input, input_swapped, padded_size);
+  //swap_bytes(input, input_swapped, padded_size);
 
   // write total message size at the end (2 base_types).
-  write_size(input_swapped, size, padded_size - 2 * base_type_size);
+  write_size(input, size, padded_size - 2 * base_type_size);
+  swap_bytes(input + padded_size - 2 * base_type_size,
+      input + padded_size - 2 * base_type_size, 2 * base_type_size);
 
   // Sha compression process.
   for (size_t i = 0; i < padded_size; i = i + BLOCK_SIZE) {
     base_type w[W_SIZE];
-    memcpy(w, input_swapped + i, 16 * sizeof(base_type));
+    memcpy(w, input + i, 16 * sizeof(base_type));
     sha2_transform(_h, w);
   }
 

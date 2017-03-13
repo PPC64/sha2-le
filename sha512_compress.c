@@ -117,6 +117,10 @@
   base_type t0;                                                             \
   base_type t1;                                                             \
   vector_base_type vt0;                                                     \
+  vector_base_type vsp8;                                                    \
+  vector_base_type vsp16;                                                   \
+  vector_base_type vsp32;                                                   \
+  vector_base_type shiftarg;                                                \
   __asm__ volatile (                                                        \
     /* j * 8 (double word size)                                          */ \
     "sldi    %[t1],%[index],3\n\t"                                          \
@@ -217,6 +221,36 @@
     "lvx     %[vt0],0,%[t0]\n\t"                                            \
     /* k1 = w[j-16] to w[j-15]                                           */ \
     "vperm   %[k7],%[vt0],%[k7],%[vrb]\n\t"                                 \
+    /* Swap bytes                                                        */ \
+    "vspltisw %[vsp16],8\n\t"                                               \
+    "vspltisw %[shiftarg],1\n\t"                                            \
+    "vsl      %[vsp16],%[vsp16], %[shiftarg]\n\t"                           \
+    "vsl      %[vsp32],%[vsp16], %[shiftarg]\n\t"                           \
+    "vspltish %[vsp8],8\n\t"                                                \
+    "vrlh     %[w0],%[w0],%[vsp8]\n\t"                                      \
+    "vrlh     %[w1],%[w1],%[vsp8]\n\t"                                      \
+    "vrlh     %[w2],%[w2],%[vsp8]\n\t"                                      \
+    "vrlh     %[w3],%[w3],%[vsp8]\n\t"                                      \
+    "vrlh     %[w4],%[w4],%[vsp8]\n\t"                                      \
+    "vrlh     %[w5],%[w5],%[vsp8]\n\t"                                      \
+    "vrlh     %[w6],%[w6],%[vsp8]\n\t"                                      \
+    "vrlh     %[w7],%[w7],%[vsp8]\n\t"                                      \
+    "vrlw     %[w0],%[w0],%[vsp16]\n\t"                                     \
+    "vrlw     %[w1],%[w1],%[vsp16]\n\t"                                     \
+    "vrlw     %[w2],%[w2],%[vsp16]\n\t"                                     \
+    "vrlw     %[w3],%[w3],%[vsp16]\n\t"                                     \
+    "vrlw     %[w4],%[w4],%[vsp16]\n\t"                                     \
+    "vrlw     %[w5],%[w5],%[vsp16]\n\t"                                     \
+    "vrlw     %[w6],%[w6],%[vsp16]\n\t"                                     \
+    "vrlw     %[w7],%[w7],%[vsp16]\n\t"                                     \
+    "vrld     %[w0],%[w0],%[vsp32]\n\t"                                     \
+    "vrld     %[w1],%[w1],%[vsp32]\n\t"                                     \
+    "vrld     %[w2],%[w2],%[vsp32]\n\t"                                     \
+    "vrld     %[w3],%[w3],%[vsp32]\n\t"                                     \
+    "vrld     %[w4],%[w4],%[vsp32]\n\t"                                     \
+    "vrld     %[w5],%[w5],%[vsp32]\n\t"                                     \
+    "vrld     %[w6],%[w6],%[vsp32]\n\t"                                     \
+    "vrld     %[w7],%[w7],%[vsp32]\n\t"                                     \
     /* calculate k+w                                                     */ \
     "vaddudm %[k0],%[k0],%[w0]\n\t"                                         \
     "vaddudm %[k1],%[k1],%[w1]\n\t"                                         \
@@ -228,6 +262,10 @@
     "vaddudm %[k7],%[k7],%[w7]\n\t"                                         \
     : /* output list                                                     */ \
       /* temporaries                                                     */ \
+      [vsp8] "=&v" (vsp8),                                                  \
+      [vsp16] "=&v" (vsp16),                                                \
+      [vsp32] "=&v" (vsp32),                                                \
+      [shiftarg] "=&v" (shiftarg),                                          \
       [t0] "=&r" (t0),                                                      \
       [t1] "=&r" (t1),                                                      \
       /* actual outputs                                                  */ \

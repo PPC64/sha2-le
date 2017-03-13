@@ -1,4 +1,5 @@
 #include "base-types.h"
+#include "sha2_common.h"
 
 #define ROTR(n, b) (((n) >> (b)) | ((n) << ((base_type_size * 8) - (b))))
 
@@ -66,6 +67,8 @@ void sha2_transform(base_type* _h, base_type* w) {
   f = _h[5];
   g = _h[6];
   h = _h[7];
+
+  swap_bytes((unsigned char*)w, (unsigned char*)w, BLOCK_SIZE);
 
   // Loop unrolling, from 0 to 15
   for (i = 0; i < 16; i++) {

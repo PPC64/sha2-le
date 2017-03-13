@@ -15,4 +15,10 @@ void swap_bytes(unsigned char *input, unsigned char *output, size_t size);
 void write_size(unsigned char *input, size_t size, size_t position);
 int sha2(unsigned char *input, size_t size, size_t padded_size);
 
+#if SHA_BITS == 256
+#define BLOCK_SIZE 64
+#elif SHA_BITS == 512
+#define BLOCK_SIZE 128
+#endif
 #endif // _PPC64_LE_SHA2_H_
+
