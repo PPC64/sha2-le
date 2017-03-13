@@ -113,7 +113,7 @@
 
 #define LOAD_W_PLUS_K(_k0, _k1, _k2, _k3, _k4, _k5, _k6, _k7,               \
                       _w0, _w1, _w2, _w3, _w4, _w5, _w6, _w7,               \
-                      _vRb, _j, _Rb, _k, _w) do {                           \
+                      _vRb, _j, _k, _w) do {                                \
   base_type t0;                                                             \
   base_type t1;                                                             \
   vector_base_type vt0;                                                     \
@@ -226,7 +226,6 @@
     "vaddudm %[k5],%[k5],%[w5]\n\t"                                         \
     "vaddudm %[k6],%[k6],%[w6]\n\t"                                         \
     "vaddudm %[k7],%[k7],%[w7]\n\t"                                         \
-    "lvsl    %[vrb],0,%[rb]\n\t"         /* parameter for vperm          */ \
     : /* output list                                                     */ \
       /* temporaries                                                     */ \
       [t0] "=&r" (t0),                                                      \
@@ -252,7 +251,6 @@
       [k7] "=v" ((_k7))                                                     \
     : /* input list                                                      */ \
       [index] "r" ((_j)),                                                   \
-      [rb] "r" ((_Rb)),                                                     \
       [wptr] "r" ((_w)),                                                    \
       [kptr] "r" ((_k))                                                     \
     : /* clobber list                                                    */ \
@@ -260,7 +258,7 @@
   ); } while (0)
 
 #define CALC_2W(_w0, _w1, _w2, _w3, _w4, _w5, _w6, _w7, _kpw0, _kpw1,       \
-                _j, _vRb, _k) do {                                          \
+                _j, _k) do {                                                \
   base_type t0;                                                             \
   base_type t1;                                                             \
   vector_base_type vt0;                                                     \
@@ -272,8 +270,8 @@
     "sldi       %[t1],%[index],%[c1]\n\t"      /* j * 8 (doubleword size)*/ \
     "add        %[t0],%[t1],%[kptr]\n\t"       /* alias to k[j] location */ \
     "lvx        %[vt3],0,%[t0]\n\t"                                         \
-    "vperm      %[vt1],%[w1],%[w0],%[vrb]\n\t" /* vt1 = w[j-15] , w[j-14]*/ \
-    "vperm      %[vt2],%[w5],%[w4],%[vrb]\n\t" /* vt2 = w[j-7] , w[j-6]  */ \
+    "vsldoi     %[vt1],%[w1],%[w0],8\n\t"      /* vt1 = w[j-15] , w[j-14]*/ \
+    "vsldoi     %[vt2],%[w5],%[w4],8\n\t"      /* vt2 = w[j-7] , w[j-6]  */ \
     /* vt1 = s0(w[j-15]) , s0(w[j-14])                                   */ \
     "vshasigmad %[vt1],%[vt1],0,0\n\t"                                      \
     /* vt4 = s1(w[j-2]) , s1(w[j-1])                                     */ \
@@ -323,7 +321,6 @@
   : /* input list                                                        */ \
     [index] "r" ((_j)),                                                     \
     [kptr] "r" ((_k)),                                                      \
-    [vrb] "v" ((_vRb)),                                                     \
     [c1] "i" (3),                                                           \
     [six1] "i" (0xf)                                                        \
   : /* clobber list                                                      */ \
@@ -414,7 +411,6 @@
 
 void sha2_transform(base_type* _h, base_type* w) {
   vector_base_type a, b, c, d, e, f, g, h;
-  int Rb = 8; /* Parameter for lvsl */
   vector int vRb;
 
   vector_base_type w0, w1, w2, w3, w4, w5, w6, w7;
@@ -428,7 +424,7 @@ void sha2_transform(base_type* _h, base_type* w) {
 
   // Load 16 elements from w out of the loop
   LOAD_W_PLUS_K(kplusw0, kplusw1, kplusw2, kplusw3, kplusw4, kplusw5, kplusw6,
-                kplusw7, w0, w1, w2, w3, w4, w5, w6, w7, vRb, j, Rb, k, w);
+                kplusw7, w0, w1, w2, w3, w4, w5, w6, w7, vRb, j, k, w);
 
   // Loop unrolling, from 0 to 15
   DEQUE(kplusw0, kpw0, kpw1);
@@ -466,22 +462,22 @@ void sha2_transform(base_type* _h, base_type* w) {
 
   // From 16 to W_SIZE (80) in 8 steps
   while (j < W_SIZE) {
-    CALC_2W(w0, w1, w2, w3, w4, w5, w6, w7, kpw0, kpw1, j, vRb, k);
+    CALC_2W(w0, w1, w2, w3, w4, w5, w6, w7, kpw0, kpw1, j, k);
     SHA2_ROUND(a, b, c, d, e, f, g, h, kpw0);
     SHA2_ROUND(h, a, b, c, d, e, f, g, kpw1);
     j += 2;
 
-    CALC_2W(w0, w1, w2, w3, w4, w5, w6, w7, kpw0, kpw1, j, vRb, k);
+    CALC_2W(w0, w1, w2, w3, w4, w5, w6, w7, kpw0, kpw1, j, k);
     SHA2_ROUND(g, h, a, b, c, d, e, f, kpw0);
     SHA2_ROUND(f, g, h, a, b, c, d, e, kpw1);
     j += 2;
 
-    CALC_2W(w0, w1, w2, w3, w4, w5, w6, w7, kpw0, kpw1, j, vRb, k);
+    CALC_2W(w0, w1, w2, w3, w4, w5, w6, w7, kpw0, kpw1, j, k);
     SHA2_ROUND(e, f, g, h, a, b, c, d, kpw0);
     SHA2_ROUND(d, e, f, g, h, a, b, c, kpw1);
     j += 2;
 
-    CALC_2W(w0, w1, w2, w3, w4, w5, w6, w7, kpw0, kpw1, j, vRb, k);
+    CALC_2W(w0, w1, w2, w3, w4, w5, w6, w7, kpw0, kpw1, j, k);
     SHA2_ROUND(c, d, e, f, g, h, a, b, kpw0);
     SHA2_ROUND(b, c, d, e, f, g, h, a, kpw1);
     j += 2;
