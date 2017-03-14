@@ -306,6 +306,10 @@
     "sldi       %[t1],%[index],%[c1]\n\t"      /* j * 8 (doubleword size)*/ \
     "add        %[t0],%[t1],%[kptr]\n\t"       /* alias to k[j] location */ \
     "lvx        %[vt3],0,%[t0]\n\t"                                         \
+    "addi       %[t0],%[t0],16\n\t"            /* alias to k[j+4] location*/\
+    "lvsr       %[vt2],0,%[kptr]\n\t"                                       \
+    "lvx        %[vt1],0,%[t0]\n\t"            /* treat unaligned case   */ \
+    "vperm      %[vt3],%[vt1],%[vt3],%[vt2]\n\t"                            \
     "vsldoi     %[vt1],%[w1],%[w0],8\n\t"      /* vt1 = w[j-15] , w[j-14]*/ \
     "vsldoi     %[vt2],%[w5],%[w4],8\n\t"      /* vt2 = w[j-7] , w[j-6]  */ \
     /* vt1 = s0(w[j-15]) , s0(w[j-14])                                   */ \
