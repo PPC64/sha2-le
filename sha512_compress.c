@@ -98,12 +98,10 @@
      "memory"                                                               \
   ); } while (0)                                                            \
 
-#define DEQUE(_k, _kpw0, _kpw1) do {                                        \
+#define DEQUE(_k, _kpw1) do {                                        \
   __asm__ volatile (                                                        \
-    "vmr         %[kpw0], %[k]\n\t"          /* kpw0 = {k[0],k[1]}       */ \
     "vsldoi      %[kpw1], %[k], %[k], 8\n\t" /* kpw1 = {k[1],k[0]}       */ \
     : /* output list                                                     */ \
-      [kpw0] "=v" ((_kpw0)),                                                \
       [kpw1] "=v" ((_kpw1)),                                                \
       /* k is read in the asm, hence should be reserved                  */ \
       [k] "+&v" ((_k))                                                      \
@@ -465,36 +463,36 @@ void sha2_transform(base_type* _h, base_type* w) {
                 kplusw7, w0, w1, w2, w3, w4, w5, w6, w7, vRb, j, k, w);
 
   // Loop unrolling, from 0 to 15
-  DEQUE(kplusw0, kpw0, kpw1);
-  SHA2_ROUND(a, b, c, d, e, f, g, h, kpw0);
+  DEQUE(kplusw0, kpw1);
+  SHA2_ROUND(a, b, c, d, e, f, g, h, kplusw0);
   SHA2_ROUND(h, a, b, c, d, e, f, g, kpw1);
 
-  DEQUE(kplusw1, kpw0, kpw1);
-  SHA2_ROUND(g, h, a, b, c, d, e, f, kpw0);
+  DEQUE(kplusw1, kpw1);
+  SHA2_ROUND(g, h, a, b, c, d, e, f, kplusw1);
   SHA2_ROUND(f, g, h, a, b, c, d, e, kpw1);
 
-  DEQUE(kplusw2, kpw0, kpw1);
-  SHA2_ROUND(e, f, g, h, a, b, c, d, kpw0);
+  DEQUE(kplusw2, kpw1);
+  SHA2_ROUND(e, f, g, h, a, b, c, d, kplusw2);
   SHA2_ROUND(d, e, f, g, h, a, b, c, kpw1);
 
-  DEQUE(kplusw3, kpw0, kpw1);
-  SHA2_ROUND(c, d, e, f, g, h, a, b, kpw0);
+  DEQUE(kplusw3, kpw1);
+  SHA2_ROUND(c, d, e, f, g, h, a, b, kplusw3);
   SHA2_ROUND(b, c, d, e, f, g, h, a, kpw1);
 
-  DEQUE(kplusw4, kpw0, kpw1);
-  SHA2_ROUND(a, b, c, d, e, f, g, h, kpw0);
+  DEQUE(kplusw4, kpw1);
+  SHA2_ROUND(a, b, c, d, e, f, g, h, kplusw4);
   SHA2_ROUND(h, a, b, c, d, e, f, g, kpw1);
 
-  DEQUE(kplusw5, kpw0, kpw1);
-  SHA2_ROUND(g, h, a, b, c, d, e, f, kpw0);
+  DEQUE(kplusw5, kpw1);
+  SHA2_ROUND(g, h, a, b, c, d, e, f, kplusw5);
   SHA2_ROUND(f, g, h, a, b, c, d, e, kpw1);
 
-  DEQUE(kplusw6, kpw0, kpw1);
-  SHA2_ROUND(e, f, g, h, a, b, c, d, kpw0);
+  DEQUE(kplusw6, kpw1);
+  SHA2_ROUND(e, f, g, h, a, b, c, d, kplusw6);
   SHA2_ROUND(d, e, f, g, h, a, b, c, kpw1);
 
-  DEQUE(kplusw7, kpw0, kpw1);
-  SHA2_ROUND(c, d, e, f, g, h, a, b, kpw0);
+  DEQUE(kplusw7, kpw1);
+  SHA2_ROUND(c, d, e, f, g, h, a, b, kplusw7);
   SHA2_ROUND(b, c, d, e, f, g, h, a, kpw1);
 
 
