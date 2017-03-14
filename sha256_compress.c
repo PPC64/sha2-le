@@ -213,6 +213,10 @@
     "sldi       %[t1],%[index],2\n\t"         /* j * 4 (word size)       */ \
     "add        %[t0],%[t1],%[kptr]\n\t"      /* alias to k[j] location  */ \
     "lvx        %[vt6],0,%[t0]\n\t"                                         \
+    "addi       %[t0],%[t0],16\n\t"           /* alias to k[j+4] location*/ \
+    "lvsr       %[vt2],0,%[kptr]\n\t"                                       \
+    "lvx        %[vt1],0,%[t0]\n\t"           /* treat unaligned case    */ \
+    "vperm      %[vt6],%[vt1],%[vt6],%[vt2]\n\t"                            \
     /* vt1 = w[j-15], w[j-14], w[j-13], w[j-12]                          */ \
     "vsldoi     %[vt1],%[w1],%[w0],12\n\t"                                  \
     /* vt7 = w[j-7], w[j-6], w[j-5], w[j-4]                              */ \
