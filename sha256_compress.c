@@ -390,9 +390,6 @@ void sha2_transform(base_type* _h, base_type* w) {
   // Load 16 elements from w out of the loop
   LOAD_W_PLUS_K(kplusw0, kplusw1, kplusw2, kplusw3, w0, w1, w2, w3, vRb, w, k);
 
-  // Prepare j to the next elements
-  int j = 16;
-
   // Loop unrolling, from 0 to 15
   DEQUE  (kplusw0, kpw1, kpw2, kpw3);
   SHA2_ROUND(a, b, c, d, e, f, g, h, kplusw0);
@@ -417,6 +414,9 @@ void sha2_transform(base_type* _h, base_type* w) {
   SHA2_ROUND(d, e, f, g, h, a, b, c, kpw1);
   SHA2_ROUND(c, d, e, f, g, h, a, b, kpw2);
   SHA2_ROUND(b, c, d, e, f, g, h, a, kpw3);
+
+  // Prepare j to the next elements
+  int j = 16;
 
   // From 16 to W_SIZE (64) in 8 steps
   while (j < W_SIZE) {
