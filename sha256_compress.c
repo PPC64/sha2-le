@@ -379,7 +379,7 @@
       "memory"                                                              \
   ); } while (0)
 
-void sha2_transform(base_type* _h, base_type* w) {
+void sha2_transform(base_type* _h, unsigned char* w) {
   vector_base_type a, b, c, d, e, f, g, h;
   vector int vRb;
 

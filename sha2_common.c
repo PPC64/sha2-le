@@ -152,25 +152,14 @@ int sha2(unsigned char *input, size_t size, size_t padded_size) {
   // Concatenate '1' to input.
   input[size] = (unsigned char)(1 << 7);
 
-  // Swap bytes due to endianess .
-  unsigned char* input_swapped = (unsigned char *) calloc(padded_size, sizeof(unsigned char));
-  if (input_swapped == NULL) {
-    fprintf(stderr, "%s\n.", strerror(errno));
-    return errno;
-  }
-  //swap_bytes(input, input_swapped, padded_size);
-
   // write total message size at the end (2 base_types).
   write_size(input, size, padded_size - 2 * base_type_size);
   swap_bytes(input + padded_size - 2 * base_type_size,
       input + padded_size - 2 * base_type_size, 2 * base_type_size);
 
   // Sha compression process.
-  for (size_t i = 0; i < padded_size; i = i + BLOCK_SIZE) {
-    base_type w[W_SIZE];
-    memcpy(w, input + i, 16 * sizeof(base_type));
-    sha2_transform(_h, w);
-  }
+  for (size_t i = 0; i < padded_size; i = i + BLOCK_SIZE)
+    sha2_transform(_h, input + i);
 
   printf(
 #if SHA_BITS == 256

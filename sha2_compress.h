@@ -3,6 +3,6 @@
 
 #include "base-types.h"
 
-void sha2_transform(base_type* _h, base_type* w);
+void sha2_transform(base_type* _h, unsigned char* w);
 
 #endif // _PPC64_LE_SHA2_COMPRESS_H_

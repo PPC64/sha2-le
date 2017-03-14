@@ -55,9 +55,11 @@ void static inline sha2_round(base_type* a, base_type* b, base_type* c,
   *a = tmp1 + tmp2;
 }
 
-void sha2_transform(base_type* _h, base_type* w) {
+void sha2_transform(base_type* _h, unsigned char* w_in) {
   base_type a, b, c, d, e, f, g, h;
   int i;
+  // using a local w as it's going to be modified
+  base_type w[W_SIZE];
 
   a = _h[0];
   b = _h[1];
@@ -68,7 +70,8 @@ void sha2_transform(base_type* _h, base_type* w) {
   g = _h[6];
   h = _h[7];
 
-  swap_bytes((unsigned char*)w, (unsigned char*)w, BLOCK_SIZE);
+  // Only first 16 bytes needs to be copied as the ones above will be defined
+  swap_bytes(w_in, (unsigned char*)w, BLOCK_SIZE);
 
   // Loop unrolling, from 0 to 15
   for (i = 0; i < 16; i++) {
