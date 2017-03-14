@@ -112,9 +112,8 @@
   ); } while (0)
 
 #define LOAD_W_PLUS_K(_k0, _k1, _k2, _k3, _w0, _w1, _w2, _w3, _vRb,         \
-    _j, _w, _k) do {                                                        \
+    _w, _k) do {                                                            \
   base_type t0;                                                             \
-  base_type t1;                                                             \
   vector_base_type vsp8;                                                    \
   vector_base_type vsp16;                                                   \
   vector_base_type shiftarg;                                                \
@@ -124,53 +123,43 @@
   vector_base_type vt3;                                                     \
   vector_base_type vt4;                                                     \
   __asm__ volatile (                                                        \
-    /* t1 = j * 4 (word size)                                            */ \
-    "sldi    %[t1],%[index],%[c1]\n\t"                                      \
-    /* alias to W[j] location                                            */ \
-    "add     %[t1],%[t1],%[wptr]\n\t"                                       \
-    "addi    %[t0],%[t1],%[c2]\n\t"                                         \
-    /* unaligned load                                                    */ \
-    "lvx     %[w0],0,%[t0]\n\t"                                             \
     /* set vrb according to alignment                                    */ \
-    "lvsr    %[vrb],0,%[t1]\n\t"                                            \
-    "addi    %[t0],%[t1],%[c3]\n\t"                                         \
+    "lvsr    %[vrb],0,%[wptr]\n\t"                                          \
+    /* unaligned load                                                    */ \
+    "lvx     %[w0],0,%[wptr]\n\t"                                           \
+    "addi    %[t0],%[wptr],16\n\t"                                          \
     "lvx     %[w1],0,%[t0]\n\t"                                             \
     /* w0 = w[j-16] to w[j-13]                                           */ \
     "vperm   %[w0],%[w1],%[w0],%[vrb]\n\t"                                  \
-    "addi    %[t0],%[t1],%[c4]\n\t"                                         \
+    "addi    %[t0],%[wptr],32\n\t"                                          \
     "lvx     %[w2],0,%[t0]\n\t"                                             \
     /* w1 = w[j-12] to w[j-9]                                            */ \
     "vperm   %[w1],%[w2],%[w1],%[vrb]\n\t"                                  \
-    "addi    %[t0],%[t1],%[c5]\n\t"                                         \
+    "addi    %[t0],%[wptr],48\n\t"                                          \
     "lvx     %[w3],0,%[t0]\n\t"                                             \
     /* w2 = w[j-8] to w[j-5]                                             */ \
     "vperm   %[w2],%[w3],%[w2],%[vrb]\n\t"                                  \
-    "addi    %[t0],%[t1],%[c0]\n\t"                                         \
+    "addi    %[t0],%[wptr],64\n\t"                                          \
     "lvx     %[vt0],0,%[t0]\n\t"                                            \
     /* w3 = w[j-4] to w[j-1]                                             */ \
     "vperm   %[w3],%[vt0],%[w3],%[vrb]\n\t"                                 \
-    /* Load 4*4 k values                                                 */ \
-    "sldi    %[t1],%[index],%[c1]\n\t"                                      \
-    /* alias to k[j] location                                            */ \
-    "add     %[t1],%[t1],%[kptr]\n\t"                                       \
-    "addi    %[t0],%[t1],%[c2]\n\t"                                         \
-    /* unaligned load                                                    */ \
-    "lvx     %[vt0],0,%[t0]\n\t"                                            \
     /* set vrb according to alignment                                    */ \
-    "lvsr    %[vrb],0,%[t1]\n\t"                                            \
-    "addi    %[t0],%[t1],%[c3]\n\t"                                         \
+    "lvsr    %[vrb],0,%[kptr]\n\t"                                          \
+    /* unaligned load                                                    */ \
+    "lvx     %[vt0],0,%[kptr]\n\t"                                          \
+    "addi    %[t0],%[kptr],16\n\t"                                          \
     "lvx     %[vt1],0,%[t0]\n\t"                                            \
     /* vt0 = k[j-16] to k[j-13]                                          */ \
     "vperm   %[vt0],%[vt1],%[vt0],%[vrb]\n\t"                               \
-    "addi    %[t0],%[t1],%[c4]\n\t"                                         \
+    "addi    %[t0],%[kptr],32\n\t"                                          \
     "lvx     %[vt2],0,%[t0]\n\t"                                            \
     /* vt1 = k[j-12] to k[j-9]                                           */ \
     "vperm   %[vt1],%[vt2],%[vt1],%[vrb]\n\t"                               \
-    "addi    %[t0],%[t1],%[c5]\n\t"                                         \
+    "addi    %[t0],%[kptr],48\n\t"                                          \
     "lvx     %[vt3],0,%[t0]\n\t"                                            \
     /* vt2 = k[j-8] to k[j-5]                                            */ \
     "vperm   %[vt2],%[vt3],%[vt2],%[vrb]\n\t"                               \
-    "addi    %[t0],%[t1],%[c0]\n\t"                                         \
+    "addi    %[t0],%[kptr],64\n\t"                                          \
     "lvx     %[vt4],0,%[t0]\n\t"                                            \
     /* vt3 = k[j-4] to k[j-1]                                            */ \
     "vperm   %[vt3],%[vt4],%[vt3],%[vrb]\n\t"                               \
@@ -206,7 +195,6 @@
       [vrb] "=v" ((_vRb)),                                                  \
       /* temporaries                                                     */ \
       [t0] "=&r" (t0),                                                      \
-      [t1] "=&r" (t1),                                                      \
       [vt0] "=&v" (vt0),                                                    \
       [vt1] "=&v" (vt1),                                                    \
       [vt2] "=&v" (vt2),                                                    \
@@ -216,15 +204,8 @@
       [vsp8] "=&v" (vsp8),                                                  \
       [vsp16] "=&v" (vsp16)                                                 \
     : /* input list                                                      */ \
-      [index] "r" ((_j)),                                                   \
       [wptr] "r" ((_w)),                                                    \
-      [kptr] "r" ((_k)),                                                    \
-      [c1] "i" (2),                                                         \
-      [c0] "i" (0),                                                         \
-      [c2] "i" (-64),                                                       \
-      [c3] "i" (-48),                                                       \
-      [c4] "i" (-32),                                                       \
-      [c5] "i" (-16)                                                        \
+      [kptr] "r" ((_k))                                                     \
     : /* clobber list                                                    */ \
       "memory"                                                              \
   ); } while (0)
@@ -416,13 +397,13 @@ void sha2_transform(base_type* _h, base_type* w) {
   vector_base_type kplusw0, kplusw1, kplusw2, kplusw3;
   vector_base_type kpw0, kpw1, kpw2, kpw3;
 
-  int j = 16;
-
   LOAD_H_VEC(a, b, c, d, e, f, g, h, _h, vRb);
 
   // Load 16 elements from w out of the loop
-  LOAD_W_PLUS_K(kplusw0, kplusw1, kplusw2, kplusw3, w0, w1, w2, w3, vRb, j,
-      w, k);
+  LOAD_W_PLUS_K(kplusw0, kplusw1, kplusw2, kplusw3, w0, w1, w2, w3, vRb, w, k);
+
+  // Prepare j to the next elements
+  int j = 16;
 
   // Loop unrolling, from 0 to 15
   DEQUE  (kplusw0, kpw0, kpw1, kpw2, kpw3);
