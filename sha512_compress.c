@@ -79,7 +79,7 @@
      "vsldoi %[h],%[g],%[g],8 \n\t"    /* h = {h,g}                      */ \
    : /* output list                                                      */ \
      /* temporaries                                                      */ \
-     [idx] "=&r" (index),                                                   \
+     [idx] "=&b" (index),                                                   \
      [tmp1] "=&v" ((tmp1)),                                                 \
      /* actual outputs                                                   */ \
      /* a,c,e,g are read in the asm, hence should be reserved            */ \
@@ -93,7 +93,7 @@
      [f] "=v" ((_f)),                                                       \
      [h] "=v" ((_h))                                                        \
    : /* input list                                                       */ \
-     [hptr] "r" ((_hptr))                                                   \
+     [hptr] "b" ((_hptr))                                                   \
    : /* clobber list                                                     */ \
      "memory"                                                               \
   ); } while (0)                                                            \
@@ -264,8 +264,8 @@
       [vsp16] "=&v" (vsp16),                                                \
       [vsp32] "=&v" (vsp32),                                                \
       [shiftarg] "=&v" (shiftarg),                                          \
-      [t0] "=&r" (t0),                                                      \
-      [t1] "=&r" (t1),                                                      \
+      [t0] "=&b" (t0),                                                      \
+      [t1] "=&b" (t1),                                                      \
       /* actual outputs                                                  */ \
       [vrb] "=v" ((_vRb)),                                                  \
       [vt0] "=v" ((vt0)),                                                   \
@@ -286,9 +286,9 @@
       [k6] "=v" ((_k6)),                                                    \
       [k7] "=v" ((_k7))                                                     \
     : /* input list                                                      */ \
-      [index] "r" ((_j)),                                                   \
-      [wptr] "r" ((_w)),                                                    \
-      [kptr] "r" ((_k))                                                     \
+      [index] "b" ((_j)),                                                   \
+      [wptr] "b" ((_w)),                                                    \
+      [kptr] "b" ((_k))                                                     \
     : /* clobber list                                                    */ \
       "memory"                                                              \
   ); } while (0)
@@ -335,8 +335,8 @@
     "vsldoi     %[kpw1], %[vt1],%[vt1], 8\n\t"                              \
   : /* output list                                                       */ \
     /* temporaries                                                       */ \
-    [t0] "=&r" (t0),                                                        \
-    [t1] "=&r" (t1),                                                        \
+    [t0] "=&b" (t0),                                                        \
+    [t1] "=&b" (t1),                                                        \
     [vt0] "=&v" (vt0),                                                      \
     [vt1] "=&v" (vt1),                                                      \
     [vt2] "=&v" (vt2),                                                      \
@@ -355,8 +355,8 @@
     [kpw0] "=v" ((_kpw0)),                                                  \
     [kpw1] "=v" ((_kpw1))                                                   \
   : /* input list                                                        */ \
-    [index] "r" ((_j)),                                                     \
-    [kptr] "r" ((_k)),                                                      \
+    [index] "b" ((_j)),                                                     \
+    [kptr] "b" ((_k)),                                                      \
     [c1] "i" (3),                                                           \
     [six1] "i" (0xf)                                                        \
   : /* clobber list                                                      */ \
@@ -426,9 +426,9 @@
       [vt7] "=&v" (vt7),                                                    \
       [vrb] "=&v" (vrb),                                                    \
       [vt8] "=&v" (vt8),                                                    \
-      [rtmp0] "=&r" ((rtmp0))                                               \
+      [rtmp0] "=&b" ((rtmp0))                                               \
     : /* input list                                                      */ \
-      [hptr] "r" ((_hptr)),                                                 \
+      [hptr] "b" ((_hptr)),                                                 \
       [a] "v" ((_a)),                                                       \
       [b] "v" ((_b)),                                                       \
       [c] "v" ((_c)),                                                       \
@@ -437,10 +437,10 @@
       [f] "v" ((_f)),                                                       \
       [g] "v" ((_g)),                                                       \
       [h] "v" ((_h)),                                                       \
-      [offs1] "r" (16),                                                     \
-      [offs2] "r" (32),                                                     \
-      [offs3] "r" (48),                                                     \
-      [offs4] "r" (64)                                                      \
+      [offs1] "b" (16),                                                     \
+      [offs2] "b" (32),                                                     \
+      [offs3] "b" (48),                                                     \
+      [offs4] "b" (64)                                                      \
     : /* clobber list                                                    */ \
       "memory"                                                              \
   ); } while (0)
