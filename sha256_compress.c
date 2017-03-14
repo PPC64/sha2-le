@@ -55,7 +55,7 @@
                                                                             \
   ); } while (0)
 
-#define LOAD_H_VEC(_a, _b, _c, _d, _e, _f, _g, _h, _hptr, _vrb) do {        \
+#define LOAD_H_VEC(_a, _e, _hptr, _vrb) do {                                \
   base_type index;                                                          \
   vector_base_type tmp1;                                                    \
   __asm__ volatile (                                                        \
@@ -67,12 +67,6 @@
      "addi %[idx],%[idx],16\n\t"                                            \
      "lvx %[tmp1],0,%[idx]\n\t"           /* load unaligned              */ \
      "vperm %[e],%[tmp1],%[e],%[vrb]\n\t" /* e = {e,f,g,h}               */ \
-     "vsldoi %[b],%[a],%[a],12\n\t"       /* b = {b,c,d,a}               */ \
-     "vsldoi %[c],%[a],%[a],8\n\t"        /* c = {c,d,a,b}               */ \
-     "vsldoi %[d],%[a],%[a],4\n\t"        /* d = {d,a,b,c}               */ \
-     "vsldoi %[f],%[e],%[e],12\n\t"       /* f = {f,g,h,e}               */ \
-     "vsldoi %[g],%[e],%[e],8\n\t"        /* g = {g,h,e,f}               */ \
-     "vsldoi %[h],%[e],%[e],4\n\t"        /* h = {h,e,f,g}               */ \
    : /* output list                                                      */ \
      /* temporaries                                                      */ \
      [idx] "=&r" (index),                                                   \
@@ -81,13 +75,7 @@
      [a] "=&v" ((_a)),                                                      \
      [e] "=&v" ((_e)),                                                      \
      [tmp1] "=&v" ((tmp1)),                                                 \
-     [vrb] "=&v" ((_vrb)),                                                  \
-     [b] "=v" ((_b)),                                                       \
-     [c] "=v" ((_c)),                                                       \
-     [d] "=v" ((_d)),                                                       \
-     [f] "=v" ((_f)),                                                       \
-     [g] "=v" ((_g)),                                                       \
-     [h] "=v" ((_h))                                                        \
+     [vrb] "=&v" ((_vrb))                                                   \
    : /* input list                                                       */ \
      [hptr] "r" ((_hptr))                                                   \
    : /* clobber list                                                     */ \
@@ -395,7 +383,9 @@ void sha2_transform(base_type* _h, base_type* w) {
   vector_base_type kplusw0, kplusw1, kplusw2, kplusw3;
   vector_base_type kpw0, kpw1, kpw2, kpw3;
 
-  LOAD_H_VEC(a, b, c, d, e, f, g, h, _h, vRb);
+  LOAD_H_VEC(a, e, _h, vRb);
+  DEQUE  (a, b, c, d);
+  DEQUE  (e, f, g, h);
 
   // Load 16 elements from w out of the loop
   LOAD_W_PLUS_K(kplusw0, kplusw1, kplusw2, kplusw3, w0, w1, w2, w3, vRb, w, k);
