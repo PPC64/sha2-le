@@ -20,12 +20,12 @@
   __asm__ volatile (                                                        \
       "vsel %[ch],%[g],%[f],%[e]\n\t"       /* ch   = Ch(e,f,g)          */ \
       "vxor %[maj],%[a],%[b]\n\t"           /* intermediate Maj          */ \
-      "vsel %[maj],%[b],%[c],%[maj]\n\t"    /* maj  = Maj(a,b,c)         */ \
-      "vshasigmad %[bsa],%[a],1,0\n\t"      /* bsa  = BigSigma0(a)       */ \
       "vshasigmad %[bse],%[e],1,0xf\n\t"    /* bse  = BigSigma1(e)       */ \
-      "vaddudm %[vt1],%[h],%[bse]\n\t"      /* vt1  = h + bse            */ \
       "vaddudm %[vt2],%[ch],%[kpw]\n\t"     /* vt2  = ch + kpw           */ \
+      "vaddudm %[vt1],%[h],%[bse]\n\t"      /* vt1  = h + bse            */ \
+      "vsel %[maj],%[b],%[c],%[maj]\n\t"    /* maj  = Maj(a,b,c)         */ \
       "vaddudm %[vt3],%[vt1],%[vt2]\n\t"    /* vt3  = h + bse + ch + kpw */ \
+      "vshasigmad %[bsa],%[a],1,0\n\t"      /* bsa  = BigSigma0(a)       */ \
       "vaddudm %[vt4],%[bsa],%[maj]\n\t"    /* vt4  = bsa + maj          */ \
       "vaddudm %[d],%[d],%[vt3]\n\t"        /* d    = d + vt3            */ \
       "vaddudm %[h],%[vt3],%[vt4]\n\t"      /* h    = vt3 + vt4          */ \
