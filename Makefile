@@ -7,12 +7,7 @@ BIN_DIR=./bin
 CC=gcc
 COMPILERS=gcc-4.8 gcc-4.9 gcc-5 gcc-6
 OPT=-O3
-
-ifeq (x$(ARCH),xppc64le)
-CFLAGS=$(OPT) -g -Wall -Werror -maltivec -mcpu=power8 -std=c99
-else
 CFLAGS=$(OPT) -g -Wall -Werror -std=c99
-endif
 
 PERF_TXT=$(BIN_DIR)/perfexample.txt
 # Number of perf stat iterations
