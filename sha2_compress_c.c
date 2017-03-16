@@ -55,7 +55,7 @@ void static inline sha2_round(base_type* a, base_type* b, base_type* c,
   *a = tmp1 + tmp2;
 }
 
-void sha2_transform(base_type* _h, unsigned char* w_in) {
+void sha2_compress(base_type* _h, unsigned char* w_in, const base_type *k) {
   base_type a, b, c, d, e, f, g, h;
   int i;
   // using a local w as it's going to be modified

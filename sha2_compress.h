@@ -3,6 +3,15 @@
 
 #include "base-types.h"
 
-void sha2_transform(base_type* _h, unsigned char* w);
+#if SHA_BITS == 256
+
+// sha256_compress is found on sha256_compress.s
+extern void sha256_compress(base_type* _h, const unsigned char* w_in, const base_type *k);
+
+#elif SHA_BITS == 512
+
+void sha512_compress(base_type* _h, const unsigned char* w, const base_type *k);
+
+#endif
 
 #endif // _PPC64_LE_SHA2_COMPRESS_H_

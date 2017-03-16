@@ -449,7 +449,7 @@
       "memory"                                                              \
   ); } while (0)
 
-void sha2_transform(base_type* _h, unsigned char* w) {
+void sha512_compress(base_type* _h, const unsigned char* w, const base_type *k) {
   vector_base_type a, b, c, d, e, f, g, h;
   vector int vRb;
 

@@ -159,7 +159,7 @@ int sha2(unsigned char *input, size_t size, size_t padded_size) {
 
   // Sha compression process.
   for (size_t i = 0; i < padded_size; i = i + BLOCK_SIZE)
-    sha2_transform(_h, input + i);
+    sha2_compress(_h, input + i, k);
 
   printf(
 #if SHA_BITS == 256

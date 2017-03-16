@@ -17,8 +17,10 @@ int sha2(unsigned char *input, size_t size, size_t padded_size);
 
 #if SHA_BITS == 256
 #define BLOCK_SIZE 64
+#define sha2_compress sha256_compress
 #elif SHA_BITS == 512
 #define BLOCK_SIZE 128
+#define sha2_compress sha512_compress
 #endif
 #endif // _PPC64_LE_SHA2_H_
 
