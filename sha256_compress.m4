@@ -33,6 +33,8 @@ dnl If they are aligned, the code is smaller and possibly faster.
 define(<STATE_MEM_16BYTE_ALIGNED>, 0) dnl 1 aligned, 0 not aligned
 define(<INPUT_MEM_16BYTE_ALIGNED>, 0) dnl 1 aligned, 0 not aligned
 define(<K_MEM_16BYTE_ALIGNED>,     0) dnl 1 aligned, 0 not aligned
+dnl Set to 1 if input buffer is in Big Endian format.
+define(<SWAP_BYTES>,               1) dnl 1 Big Endian, 0 Little Endian
 
 dnl Main vector registers
 define(<a>,        <v9>)
@@ -177,19 +179,21 @@ define(<LOAD_W_PLUS_K>, <
     vperm     vt3,  vt4,   vt3,  vrb
   >)
 
-  # Swap bytes
-  vspltisw  vsp16,8
-  vspltish  vsp8, 8
-  vspltisw  shiftarg,1
-  vsl       vsp16,vsp16, shiftarg
-  vrlh      w0,   w0,   vsp8
-  vrlh      w1,   w1,   vsp8
-  vrlh      w2,   w2,   vsp8
-  vrlh      w3,   w3,   vsp8
-  vrlw      w0,   w0,   vsp16
-  vrlw      w1,   w1,   vsp16
-  vrlw      w2,   w2,   vsp16
-  vrlw      w3,   w3,   vsp16
+  ifelse(SWAP_BYTES, 1, <
+    # Swap bytes
+    vspltisw  vsp16,8
+    vspltish  vsp8, 8
+    vspltisw  shiftarg,1
+    vsl       vsp16,vsp16, shiftarg
+    vrlh      w0,   w0,   vsp8
+    vrlh      w1,   w1,   vsp8
+    vrlh      w2,   w2,   vsp8
+    vrlh      w3,   w3,   vsp8
+    vrlw      w0,   w0,   vsp16
+    vrlw      w1,   w1,   vsp16
+    vrlw      w2,   w2,   vsp16
+    vrlw      w3,   w3,   vsp16
+  >)
 
   # Add _w to K
   vadduwm   kplusw0,vt0,w0
