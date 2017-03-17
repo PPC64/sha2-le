@@ -1,6 +1,22 @@
 # This file was generated using the sha2-le project from:
 # https://github.com/PPC64/sha2-le
 
+dnl Indicates if the input memory pointers are not aligned to 16bytes.
+dnl If they are aligned, the code is smaller and possibly faster.
+define(<STATE_MEM_16BYTE_ALIGNED>, 0) dnl 1 aligned, 0 not aligned
+define(<INPUT_MEM_16BYTE_ALIGNED>, 0) dnl 1 aligned, 0 not aligned
+define(<K_MEM_16BYTE_ALIGNED>,     0) dnl 1 aligned, 0 not aligned
+dnl Set to 1 if input buffer is in Big Endian format.
+define(<SWAP_BYTES>,               1) dnl 1 Big Endian, 0 Little Endian
+dnl Used to output to file configured parameters
+define(<PRINT_PARAM>, <#   $1 = $2>) dnl
+
+# Configured as:
+PRINT_PARAM(<STATE_MEM_16BYTE_ALIGNED>, STATE_MEM_16BYTE_ALIGNED)
+PRINT_PARAM(<INPUT_MEM_16BYTE_ALIGNED>, INPUT_MEM_16BYTE_ALIGNED)
+PRINT_PARAM(<K_MEM_16BYTE_ALIGNED>, K_MEM_16BYTE_ALIGNED)
+PRINT_PARAM(<SWAP_BYTES>, SWAP_BYTES)
+
 .file "sha256_compress_ppc.s"
 
 # Keep in mind that vector loading/store is/would-be done directly by dealing
@@ -30,13 +46,6 @@ dnl Input parameters
 define(<STATE>,    <r3>)
 define(<INPUT>,    <r4>)
 define(<K>,        <r5>)
-dnl Indicates if the input memory pointers are not aligned to 16bytes.
-dnl If they are aligned, the code is smaller and possibly faster.
-define(<STATE_MEM_16BYTE_ALIGNED>, 0) dnl 1 aligned, 0 not aligned
-define(<INPUT_MEM_16BYTE_ALIGNED>, 0) dnl 1 aligned, 0 not aligned
-define(<K_MEM_16BYTE_ALIGNED>,     0) dnl 1 aligned, 0 not aligned
-dnl Set to 1 if input buffer is in Big Endian format.
-define(<SWAP_BYTES>,               1) dnl 1 Big Endian, 0 Little Endian
 
 dnl Main vector registers
 define(<a>,        <v9>)
