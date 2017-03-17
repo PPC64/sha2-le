@@ -73,9 +73,9 @@ $(BIN_DIR)/sha512_common_$(CC).o: sha2_common.c sha2_compress.h base-types.h
 	$(CC) $(CFLAGS) -c $< -DSHA_BITS=512 -o $@
 
 ifeq (x$(ARCH),xppc64le)
-sha256_compress.s: common.m4 sha256_compress.m4 # Order matters!
+sha256_compress_ppc.s: common.m4 sha256_compress_ppc.m4 # Order matters!
 	m4 $^ > $@
-$(BIN_DIR)/sha256_compress_$(CC).o: sha256_compress.s
+$(BIN_DIR)/sha256_compress_$(CC).o: sha256_compress_ppc.s
 	$(CC) $(CFLAGS) -c $< -o $@
 $(BIN_DIR)/sha512_compress_$(CC).o: sha512_compress.c base-types.h sha2_compress.h
 	$(CC) $(CFLAGS) -c $< -DSHA_BITS=512 -o $@
@@ -169,5 +169,5 @@ clean:
 	done
 	rm -rf $(BIN_DIR)
 ifeq (x$(ARCH),xppc64le)
-	rm -f sha256_compress.s
+	rm -f sha256_compress_ppc.s
 endif

@@ -11,4 +11,4 @@ bin/test512_*
 bin/test512_ll_intrinsics_*
 bin/test512_ll_asm_*
 .*.sw[po]
-sha256_compress.s
+sha256_compress_ppc.s
