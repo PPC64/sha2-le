@@ -407,7 +407,7 @@ divert(1) dnl enable output
 
 .text
 ALIGN(16)
-dnl void sha256_compress(uint32_t *STATE, const uint8_t *input, const uint32_t *k)
+# void sha256_compress(uint32_t *STATE, const uint8_t *input, const uint32_t *k)
 PROLOGUE(sha256_compress, 0, 10)  dnl v20 up to v29 are used
 
   # Load hash STATE to registers
@@ -494,6 +494,5 @@ ALIGN(16)
   # Update hash STATE
   UPDATE_SHA_STATE()
 
-
-EPILOGUE(sha256_compress, 0, 10)  dnl v20 up to v29 are used
+EPILOGUE(sha256_compress, 0, 10)
 
