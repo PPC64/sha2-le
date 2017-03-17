@@ -130,6 +130,22 @@ RESTORE_NVOLATILE($2,$3)
 <  blr
 .size $1, . - $1>)
 
+dnl Ceiling operation of $1 to $2.
+dnl E.g: ceil(16,16) => 16; ceil(17,16) => 32;
+define(<ceil>, <eval(((((8*$1)-1)/$2)+1)*$2)>)
+
+dnl Parameter of std/ld to the location where gpr $1 should be saved
+define(<gpr_loc>, <r$1, -eval(8*($1-13))(r1)
+>)
+
+dnl To save vectors, memory should be 16 bytes aligned.
+dnl Uses stvx to save vr $1 after saving $2 gprs
+define(<vr_save>, <li r0, -eval(ceil($2, 16) + 16*($1-19)); stvx v$1, r1, r0
+>)
+dnl Uses lvx to loads vr $1 after loading $2 gprs
+define(<vr_load>, <li r0, -eval(ceil($2, 16) + 16*($1-19)); lvx v$1, r1, r0
+>)
+
 dnl SAVE_NVOLATILE(gpr_used, vr_used)
 define(<SAVE_NVOLATILE>, <
   changequote([,])dnl
@@ -137,68 +153,37 @@ define(<SAVE_NVOLATILE>, <
   ifelse(<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< ignored; only for balancing)dnl
   dnl Save r14-r31 and vr20-vr31 in the red zone, if needed
   dnl Saving GP regs first and then Vectors
-  ifelse(eval($1 > 17), 1, [
-    std r31, -eval(8*(18))(r1) ])dnl
-  ifelse(eval($1 > 16), 1, [
-    std r30, -eval(8*(17))(r1) ])dnl
-  ifelse(eval($1 > 15), 1, [
-    std r29, -eval(8*(16))(r1) ])dnl
-  ifelse(eval($1 > 14), 1, [
-    std r28, -eval(8*(15))(r1) ])dnl
-  ifelse(eval($1 > 13), 1, [
-    std r27, -eval(8*(14))(r1) ])dnl
-  ifelse(eval($1 > 12), 1, [
-    std r26, -eval(8*(13))(r1) ])dnl
-  ifelse(eval($1 > 11), 1, [
-    std r25, -eval(8*(12))(r1) ])dnl
-  ifelse(eval($1 > 10), 1, [
-    std r24, -eval(8*(11))(r1) ])dnl
-  ifelse(eval($1 >  9), 1, [
-    std r23, -eval(8*(10))(r1) ])dnl
-  ifelse(eval($1 >  8), 1, [
-    std r22, -eval(8*( 9))(r1) ])dnl
-  ifelse(eval($1 >  7), 1, [
-    std r21, -eval(8*( 8))(r1) ])dnl
-  ifelse(eval($1 >  6), 1, [
-    std r20, -eval(8*( 7))(r1) ])dnl
-  ifelse(eval($1 >  5), 1, [
-    std r19, -eval(8*( 6))(r1) ])dnl
-  ifelse(eval($1 >  4), 1, [
-    std r18, -eval(8*( 5))(r1) ])dnl
-  ifelse(eval($1 >  3), 1, [
-    std r17, -eval(8*( 4))(r1) ])dnl
-  ifelse(eval($1 >  2), 1, [
-    std r16, -eval(8*( 3))(r1) ])dnl
-  ifelse(eval($1 >  1), 1, [
-    std r15, -eval(8*( 2))(r1) ])dnl
-  ifelse(eval($1 >  0), 1, [
-    std r14, -eval(8*( 1))(r1) ])dnl
+  ifelse(eval($1 > 17), 1, [ std gpr_loc(31) ])dnl
+  ifelse(eval($1 > 16), 1, [ std gpr_loc(30) ])dnl
+  ifelse(eval($1 > 15), 1, [ std gpr_loc(29) ])dnl
+  ifelse(eval($1 > 14), 1, [ std gpr_loc(28) ])dnl
+  ifelse(eval($1 > 13), 1, [ std gpr_loc(27) ])dnl
+  ifelse(eval($1 > 12), 1, [ std gpr_loc(26) ])dnl
+  ifelse(eval($1 > 11), 1, [ std gpr_loc(25) ])dnl
+  ifelse(eval($1 > 10), 1, [ std gpr_loc(24) ])dnl
+  ifelse(eval($1 >  9), 1, [ std gpr_loc(23) ])dnl
+  ifelse(eval($1 >  8), 1, [ std gpr_loc(22) ])dnl
+  ifelse(eval($1 >  7), 1, [ std gpr_loc(21) ])dnl
+  ifelse(eval($1 >  6), 1, [ std gpr_loc(20) ])dnl
+  ifelse(eval($1 >  5), 1, [ std gpr_loc(19) ])dnl
+  ifelse(eval($1 >  4), 1, [ std gpr_loc(18) ])dnl
+  ifelse(eval($1 >  3), 1, [ std gpr_loc(17) ])dnl
+  ifelse(eval($1 >  2), 1, [ std gpr_loc(16) ])dnl
+  ifelse(eval($1 >  1), 1, [ std gpr_loc(15) ])dnl
+  ifelse(eval($1 >  0), 1, [ std gpr_loc(14) ])dnl
 
-  dnl must be 16 bytes aligned: ((((n-1)/16)+1)*16)
-  ifelse(eval($2 > 11), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16*12); stvx v31, r1, r0 ])dnl
-  ifelse(eval($2 > 10), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16*11); stvx v30, r1, r0 ])dnl
-  ifelse(eval($2 >  9), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16*10); stvx v29, r1, r0 ])dnl
-  ifelse(eval($2 >  8), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 9); stvx v28, r1, r0 ])dnl
-  ifelse(eval($2 >  7), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 8); stvx v27, r1, r0 ])dnl
-  ifelse(eval($2 >  6), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 7); stvx v26, r1, r0 ])dnl
-  ifelse(eval($2 >  5), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 6); stvx v25, r1, r0 ])dnl
-  ifelse(eval($2 >  4), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 5); stvx v24, r1, r0 ])dnl
-  ifelse(eval($2 >  3), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 4); stvx v23, r1, r0 ])dnl
-  ifelse(eval($2 >  2), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 3); stvx v22, r1, r0 ])dnl
-  ifelse(eval($2 >  1), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 2); stvx v21, r1, r0 ])dnl
-  ifelse(eval($2 >  0), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 1); stvx v20, r1, r0 ])dnl
+  ifelse(eval($2 > 11), 1, [ vr_save(31, $1) ])dnl
+  ifelse(eval($2 > 10), 1, [ vr_save(30, $1) ])dnl
+  ifelse(eval($2 >  9), 1, [ vr_save(29, $1) ])dnl
+  ifelse(eval($2 >  8), 1, [ vr_save(28, $1) ])dnl
+  ifelse(eval($2 >  7), 1, [ vr_save(27, $1) ])dnl
+  ifelse(eval($2 >  6), 1, [ vr_save(26, $1) ])dnl
+  ifelse(eval($2 >  5), 1, [ vr_save(25, $1) ])dnl
+  ifelse(eval($2 >  4), 1, [ vr_save(24, $1) ])dnl
+  ifelse(eval($2 >  3), 1, [ vr_save(23, $1) ])dnl
+  ifelse(eval($2 >  2), 1, [ vr_save(22, $1) ])dnl
+  ifelse(eval($2 >  1), 1, [ vr_save(21, $1) ])dnl
+  ifelse(eval($2 >  0), 1, [ vr_save(20, $1) ])dnl
   changequote(<,>)dnl
 >)
 
@@ -210,68 +195,37 @@ define(<RESTORE_NVOLATILE>, <
 
   dnl Restore r14-r31 and vr20-vr31 if needed
   dnl Restore GP regs first and then Vectors
-  ifelse(eval($1 > 17), 1, [
-    ld r31, -eval(8*(18))(r1) ])dnl
-  ifelse(eval($1 > 16), 1, [
-    ld r30, -eval(8*(17))(r1) ])dnl
-  ifelse(eval($1 > 15), 1, [
-    ld r29, -eval(8*(16))(r1) ])dnl
-  ifelse(eval($1 > 14), 1, [
-    ld r28, -eval(8*(15))(r1) ])dnl
-  ifelse(eval($1 > 13), 1, [
-    ld r27, -eval(8*(14))(r1) ])dnl
-  ifelse(eval($1 > 12), 1, [
-    ld r26, -eval(8*(13))(r1) ])dnl
-  ifelse(eval($1 > 11), 1, [
-    ld r25, -eval(8*(12))(r1) ])dnl
-  ifelse(eval($1 > 10), 1, [
-    ld r24, -eval(8*(11))(r1) ])dnl
-  ifelse(eval($1 >  9), 1, [
-    ld r23, -eval(8*(10))(r1) ])dnl
-  ifelse(eval($1 >  8), 1, [
-    ld r22, -eval(8*( 9))(r1) ])dnl
-  ifelse(eval($1 >  7), 1, [
-    ld r21, -eval(8*( 8))(r1) ])dnl
-  ifelse(eval($1 >  6), 1, [
-    ld r20, -eval(8*( 7))(r1) ])dnl
-  ifelse(eval($1 >  5), 1, [
-    ld r19, -eval(8*( 6))(r1) ])dnl
-  ifelse(eval($1 >  4), 1, [
-    ld r18, -eval(8*( 5))(r1) ])dnl
-  ifelse(eval($1 >  3), 1, [
-    ld r17, -eval(8*( 4))(r1) ])dnl
-  ifelse(eval($1 >  2), 1, [
-    ld r16, -eval(8*( 3))(r1) ])dnl
-  ifelse(eval($1 >  1), 1, [
-    ld r15, -eval(8*( 2))(r1) ])dnl
-  ifelse(eval($1 >  0), 1, [
-    ld r14, -eval(8*( 1))(r1) ])dnl
+  ifelse(eval($1 > 17), 1, [ ld gpr_loc(31) ])dnl
+  ifelse(eval($1 > 16), 1, [ ld gpr_loc(30) ])dnl
+  ifelse(eval($1 > 15), 1, [ ld gpr_loc(29) ])dnl
+  ifelse(eval($1 > 14), 1, [ ld gpr_loc(28) ])dnl
+  ifelse(eval($1 > 13), 1, [ ld gpr_loc(27) ])dnl
+  ifelse(eval($1 > 12), 1, [ ld gpr_loc(26) ])dnl
+  ifelse(eval($1 > 11), 1, [ ld gpr_loc(25) ])dnl
+  ifelse(eval($1 > 10), 1, [ ld gpr_loc(24) ])dnl
+  ifelse(eval($1 >  9), 1, [ ld gpr_loc(23) ])dnl
+  ifelse(eval($1 >  8), 1, [ ld gpr_loc(22) ])dnl
+  ifelse(eval($1 >  7), 1, [ ld gpr_loc(21) ])dnl
+  ifelse(eval($1 >  6), 1, [ ld gpr_loc(20) ])dnl
+  ifelse(eval($1 >  5), 1, [ ld gpr_loc(19) ])dnl
+  ifelse(eval($1 >  4), 1, [ ld gpr_loc(18) ])dnl
+  ifelse(eval($1 >  3), 1, [ ld gpr_loc(17) ])dnl
+  ifelse(eval($1 >  2), 1, [ ld gpr_loc(16) ])dnl
+  ifelse(eval($1 >  1), 1, [ ld gpr_loc(15) ])dnl
+  ifelse(eval($1 >  0), 1, [ ld gpr_loc(14) ])dnl
 
-  dnl must be 16 bytes aligned: ((((n-1)/16)+1)*16)
-  ifelse(eval($2 > 11), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16*12); lvx v31, r1, r0 ])dnl
-  ifelse(eval($2 > 10), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16*11); lvx v30, r1, r0 ])dnl
-  ifelse(eval($2 >  9), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16*10); lvx v29, r1, r0 ])dnl
-  ifelse(eval($2 >  8), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 9); lvx v28, r1, r0 ])dnl
-  ifelse(eval($2 >  7), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 8); lvx v27, r1, r0 ])dnl
-  ifelse(eval($2 >  6), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 7); lvx v26, r1, r0 ])dnl
-  ifelse(eval($2 >  5), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 6); lvx v25, r1, r0 ])dnl
-  ifelse(eval($2 >  4), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 5); lvx v24, r1, r0 ])dnl
-  ifelse(eval($2 >  3), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 4); lvx v23, r1, r0 ])dnl
-  ifelse(eval($2 >  2), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 3); lvx v22, r1, r0 ])dnl
-  ifelse(eval($2 >  1), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 2); lvx v21, r1, r0 ])dnl
-  ifelse(eval($2 >  0), 1, [
-    li r0, -eval((((((8*$1)-1)/16)+1)*16) + 16* 1); lvx v20, r1, r0 ])dnl
+  ifelse(eval($2 > 11), 1, [ vr_load(31, $1) ])dnl
+  ifelse(eval($2 > 10), 1, [ vr_load(30, $1) ])dnl
+  ifelse(eval($2 >  9), 1, [ vr_load(29, $1) ])dnl
+  ifelse(eval($2 >  8), 1, [ vr_load(28, $1) ])dnl
+  ifelse(eval($2 >  7), 1, [ vr_load(27, $1) ])dnl
+  ifelse(eval($2 >  6), 1, [ vr_load(26, $1) ])dnl
+  ifelse(eval($2 >  5), 1, [ vr_load(25, $1) ])dnl
+  ifelse(eval($2 >  4), 1, [ vr_load(24, $1) ])dnl
+  ifelse(eval($2 >  3), 1, [ vr_load(23, $1) ])dnl
+  ifelse(eval($2 >  2), 1, [ vr_load(22, $1) ])dnl
+  ifelse(eval($2 >  1), 1, [ vr_load(21, $1) ])dnl
+  ifelse(eval($2 >  0), 1, [ vr_load(20, $1) ])dnl
 
   changequote(<,>)dnl
 >)
