@@ -328,12 +328,12 @@ dnl Majority (A,B,C) = vsel(B, C, vxor(A, B))
 define(<ROUND>, <
   vsel       ch,  $7,  $6, $5           # ch  = Ch(e,f,g)
   vxor       maj, $1,  $2               # intermediate Maj
-  vsel       maj, $2,  $3, maj          # maj = Maj(a,b,c)
-  vshasigmaw bsa, $1,  1,  0            # bsa = BigSigma0(a)
   vshasigmaw bse, $5,  1,  0xF          # bse = BigSigma1(e)
-  vadduwm    vt1, $8,  bse              # vt1 = h + bse
   vadduwm    vt2, ch,  $9               # vt2 = ch + kpw
+  vadduwm    vt1, $8,  bse              # vt1 = h + bse
+  vsel       maj, $2,  $3, maj          # maj = Maj(a,b,c)
   vadduwm    vt3, vt1, vt2              # vt3 = h + bse + ch + kpw
+  vshasigmaw bsa, $1,  1,  0            # bsa = BigSigma0(a)
   vadduwm    vt4, bsa, maj              # vt4 = bsa + maj
   vadduwm    $4,  $4,  vt3              # d   = d + vt3
   vadduwm    $8,  vt3, vt4              # h   = vt3 + vt4
