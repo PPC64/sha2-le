@@ -9,5 +9,6 @@ target at this moment is the following list:
 
  - OpenJDK
  - nettle
+ - Cryptopp
  - ...
 
