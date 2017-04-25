@@ -9,7 +9,7 @@
 
 #ifdef LIBCRYPTO
  #include <openssl/evp.h>
- #include <openssl/conf.h>
+ #include <openssl/engine.h>
  #include <openssl/sha.h>
 #else
  #include "sha2_common.h"
@@ -67,11 +67,8 @@ int main (int argc, char *argv[]) {
   fclose(file);
 
 #ifdef LIBCRYPTO
-  /* Load all digest and cipher algorithms */
-  OpenSSL_add_all_algorithms();
-
-  /* Load config file, and other important initialisation */
-  OPENSSL_config(NULL);
+  /* Load OPENSSL engines for improved performance */
+  ENGINE_load_builtin_engines();
 
   unsigned char md[SHA_BITS/8];
 
