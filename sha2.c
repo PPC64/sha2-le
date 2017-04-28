@@ -9,8 +9,17 @@
 
 #ifdef LIBCRYPTO
  #include <openssl/evp.h>
- #include <openssl/engine.h>
  #include <openssl/sha.h>
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+#define OPENSSL_VERSION_1_1 1
+#endif
+
+#ifndef OPENSSL_VERSION_1_1
+/* For some reason, this function is not declared on OpenSSL's headers */
+void OPENSSL_cpuid_setup(void);
+#endif
+
 #else
  #include "sha2_common.h"
 #endif
@@ -67,8 +76,10 @@ int main (int argc, char *argv[]) {
   fclose(file);
 
 #ifdef LIBCRYPTO
-  /* Load OPENSSL engines for improved performance */
-  ENGINE_load_builtin_engines();
+#ifndef OPENSSL_VERSION_1_1
+  /* This needs to be called in order to use a SIMD approach for hashing */
+  OPENSSL_cpuid_setup();
+#endif
 
   unsigned char md[SHA_BITS/8];
 
