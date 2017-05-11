@@ -109,47 +109,28 @@
   vector_base_type vt3;                                                     \
   vector_base_type vt4;                                                     \
   __asm__ volatile (                                                        \
-    /* set vrb according to alignment                                    */ \
-    "lvsr    %[vrb],0,%[wptr]\n\t"                                          \
-    /* unaligned load                                                    */ \
-    "lvx     %[w0],0,%[wptr]\n\t"                                           \
-    "addi    %[t0],%[wptr],16\n\t"                                          \
-    "lvx     %[w1],0,%[t0]\n\t"                                             \
-    /* w0 = w[j-16] to w[j-13]                                           */ \
-    "vperm   %[w0],%[w1],%[w0],%[vrb]\n\t"                                  \
-    "addi    %[t0],%[wptr],32\n\t"                                          \
-    "lvx     %[w2],0,%[t0]\n\t"                                             \
-    /* w1 = w[j-12] to w[j-9]                                            */ \
-    "vperm   %[w1],%[w2],%[w1],%[vrb]\n\t"                                  \
-    "addi    %[t0],%[wptr],48\n\t"                                          \
-    "lvx     %[w3],0,%[t0]\n\t"                                             \
-    /* w2 = w[j-8] to w[j-5]                                             */ \
-    "vperm   %[w2],%[w3],%[w2],%[vrb]\n\t"                                  \
-    "addi    %[t0],%[wptr],64\n\t"                                          \
-    "lvx     %[vt0],0,%[t0]\n\t"                                            \
-    /* w3 = w[j-4] to w[j-1]                                             */ \
-    "vperm   %[w3],%[vt0],%[w3],%[vrb]\n\t"                                 \
-    /* set vrb according to alignment                                    */ \
-    "lvsr    %[vrb],0,%[kptr]\n\t"                                          \
-    /* unaligned load                                                    */ \
-    "lvx     %[vt0],0,%[kptr]\n\t"                                          \
-    "addi    %[t0],%[kptr],16\n\t"                                          \
-    "lvx     %[vt1],0,%[t0]\n\t"                                            \
-    /* vt0 = k[j-16] to k[j-13]                                          */ \
-    "vperm   %[vt0],%[vt1],%[vt0],%[vrb]\n\t"                               \
-    "addi    %[t0],%[kptr],32\n\t"                                          \
-    "lvx     %[vt2],0,%[t0]\n\t"                                            \
-    /* vt1 = k[j-12] to k[j-9]                                           */ \
-    "vperm   %[vt1],%[vt2],%[vt1],%[vrb]\n\t"                               \
-    "addi    %[t0],%[kptr],48\n\t"                                          \
-    "lvx     %[vt3],0,%[t0]\n\t"                                            \
-    /* vt2 = k[j-8] to k[j-5]                                            */ \
-    "vperm   %[vt2],%[vt3],%[vt2],%[vrb]\n\t"                               \
-    "addi    %[t0],%[kptr],64\n\t"                                          \
-    "lvx     %[vt4],0,%[t0]\n\t"                                            \
-    /* vt3 = k[j-4] to k[j-1]                                            */ \
-    "vperm   %[vt3],%[vt4],%[vt3],%[vrb]\n\t"                               \
-                                                                            \
+    "lxvd2x   %x[w0],0,%[wptr]\n\t"                                         \
+    "xxswapd  %x[w0],%x[w0]\n\t"                                            \
+    "addi     %[t0],%[wptr],16\n\t"                                         \
+    "lxvd2x   %x[w1],0,%[t0]\n\t"                                           \
+    "xxswapd  %x[w1],%x[w1]\n\t"                                            \
+    "addi     %[t0],%[wptr],32\n\t"                                         \
+    "lxvd2x   %x[w2],0,%[t0]\n\t"                                           \
+    "xxswapd  %x[w2],%x[w2]\n\t"                                            \
+    "addi     %[t0],%[wptr],48\n\t"                                         \
+    "lxvd2x   %x[w3],0,%[t0]\n\t"                                           \
+    "xxswapd  %x[w3],%x[w3]\n\t"                                            \
+    "lxvd2x   %x[vt0],0,%[kptr]\n\t"                                        \
+    "xxswapd  %x[vt0],%x[vt0]\n\t"                                          \
+    "addi     %[t0],%[kptr],16\n\t"                                         \
+    "lxvd2x   %x[vt1],0,%[t0]\n\t"                                          \
+    "xxswapd  %x[vt1],%x[vt1]\n\t"                                          \
+    "addi     %[t0],%[kptr],32\n\t"                                         \
+    "lxvd2x   %x[vt2],0,%[t0]\n\t"                                          \
+    "xxswapd  %x[vt2],%x[vt2]\n\t"                                          \
+    "addi     %[t0],%[kptr],48\n\t"                                         \
+    "lxvd2x   %x[vt3],0,%[t0]\n\t"                                          \
+    "xxswapd  %x[vt3],%x[vt3]\n\t"                                          \
     /* Swap bytes */                                                        \
     "vspltisw %[vsp16],8\n\t"                                               \
     "vspltish %[vsp8],8\n\t"                                                \
@@ -212,11 +193,8 @@
   __asm__ volatile (                                                        \
     "sldi       %[t1],%[index],2\n\t"         /* j * 4 (word size)       */ \
     "add        %[t0],%[t1],%[kptr]\n\t"      /* alias to k[j] location  */ \
-    "lvx        %[vt6],0,%[t0]\n\t"                                         \
-    "addi       %[t0],%[t0],16\n\t"           /* alias to k[j+4] location*/ \
-    "lvsr       %[vt2],0,%[kptr]\n\t"                                       \
-    "lvx        %[vt1],0,%[t0]\n\t"           /* treat unaligned case    */ \
-    "vperm      %[vt6],%[vt1],%[vt6],%[vt2]\n\t"                            \
+    "lxvd2x     %x[vt6],0,%[t0]\n\t"                                        \
+    "xxswapd    %x[vt6],%x[vt6]\n\t"                                        \
     /* vt1 = w[j-15], w[j-14], w[j-13], w[j-12]                          */ \
     "vsldoi     %[vt1],%[w1],%[w0],12\n\t"                                  \
     /* vt7 = w[j-7], w[j-6], w[j-5], w[j-4]                              */ \
