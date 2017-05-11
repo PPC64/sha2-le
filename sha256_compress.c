@@ -324,35 +324,11 @@
       "vadduwm %[vt0],%[vt0],%[vt1]\n\t"                                    \
       /* vt5 = {e+_h[4], f+_h[5], g+_h[6], h+_h[7]                       */ \
       "vadduwm %[vt5],%[vt5],%[vt3]\n\t"                                    \
-      "mfvrwz %[rtmp], %[vt0]\n\t"          /* rtmp = a+hptr[0]          */ \
-      "stw    %[rtmp], 8(%[hptr])\n\t"      /* update h[3]               */ \
-      /* vt6 = {b+hptr[1], c+hptr[2], d+hptr[3], a+hptr[0]}              */ \
-      "vsldoi %[vt6],%[vt0],%[vt0],12\n\t"                                  \
-      "mfvrwz %[rtmp], %[vt6]\n\t"          /* tmp = b+hptr[1]           */ \
-      "stw    %[rtmp], 12(%[hptr])\n\t"     /* update h[2]               */ \
-      /* vt6 = {c+hptr[2], d+hptr[3], a+hptr[0], b+hptr[1]}              */ \
-      "vsldoi %[vt6],%[vt6],%[vt6],12\n\t"                                  \
-      "mfvrwz %[rtmp],%[vt6]\n\t"           /* rtmp = c+hptr[2]          */ \
-      "stw    %[rtmp],0(%[hptr])\n\t"       /* update h[1]               */ \
-      /* vt6 = {d+hptr[3], a+hptr[0], b+hptr[1], c+hptr[2]}              */ \
-      "vsldoi %[vt6],%[vt6],%[vt6],12\n\t"                                  \
-      "mfvrwz %[rtmp],%[vt6]\n\t"           /* rtmp = d+hptr[3]          */ \
-      "stw    %[rtmp],4(%[hptr])\n\t"       /* update h[0]               */ \
-      "mfvrwz %[rtmp],%[vt5]\n\t"           /* tmp = e+hptr[4]           */ \
-      "stw    %[rtmp],24(%[hptr])\n\t"      /* update h[7]               */ \
-      /* vt6 = {f+hptr[5], g+hptr[6], d+hptr[3], h+hptr[7]}              */ \
-      "vsldoi %[vt6],%[vt5],%[vt5],12\n\t"                                  \
-      "mfvrwz %[rtmp],%[vt6]\n\t"           /* rtmp = f+hptr[5]          */ \
-      "stw    %[rtmp],28(%[hptr])\n\t"      /* update h[6]               */ \
-      /* vt6 = {g+hptr[6], h+hptr[7], e+hptr[4], f+hptr[5]}              */ \
-      "vsldoi %[vt6],%[vt6],%[vt6],12\n\t"                                  \
-      "mfvrwz %[rtmp],%[vt6]\n\t"           /* rtmp = g+hptr[6]          */ \
-      "stw    %[rtmp],16(%[hptr])\n\t"      /* update h[5]               */ \
-      /* vt6 = {h+hptr[7], e+hptr[4], f+hptr[5], g+hptr[6]}              */ \
-      "vsldoi %[vt6],%[vt6],%[vt6],12\n\t"                                  \
-      "mfvrwz %[rtmp],%[vt6]\n\t"           /* rtmp = h+hptr[7]          */ \
-      "stw    %[rtmp],20(%[hptr])\n\t"                                      \
-    : /* output list                                                     */ \
+      "xxswapd %x[vt0],%x[vt0]\n\t"                                         \
+      "stxvd2x %x[vt0],0,%[hptr]\n\t"                                       \
+      "xxswapd %x[vt5],%x[vt5]\n\t"                                         \
+      "stxvd2x %x[vt5],%[offs],%[hptr]\n\t"                                 \
+      : /* output list                                                   */ \
       /* temporaries                                                     */ \
       [vt0] "=&v" (vt0),                                                    \
       [vt1] "=&v" (vt1),                                                    \

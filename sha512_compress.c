@@ -398,27 +398,15 @@
       "vaddudm %[vt1],%[vt1],%[vt5]\n\t"    /* vt1 = {_h[2]+c, _h[3]+d}  */ \
       "vaddudm %[vt2],%[vt2],%[vt6]\n\t"    /* vt2 = {_h[4]+e, _h[5]+f}  */ \
       "vaddudm %[vt3],%[vt3],%[vt7]\n\t"    /* vt3 = {_h[6]+g, _h[7]+h}  */ \
-      "mfvrd   %[rtmp0],%[vt0]\n\t"                                         \
-      "std     %[rtmp0],8(%[hptr])\n\t"                                     \
-      "vsldoi  %[vt8],%[vt0],%[vt0],8\n\t"                                  \
-      "mfvrd   %[rtmp0],%[vt8]\n\t"                                         \
-      "std     %[rtmp0],0(%[hptr])\n\t"                                     \
-      "mfvrd   %[rtmp0],%[vt1]\n\t"                                         \
-      "std     %[rtmp0],24(%[hptr])\n\t"                                    \
-      "vsldoi  %[vt8],%[vt1],%[vt1],8\n\t"                                  \
-      "mfvrd   %[rtmp0],%[vt8]\n\t"                                         \
-      "std     %[rtmp0],16(%[hptr])\n\t"                                    \
-      "mfvrd   %[rtmp0],%[vt2]\n\t"                                         \
-      "std     %[rtmp0],40(%[hptr])\n\t"                                    \
-      "vsldoi  %[vt8],%[vt2],%[vt2],8\n\t"                                  \
-      "mfvrd   %[rtmp0],%[vt8]\n\t"                                         \
-      "std     %[rtmp0],32(%[hptr])\n\t"                                    \
-      "mfvrd   %[rtmp0],%[vt3]\n\t"                                         \
-      "std     %[rtmp0],56(%[hptr])\n\t"                                    \
-      "vsldoi  %[vt8],%[vt3],%[vt3],8\n\t"                                  \
-      "mfvrd   %[rtmp0],%[vt8]\n\t"                                         \
-      "std     %[rtmp0],48(%[hptr])\n\t"                                    \
-    : /* output list                                                     */ \
+      "xxswapd %x[vt0],%x[vt0]\n\t"                                         \
+      "stxvd2x %x[vt0],0,%[hptr]\n\t"                                       \
+      "xxswapd %x[vt1],%x[vt1]\n\t"                                         \
+      "stxvd2x %x[vt1],%[offs1],%[hptr]\n\t"                                \
+      "xxswapd %x[vt2],%x[vt2]\n\t"                                         \
+      "stxvd2x %x[vt2],%[offs2],%[hptr]\n\t"                                \
+      "xxswapd %x[vt3],%x[vt3]\n\t"                                         \
+      "stxvd2x %x[vt3],%[offs3],%[hptr]\n\t"                                \
+      : /* output list                                                   */ \
       /* temporaries                                                     */ \
       [vt0] "=&v" (vt0),                                                    \
       [vt1] "=&v" (vt1),                                                    \
