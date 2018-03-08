@@ -139,11 +139,11 @@ void swap_bytes(unsigned char *input, unsigned char *output, size_t size) {
 
 void write_size(unsigned char *input, size_t size, size_t position) {
   base_type* total_size = (base_type*)&input[position];
-  // Undefined for SHA512. Right shift count >= width of type (uint64_t)
+  const unsigned long long bit_size = size * 8;
   #if SHA_BITS == 256
-  *total_size = (base_type)((size * 8) >> 32); // higher bits
+  *total_size = (base_type)(bit_size >> 32); // higher bits
   #endif
-  *(++total_size) = (base_type)size * 8; // lower bits
+  *(++total_size) = (base_type)bit_size; // lower bits
 }
 
 int sha2(unsigned char *input, size_t size, size_t padded_size) {
