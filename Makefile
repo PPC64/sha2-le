@@ -7,7 +7,7 @@ BIN_DIR=./bin
 CC=gcc
 COMPILERS=gcc-4.8 gcc-4.9 gcc-5 gcc-6
 OPT=-O3
-CFLAGS=$(OPT) -g -Wall -Werror -std=c99
+ALL_CFLAGS=$(OPT) -g -Wall -Werror -std=c99 $(CFLAGS)
 
 PERF_TXT=$(BIN_DIR)/perfexample.txt
 # Number of perf stat iterations
@@ -53,61 +53,61 @@ all-compiler: $(BINS)
 
 # Objects - Not using %.o as X64 wouldn't compile
 $(BIN_DIR)/sha256_compress_c_$(SUFFIX).o: sha2_compress_c.c base-types.h sha2_compress.h
-	$(CC) $(CFLAGS) -c $< -DSHA_BITS=256 -o $@
+	$(CC) $(ALL_CFLAGS) -c $< -DSHA_BITS=256 -o $@
 $(BIN_DIR)/sha512_compress_c_$(SUFFIX).o: sha2_compress_c.c base-types.h sha2_compress.h
-	$(CC) $(CFLAGS) -c $< -DSHA_BITS=512 -o $@
+	$(CC) $(ALL_CFLAGS) -c $< -DSHA_BITS=512 -o $@
 
 $(BIN_DIR)/sha256_c_$(SUFFIX).o: sha2_compress_c.c sha2_common.h base-types.h
-	$(CC) $(CFLAGS) -c $< -DSHA_BITS=256 -o $@
+	$(CC) $(ALL_CFLAGS) -c $< -DSHA_BITS=256 -o $@
 $(BIN_DIR)/sha512_c_$(SUFFIX).o: sha2_compress_c.c sha2_common.h base-types.h
-	$(CC) $(CFLAGS) -c $< -DSHA_BITS=512 -o $@
+	$(CC) $(ALL_CFLAGS) -c $< -DSHA_BITS=512 -o $@
 
 $(BIN_DIR)/sha256_$(SUFFIX).o: sha2.c sha2_common.h base-types.h
-	$(CC) $(CFLAGS) -c $< -DSHA_BITS=256 -o $@
+	$(CC) $(ALL_CFLAGS) -c $< -DSHA_BITS=256 -o $@
 $(BIN_DIR)/sha512_$(SUFFIX).o: sha2.c sha2_common.h base-types.h
-	$(CC) $(CFLAGS) -c $< -DSHA_BITS=512 -o $@
+	$(CC) $(ALL_CFLAGS) -c $< -DSHA_BITS=512 -o $@
 
 $(BIN_DIR)/sha256_common_$(SUFFIX).o: sha2_common.c sha2_compress.h base-types.h
-	$(CC) $(CFLAGS) -c $< -DSHA_BITS=256 -o $@
+	$(CC) $(ALL_CFLAGS) -c $< -DSHA_BITS=256 -o $@
 $(BIN_DIR)/sha512_common_$(SUFFIX).o: sha2_common.c sha2_compress.h base-types.h
-	$(CC) $(CFLAGS) -c $< -DSHA_BITS=512 -o $@
+	$(CC) $(ALL_CFLAGS) -c $< -DSHA_BITS=512 -o $@
 
 ifeq (x$(ARCH),xppc64le)
 sha256_compress_ppc.s: common.m4 sha256_compress_ppc.m4 # Order matters!
 	m4 $^ > $@
 $(BIN_DIR)/sha256_compress_$(SUFFIX).o: sha256_compress_ppc.s
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(ALL_CFLAGS) -c $< -o $@
 $(BIN_DIR)/sha512_compress_$(SUFFIX).o: sha512_compress.c base-types.h sha2_compress.h
-	$(CC) $(CFLAGS) -c $< -DSHA_BITS=512 -o $@
+	$(CC) $(ALL_CFLAGS) -c $< -DSHA_BITS=512 -o $@
 
 $(BIN_DIR)/test256_$(SUFFIX).o: tests.c base-types.h sha2_common.h
-	$(CC) $(CFLAGS) -c $< -DSHA_BITS=256 -o $@
+	$(CC) $(ALL_CFLAGS) -c $< -DSHA_BITS=256 -o $@
 $(BIN_DIR)/test512_$(SUFFIX).o: tests.c base-types.h sha2_common.h
-	$(CC) $(CFLAGS) -c $< -DSHA_BITS=512 -o $@
+	$(CC) $(ALL_CFLAGS) -c $< -DSHA_BITS=512 -o $@
 endif
 
 
 # Binaries
 $(BIN_DIR)/sha256_libcrypto_$(SUFFIX): sha2.c
-	$(CC) $(CFLAGS) $^ -DSHA_BITS=256 -DLIBCRYPTO -o $@ -lcrypto
+	$(CC) $(ALL_CFLAGS) $^ -DSHA_BITS=256 -DLIBCRYPTO -o $@ -lcrypto
 $(BIN_DIR)/sha512_libcrypto_$(SUFFIX): sha2.c
-	$(CC) $(CFLAGS) $^ -DSHA_BITS=512 -DLIBCRYPTO -o $@ -lcrypto
+	$(CC) $(ALL_CFLAGS) $^ -DSHA_BITS=512 -DLIBCRYPTO -o $@ -lcrypto
 
 $(BIN_DIR)/sha256_c_$(SUFFIX): $(BIN_DIR)/sha256_c_$(SUFFIX).o $(BIN_DIR)/sha256_$(SUFFIX).o $(BIN_DIR)/sha256_common_$(SUFFIX).o
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(ALL_CFLAGS) $^ -o $@
 $(BIN_DIR)/sha512_c_$(SUFFIX): $(BIN_DIR)/sha512_c_$(SUFFIX).o $(BIN_DIR)/sha512_$(SUFFIX).o $(BIN_DIR)/sha512_common_$(SUFFIX).o
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(ALL_CFLAGS) $^ -o $@
 
 ifeq (x$(ARCH),xppc64le)
 $(BIN_DIR)/sha256_$(SUFFIX): $(BIN_DIR)/sha256_$(SUFFIX).o $(BIN_DIR)/sha256_compress_$(SUFFIX).o $(BIN_DIR)/sha256_common_$(SUFFIX).o
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(ALL_CFLAGS) $^ -o $@
 $(BIN_DIR)/sha512_$(SUFFIX): $(BIN_DIR)/sha512_$(SUFFIX).o $(BIN_DIR)/sha512_compress_$(SUFFIX).o $(BIN_DIR)/sha512_common_$(SUFFIX).o
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(ALL_CFLAGS) $^ -o $@
 
 $(BIN_DIR)/test256_$(SUFFIX): $(BIN_DIR)/test256_$(SUFFIX).o $(BIN_DIR)/sha256_common_$(SUFFIX).o $(BIN_DIR)/sha256_compress_$(SUFFIX).o
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(ALL_CFLAGS) $^ -o $@
 $(BIN_DIR)/test512_$(SUFFIX): $(BIN_DIR)/test512_$(SUFFIX).o $(BIN_DIR)/sha512_common_$(SUFFIX).o $(BIN_DIR)/sha512_compress_$(SUFFIX).o
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(ALL_CFLAGS) $^ -o $@
 endif
 
 test-compiler: $(BINS) $(TESTS)
