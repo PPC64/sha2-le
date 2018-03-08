@@ -33,7 +33,6 @@ const base_type k[64] = {
   0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
   0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
-const size_t W_SIZE     = 64;
 
 #elif SHA_BITS == 512
 
@@ -73,7 +72,6 @@ const base_type k[80] = {
   0x431d67c49c100d4c, 0x4cc5d4becb3e42b6, 0x597f299cfc657e2a,
   0x5fcb6fab3ad6faec, 0x6c44198c4a475817
 };
-const size_t W_SIZE     = 80;
 
 #else
 #error "Invalid SHA_BITS"
