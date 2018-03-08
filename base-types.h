@@ -1,5 +1,5 @@
-#ifndef _PPC64_LE_BASE_TYPES_H_
-#define _PPC64_LE_BASE_TYPES_H_
+#ifndef PPC64_LE_BASE_TYPES_H
+#define PPC64_LE_BASE_TYPES_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -25,4 +25,4 @@ const size_t W_SIZE;
 static const size_t base_type_size = sizeof(base_type);
 typedef vector base_type vector_base_type;
 
-#endif // _PPC64_LE_BASE_TYPES_H_
+#endif // PPC64_LE_BASE_TYPES_H
