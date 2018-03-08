@@ -132,7 +132,7 @@ void swap_bytes(unsigned char *input, unsigned char *output, size_t size) {
       (*input_cast & 0x00000000000000FFULL) << 56;
 # endif // SHA_BITS
 #else
-# error "Little endian only"
+    memcpy(output_cast, input_cast, sizeof(base_type));
 #endif
   }
 }
