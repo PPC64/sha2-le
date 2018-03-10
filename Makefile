@@ -6,8 +6,8 @@ ARCH:=$(shell uname -m)
 BIN_DIR=./bin
 CC=gcc
 COMPILERS=gcc-4.8 gcc-4.9 gcc-5 gcc-6
-CFLAGS=-g -O3 
-ALL_CFLAGS=$(CFLAGS)
+OPT=-O3
+ALL_CFLAGS=$(OPT) -g -Wall -Werror -std=c99 $(CFLAGS)
 
 PERF_TXT=$(BIN_DIR)/perfexample.txt
 # Number of perf stat iterations

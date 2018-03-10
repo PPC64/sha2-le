@@ -112,7 +112,7 @@ void swap_bytes(unsigned char *input, unsigned char *output, size_t size) {
     base_type *input_cast = (base_type*)input+i;
     base_type *output_cast = (base_type*)output+i;
 
-#if __LITTLE_ENDIAN__
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     *output_cast =
 # if SHA_BITS == 256
       (*input_cast & 0xFF000000) >> 24 |
