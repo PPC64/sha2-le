@@ -1,10 +1,10 @@
-#ifndef _PPC64_LE_BASE_TYPES_H_
-#define _PPC64_LE_BASE_TYPES_H_
+#ifndef PPC64_LE_BASE_TYPES_H
+#define PPC64_LE_BASE_TYPES_H
 
 #include <stdint.h>
 #include <stdlib.h>
 
-#if defined(__powerpc64__)
+#if defined(__powerpc64__) || defined(__ALTIVEC__)
 #include <altivec.h>
 #else
 // dummy define to avoid errors on x64 compilation
@@ -13,16 +13,18 @@
 
 #if SHA_BITS == 256
 typedef unsigned int base_type;
-const base_type k[64];
+typedef vector unsigned int vector_base_type;
+extern const base_type h[8];
+extern const base_type k[64];
+static const size_t W_SIZE = 64;
 #elif SHA_BITS == 512
 typedef unsigned long long base_type;
-const base_type k[80];
+typedef vector unsigned long long vector_base_type;
+extern const base_type h[8];
+extern const base_type k[80];
+static const size_t W_SIZE = 80;
 #endif // SHA_BITS
 
-base_type _h[8];
-const size_t W_SIZE;
-
 static const size_t base_type_size = sizeof(base_type);
-typedef vector base_type vector_base_type;
 
-#endif // _PPC64_LE_BASE_TYPES_H_
+#endif // PPC64_LE_BASE_TYPES_H

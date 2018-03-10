@@ -1,5 +1,5 @@
-#ifndef _PPC64_LE_SHA2_H_
-#define _PPC64_LE_SHA2_H_
+#ifndef PPC64_LE_SHA2_H
+#define PPC64_LE_SHA2_H
 
 #include <stdio.h>
 #include <string.h>
@@ -22,5 +22,5 @@ int sha2(unsigned char *input, size_t size, size_t padded_size);
 #define BLOCK_SIZE 128
 #define sha2_compress sha512_compress
 #endif
-#endif // _PPC64_LE_SHA2_H_
+#endif // PPC64_LE_SHA2_H
 

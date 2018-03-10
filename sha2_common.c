@@ -33,7 +33,6 @@ const base_type k[64] = {
   0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
   0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
-const size_t W_SIZE     = 64;
 
 #elif SHA_BITS == 512
 
@@ -73,7 +72,6 @@ const base_type k[80] = {
   0x431d67c49c100d4c, 0x4cc5d4becb3e42b6, 0x597f299cfc657e2a,
   0x5fcb6fab3ad6faec, 0x6c44198c4a475817
 };
-const size_t W_SIZE     = 80;
 
 #else
 #error "Invalid SHA_BITS"
@@ -114,15 +112,14 @@ void swap_bytes(unsigned char *input, unsigned char *output, size_t size) {
     base_type *input_cast = (base_type*)input+i;
     base_type *output_cast = (base_type*)output+i;
 
-#if __BYTE_ORDER__ ==  __ORDER_LITTLE_ENDIAN__
-
+#if __LITTLE_ENDIAN__
     *output_cast =
-#if SHA_BITS == 256
+# if SHA_BITS == 256
       (*input_cast & 0xFF000000) >> 24 |
       (*input_cast & 0x00FF0000) >>  8 |
       (*input_cast & 0x0000FF00) <<  8 |
       (*input_cast & 0x000000FF) << 24;
-#elif SHA_BITS == 512
+# elif SHA_BITS == 512
       (*input_cast & 0xFF00000000000000ULL) >> 56 |
       (*input_cast & 0x00FF000000000000ULL) >> 40 |
       (*input_cast & 0x0000FF0000000000ULL) >> 24 |
@@ -131,20 +128,20 @@ void swap_bytes(unsigned char *input, unsigned char *output, size_t size) {
       (*input_cast & 0x0000000000FF0000ULL) << 24 |
       (*input_cast & 0x000000000000FF00ULL) << 40 |
       (*input_cast & 0x00000000000000FFULL) << 56;
-#endif // SHA_BITS
-  }
+# endif // SHA_BITS
 #else
-#error "Little endian only"
+    memcpy(output_cast, input_cast, sizeof(base_type));
 #endif
+  }
 }
 
 void write_size(unsigned char *input, size_t size, size_t position) {
   base_type* total_size = (base_type*)&input[position];
-  // Undefined for SHA512. Right shift count >= width of type (uint64_t)
+  const unsigned long long bit_size = size * 8;
   #if SHA_BITS == 256
-  *total_size = (base_type)((size * 8) >> 32); // higher bits
+  *total_size = (base_type)(bit_size >> 32); // higher bits
   #endif
-  *(++total_size) = (base_type)size * 8; // lower bits
+  *(++total_size) = (base_type)bit_size; // lower bits
 }
 
 int sha2(unsigned char *input, size_t size, size_t padded_size) {

@@ -1,5 +1,5 @@
-#ifndef _PPC64_LE_SHA2_COMPRESS_H_
-#define _PPC64_LE_SHA2_COMPRESS_H_
+#ifndef PPC64_LE_SHA2_COMPRESS_H
+#define PPC64_LE_SHA2_COMPRESS_H
 
 #include "base-types.h"
 
@@ -14,4 +14,4 @@ void sha512_compress(base_type* _h, const unsigned char* w, const base_type *k);
 
 #endif
 
-#endif // _PPC64_LE_SHA2_COMPRESS_H_
+#endif // PPC64_LE_SHA2_COMPRESS_H
